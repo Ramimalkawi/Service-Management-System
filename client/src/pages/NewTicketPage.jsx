@@ -20,7 +20,7 @@ const testPdfUrl =
   "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
 
 import "./NewTicket.css";
-import SignaturePdfModal from "../components/SignaturePDFModal";
+import SignaturePdfModal from "../components/SignaturePdfModal";
 import { useUser } from "../context/userContext";
 
 const NewTicket = () => {
