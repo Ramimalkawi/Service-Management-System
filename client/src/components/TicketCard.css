@@ -1,0 +1,48 @@
+.ticket-card-new {
+  width: 100%;
+  background-color: #47ff84;
+  padding: 10px 15px;
+  padding: 10px 15px;
+  border-radius: 10px;
+}
+
+.ticket-card-new.selected {
+  box-shadow: 0 0 0 3px #1ccad4;
+  border-left: 4px solid #094549;
+}
+
+.ticket-card-new.selected::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(62, 63, 63, 0.3);
+  border-left: 4px solid #094549;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+.ticket-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.ticket-id {
+  color: red;
+}
+
+.ticket-status,
+.ticket-customer {
+  color: rgb(0, 0, 0);
+}
+
+.ticket-body,
+.ticket-date {
+  margin-left: 5px;
+}

@@ -1,0 +1,146 @@
+/* PartsDeliveryModal.css */
+
+.parts-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 30px; /* Adjusted padding for better alignment */
+  z-index: 1000;
+}
+
+.parts-modal {
+  background-color: white;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 95vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.parts-modal h2 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-decoration: underline;
+}
+
+.parts-modal-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.parts-modal-header .info {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.parts-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+
+  font-size: 14px;
+}
+
+.parts-modal th,
+.parts-modal td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+.parts-modal th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.parts-modal .notes,
+.parts-modal .warranty {
+  font-size: 13px;
+  margin: 16px 0;
+  line-height: 1.6;
+}
+
+.parts-modal .signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  gap: 20px;
+}
+
+.signature-block {
+  text-align: left;
+  flex: 1;
+}
+
+.signature-block p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.signature-box {
+  border: 1px dashed #999;
+  height: 100px;
+  margin-top: 6px;
+}
+
+.parts-modal .action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.parts-modal .clear-button,
+.parts-modal .save-button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.parts-modal .clear-button {
+  background-color: #001acc;
+  color: white;
+}
+
+.parts-modal .save-button {
+  background-color: #666;
+  color: white;
+}
+
+.parts-modal .save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.parts-modal .footer-logos {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  align-items: center;
+}
+
+.parts-modal .footer-logos img {
+  max-height: 40px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-left: 30px; /* Adjusted padding for better alignment */
+}

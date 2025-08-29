@@ -1,0 +1,188 @@
+/* PriceQuotationModal.css - Similar to PartsModal but for price quotations */
+
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.right-modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 700px;
+  height: 100vh;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  max-height: calc(100vh - 80px); /* subtract sticky footer height */
+}
+
+.modal-form input,
+.modal-form select {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.delivery-header {
+  margin-top: 1.5rem;
+  border-top: 1px solid #ccc;
+  padding-top: 1rem;
+}
+
+.delivery-details {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding-left: 20px;
+}
+
+.delivery-details .left,
+.delivery-details .right {
+  width: 48%;
+}
+
+.delivery-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.delivery-table th,
+.delivery-table td {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.modal-actions {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #ccc;
+  background: white;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+.save-button {
+  width: 100%;
+  padding: 12px;
+  font-weight: bold;
+  background-color: #4b44f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.apply-button {
+  margin-top: 1rem;
+  padding: 8px 16px;
+  background-color: #3333cc;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.service-section {
+  margin-top: 10px;
+}
+
+.service-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.service-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  margin-bottom: 0 !important;
+}
+
+.service-checkbox input[type="checkbox"] {
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.service-type-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.service-type-select label {
+  white-space: nowrap;
+  margin-bottom: 0 !important;
+}
+
+.service-type-select select {
+  margin-bottom: 0 !important;
+  flex: 1;
+}
+
+.custom-service-input {
+  margin-left: 8px !important;
+  margin-bottom: 0 !important;
+  flex: 1;
+  padding: 8px !important;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-size: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.logo-img {
+  max-height: 40px;
+  margin-bottom: 10px;
+}
+
+.logo-section {
+  text-align: center;
+}
+
+.logo-section h2 {
+  margin-bottom: 4px;
+  font-size: 22px;
+  color: #094549;
+}
+
+.logo-section .underline {
+  height: 2px;
+  background-color: #094549;
+  width: 100px;
+  margin: 0 auto;
+}
+
+.delete-part-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #cc0000;
+}

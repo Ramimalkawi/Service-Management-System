@@ -1,0 +1,146 @@
+.delivery-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  align-items: flex-start; /* so content starts from top */
+}
+
+.delivery-modal {
+  background-color: white;
+  width: 90%;
+  max-width: 1000px; /* increased from 800px */
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 40px 30px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center; /* center inner content */
+}
+
+.delivery-modal h2 {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.signature-box {
+  border: 1px solid #aaa;
+  height: 100px;
+  width: 150px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+}
+.customer-info {
+  display: flex;
+  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.delivery-modal {
+  padding: 10px 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  gap: 5px;
+}
+
+.no-print-mode .no-print {
+  display: none !important;
+}
+
+.modal-contents {
+  overflow: visible;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 5px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #000;
+  background-color: white;
+}
+
+.arabic-text {
+  font-size: 13px;
+  line-height: 1.8;
+  text-align: right;
+  direction: rtl;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  direction: rtl;
+}
+
+.button-row.no-print {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  width: 50px;
+  padding-left: 20px;
+}
+
+.clear-button,
+.save-button {
+  padding: 10px 25px;
+  font-size: 13px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+}
+
+.clear-button {
+  background-color: #0033cc;
+  color: white;
+}
+
+.clear-button:hover {
+  background-color: #0022aa;
+}
+
+.save-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #218838;
+}
+
+.save-button:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}

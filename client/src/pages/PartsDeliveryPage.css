@@ -1,0 +1,179 @@
+/* PartsDeliveryPage.css */
+
+.parts-page-wrapper {
+  padding: 40px;
+  background: #f4f6f8;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: start;
+}
+
+/* Header section with logo */
+.header-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.header-section .logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.header-section .modal-title {
+  margin: 0;
+  flex: 1;
+}
+
+.parts-delivery-container {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  font-family: "Segoe UI", sans-serif;
+}
+
+.modal-title {
+  font-size: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.parts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.parts-table th,
+.parts-table td {
+  border: 1px solid #ccc;
+  padding: 10px 8px;
+  text-align: left;
+}
+
+.parts-table th {
+  background-color: #f0f0f0;
+}
+
+.notes-section {
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.notes-section ol {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.signatures {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.signature-block {
+  flex: 1;
+}
+
+.signature-box {
+  border: 1px solid #ccc;
+  height: 100px;
+  background-color: #fdfdfd;
+}
+
+.empty-box {
+  background-color: #fafafa;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.clear-button,
+.save-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-button {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.clear-button:hover {
+  background-color: #d0d0d0;
+}
+
+.save-button {
+  background-color: #0077cc;
+  color: white;
+}
+
+.save-button:disabled {
+  background-color: #a0a0a0;
+  cursor: not-allowed;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #005fa3;
+}
+
+/* Hide buttons in PDF */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+.saving-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner-PDF {
+  width: 48px;
+  height: 48px;
+  border: 6px solid #ccc;
+  border-top: 6px solid #0077cc;
+  border-radius: 50%;
+  animation: spin1 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin1 {
+  to {
+    transform: rotate(360deg);
+  }
+}

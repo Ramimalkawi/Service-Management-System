@@ -1,0 +1,142 @@
+<!-- WordPress Integration Examples -->
+
+<!-- Option 1: Simple Button Link -->
+<div class="solutions-system-container">
+  <h3>365Solutions Ticket Management System</h3>
+  <p>
+    Access our comprehensive ticket management system to create, track, and
+    manage service requests.
+  </p>
+  <a
+    href="https://your-react-app-url.com"
+    target="_blank"
+    class="btn btn-primary solutions-btn"
+  >
+    🎫 Open Ticket System
+  </a>
+</div>
+
+<style>
+  .solutions-system-container {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .solutions-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 18px;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+
+  .solutions-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+</style>
+
+<!-- Option 2: Embedded iframe -->
+<div class="solutions-iframe-container">
+  <iframe
+    src="https://your-react-app-url.com"
+    width="100%"
+    height="800px"
+    frameborder="0"
+    class="solutions-frame"
+  >
+  </iframe>
+</div>
+
+<style>
+  .solutions-iframe-container {
+    margin: 20px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .solutions-frame {
+    border: none;
+    width: 100%;
+    min-height: 800px;
+  }
+
+  @media (max-width: 768px) {
+    .solutions-frame {
+      height: 600px;
+    }
+  }
+</style>
+
+<!-- Option 3: Modal Popup (requires JavaScript) -->
+<button onclick="openSolutionsModal()" class="btn-modal">
+  Open Solutions System
+</button>
+
+<div id="solutionsModal" class="solutions-modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeSolutionsModal()">&times;</span>
+    <iframe
+      src="https://your-react-app-url.com"
+      width="100%"
+      height="700px"
+    ></iframe>
+  </div>
+</div>
+
+<style>
+  .solutions-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 95%;
+    height: 90%;
+    position: relative;
+  }
+
+  .close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 30px;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  function openSolutionsModal() {
+    document.getElementById("solutionsModal").style.display = "block";
+  }
+
+  function closeSolutionsModal() {
+    document.getElementById("solutionsModal").style.display = "none";
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function (event) {
+    const modal = document.getElementById("solutionsModal");
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  };
+</script>

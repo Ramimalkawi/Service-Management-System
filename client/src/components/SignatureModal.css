@@ -1,0 +1,47 @@
+/* SignaturePdfModal.css */
+
+.signature-modal {
+  background: white;
+  padding: 20px;
+  max-width: 800px;
+  max-height: 90vh;
+  margin: auto;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-preview {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.signature-box {
+  margin-top: 1rem;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sig-canvas {
+  width: 50%;
+  height: 50%;
+  background: white;
+}
