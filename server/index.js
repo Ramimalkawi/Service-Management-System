@@ -66,8 +66,13 @@ app.get("/api", (req, res) => {
 });
 
 // Serve React app for all non-API routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+app.use((req, res) => {
+  // Only serve React app for GET requests that don't start with /api
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
 });
 
 // Error handling middleware
