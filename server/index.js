@@ -37,7 +37,7 @@ dotenv.config();
 const app = express();
 
 // Serve static files from the React build directory
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   cors({
@@ -68,10 +68,10 @@ app.get("/api", (req, res) => {
 // Serve React app for all non-API routes
 app.use((req, res) => {
   // Only serve React app for GET requests that don't start with /api
-  if (req.method === 'GET' && !req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+  if (req.method === "GET" && !req.path.startsWith("/api")) {
+    res.sendFile(path.join(__dirname, "public/index.html"));
   } else {
-    res.status(404).json({ error: 'Not found' });
+    res.status(404).json({ error: "Not found" });
   }
 });
 
