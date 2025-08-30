@@ -2,8 +2,13 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
+import path from "path";
+import { fileURLToPath } from "url";
 import sendEmailRoute from "./routes/sendEmail.js";
 import createUserRoute from "./routes/createUser.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -31,6 +36,9 @@ dotenv.config();
 
 const app = express();
 
+// Serve static files from the React build directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN?.split(",") || [
@@ -52,9 +60,14 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use("/api/sendEmail", sendEmailRoute);
 app.use("/api/createUser", createUserRoute);
 
-// Add a simple test route
-app.get("/", (req, res) => {
-  res.json({ message: "Server is running!" });
+// API health check route
+app.get("/api", (req, res) => {
+  res.json({ message: "API is running!" });
+});
+
+// Serve React app for all non-API routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 // Error handling middleware
