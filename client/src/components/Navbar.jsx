@@ -50,9 +50,6 @@ const Navbar = () => {
         <NavLink to="/customers" activeClassName="active">
           Customers
         </NavLink>
-        <NavLink to="/devices" activeClassName="active">
-          Devices
-        </NavLink>
         {/* 👇 Conditionally render Admin Dashboard link */}
         {technician?.permission === "Admin" && (
           <NavLink to="/admin" activeClassName="active">
