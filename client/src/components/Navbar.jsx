@@ -66,6 +66,12 @@ const Navbar = () => {
             👥 User Management
           </NavLink>
         )}
+        {/* 👇 Conditionally render Accounting link for accountants only */}
+        {technician?.isAccountant && (
+          <NavLink to="/accounting" activeClassName="active">
+            Accounting
+          </NavLink>
+        )}
         <NavLink to="/archived" activeClassName="active">
           Archived
         </NavLink>

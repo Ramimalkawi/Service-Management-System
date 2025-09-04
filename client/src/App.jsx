@@ -6,6 +6,7 @@ import Devices from "./pages/Devices";
 import Archived from "./pages/Archived";
 import LoginPage from "./pages/LoginPage";
 import UserManagement from "./pages/UserManagement";
+import Accounting from "./pages/Accounting";
 
 import "./App.css";
 import NewTicket from "./pages/NewTicketPage";
@@ -119,6 +120,14 @@ function App() {
             element={
               <PrivateRoute>
                 <ReceiptPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/accounting"
+            element={
+              <PrivateRoute>
+                <Accounting />
               </PrivateRoute>
             }
           />

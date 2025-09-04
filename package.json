@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "cd client && npm install && npm run build && cd .. && mkdir -p server/public && cp -r client/dist/* server/public/ && cd server && npm install",
-    "start": "cd server && node index.js",
+    "build": "npm install && npm run build -w client && mkdir -p server/public && cp -r client/dist/* server/public/",
+    "start": "npm start -w server",
     "build-client": "cd client && npm run build",
     "dev": "cd client && npm run dev",
     "install-client": "cd client && npm install",
