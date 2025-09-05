@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
+import { useUser } from "../context/userContext";
 
 export default function ReceivePayment() {
   const { ticketId } = useParams();
@@ -9,7 +17,9 @@ export default function ReceivePayment() {
   const [ticket, setTicket] = useState(null);
   const [parts, setParts] = useState([]);
   const [amountPaid, setAmountPaid] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [loading, setLoading] = useState(true);
+  const { technician } = useUser();
 
   useEffect(() => {
     async function fetchTicketDetails() {
@@ -47,7 +57,10 @@ export default function ReceivePayment() {
   }, [ticketId]);
 
   const handlePayment = async () => {
-    if (!ticket) return;
+    if (!ticket || !amountPaid || amountPaid <= 0) {
+      alert("Please enter a valid payment amount.");
+      return;
+    }
 
     const totalAmount = parts.reduce(
       (sum, part) => sum + Number(part.price || 0),
@@ -62,7 +75,17 @@ export default function ReceivePayment() {
           : "Pending";
 
     try {
+      // 1. Add a new payment record to the 'payments' subcollection
       const ticketRef = doc(db, "tickets", ticketId);
+      const paymentsCollectionRef = collection(ticketRef, "payments");
+      await addDoc(paymentsCollectionRef, {
+        amount: Number(amountPaid),
+        paymentDate: serverTimestamp(),
+        receivedBy: technician.name,
+        paymentMethod: paymentMethod,
+      });
+
+      // 2. Update the total amountPaid and status on the ticket document
       await updateDoc(ticketRef, {
         amountPaid: newAmountPaid,
         status: newStatus,
@@ -230,6 +253,20 @@ export default function ReceivePayment() {
             style={{ marginLeft: "8px", padding: "4px" }}
           />
         </label>
+        <div style={{ marginTop: "1rem" }}>
+          <label>
+            Payment Method:
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              style={{ marginLeft: "8px", padding: "4px" }}
+            >
+              <option value="Cash">Cash</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <button

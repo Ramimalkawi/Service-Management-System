@@ -19,6 +19,7 @@ import DeliveryPage from "./pages/DeliveryPage";
 import PartsDeliveryPage from "./pages/PartsDeliveryPage";
 import ReceiptPage from "./pages/ReceiptPage";
 import ReceivePayment from "./pages/ReceivePayment";
+import PaymentReceipt from "./pages/PaymentReceipt";
 
 function App() {
   return (
@@ -137,6 +138,14 @@ function App() {
             element={
               <PrivateRoute>
                 <ReceivePayment />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/receipt/:ticketId/:paymentId"
+            element={
+              <PrivateRoute>
+                <PaymentReceipt />
               </PrivateRoute>
             }
           />

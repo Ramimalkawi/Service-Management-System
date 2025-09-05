@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
+import { FaReceipt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 export default function Accounting() {
@@ -8,16 +16,17 @@ export default function Accounting() {
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
   const [partsByTicket, setPartsByTicket] = useState({});
+  const [paymentsByTicket, setPaymentsByTicket] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchTicketsAndParts() {
-      setLoading(true);
-      const q = query(
-        collection(db, "tickets"),
-        where("shouldHaveInvoice", "==", true)
-      );
-      const snapshot = await getDocs(q);
+    setLoading(true);
+    const q = query(
+      collection(db, "tickets"),
+      where("shouldHaveInvoice", "==", true)
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const ticketsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -27,11 +36,11 @@ export default function Accounting() {
       for (const ticket of ticketsData) {
         if (
           ticket.partDeliveryNote &&
-          typeof ticket.partDeliveryNote === "string"
+          typeof ticket.partDeliveryNote === "string" &&
+          ticket.partDeliveryNote.trim() !== ""
         ) {
-          const { getDoc, doc: docRef } = await import("firebase/firestore");
           const snap = await getDoc(
-            docRef(db, "partsDeliveryNotes", ticket.partDeliveryNote)
+            doc(db, "partsDeliveryNotes", ticket.partDeliveryNote)
           );
           if (snap.exists()) {
             const docData = snap.data();
@@ -49,37 +58,59 @@ export default function Accounting() {
       setTickets(ticketsData);
       setPartsByTicket(partsData);
       setLoading(false);
-    }
+    });
 
-    fetchTicketsAndParts();
+    return () => unsubscribe();
   }, []);
 
-  // Fetch parts for a ticket when expanded
+  // Fetch parts and payments for a ticket when expanded
   const handleRowClick = async (ticketId) => {
-    setExpandedRow(expandedRow === ticketId ? null : ticketId);
-    if (expandedRow !== ticketId && !partsByTicket[ticketId]) {
-      // Find the ticket object
-      const ticket = tickets.find((t) => t.id === ticketId);
-      if (
-        !ticket ||
-        !ticket.partDeliveryNote ||
-        typeof ticket.partDeliveryNote !== "string" ||
-        ticket.partDeliveryNote.trim() === ""
-      ) {
-        setPartsByTicket((prev) => ({ ...prev, [ticketId]: [] }));
-        return;
+    const newExpandedRow = expandedRow === ticketId ? null : ticketId;
+    setExpandedRow(newExpandedRow);
+
+    // If we are expanding a new row, fetch its details
+    if (newExpandedRow) {
+      // Fetch parts if not already loaded
+      if (!partsByTicket[ticketId]) {
+        const ticket = tickets.find((t) => t.id === ticketId);
+        if (
+          ticket &&
+          ticket.partDeliveryNote &&
+          typeof ticket.partDeliveryNote === "string" &&
+          ticket.partDeliveryNote.trim() !== ""
+        ) {
+          const snap = await getDoc(
+            doc(db, "partsDeliveryNotes", ticket.partDeliveryNote)
+          );
+          if (snap.exists()) {
+            const docData = snap.data();
+            setPartsByTicket((prev) => ({
+              ...prev,
+              [ticketId]: Array.isArray(docData.parts) ? docData.parts : [],
+            }));
+          } else {
+            setPartsByTicket((prev) => ({ ...prev, [ticketId]: [] }));
+          }
+        } else {
+          setPartsByTicket((prev) => ({ ...prev, [ticketId]: [] }));
+        }
       }
-      // Fetch the partsDeliveryNotes document by its ID
-      const { getDoc, doc: docRef } = await import("firebase/firestore");
-      const snap = await getDoc(
-        docRef(db, "partsDeliveryNotes", ticket.partDeliveryNote)
-      );
-      if (snap.exists()) {
-        const docData = snap.data();
-        const allParts = Array.isArray(docData.parts) ? docData.parts : [];
-        setPartsByTicket((prev) => ({ ...prev, [ticketId]: allParts }));
-      } else {
-        setPartsByTicket((prev) => ({ ...prev, [ticketId]: [] }));
+
+      // Fetch payments if not already loaded
+      if (!paymentsByTicket[ticketId]) {
+        const paymentsQuery = query(
+          collection(db, "tickets", ticketId, "payments")
+        );
+        onSnapshot(paymentsQuery, (snapshot) => {
+          const paymentsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setPaymentsByTicket((prev) => ({
+            ...prev,
+            [ticketId]: paymentsData,
+          }));
+        });
       }
     }
   };
@@ -327,7 +358,7 @@ export default function Accounting() {
                     {expandedRow === ticket.id && (
                       <tr key={ticket.id + "-details"}>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           style={{ background: "#f9f9f9", padding: "0" }}
                         >
                           <div style={{ padding: "16px" }}>
@@ -387,96 +418,47 @@ export default function Accounting() {
                                       >
                                         Price
                                       </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Warranty
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        New SN
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Old SN
-                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {partsByTicket[ticket.id].map((part) => (
-                                      <tr key={part.id}>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.partNumber}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.description}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.quantity}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.price}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.warrantyStatus}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.newSN}
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "8px",
-                                            borderBottom: "1px solid #eee",
-                                          }}
-                                        >
-                                          {part.oldSN}
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {partsByTicket[ticket.id].map(
+                                      (part, index) => (
+                                        <tr key={index}>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {part.partNumber}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {part.description}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {part.quantity}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {part.price}
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
                                   </tbody>
                                 </table>
                               ) : (
@@ -486,6 +468,151 @@ export default function Accounting() {
                               )
                             ) : (
                               <p style={{ margin: 0 }}>Loading parts...</p>
+                            )}
+
+                            {/* Payment History Section */}
+                            <h4
+                              style={{
+                                margin: "20px 0 12px 0",
+                                fontWeight: 600,
+                                color: "#1976d2",
+                              }}
+                            >
+                              Payment History
+                            </h4>
+                            {paymentsByTicket[ticket.id] ? (
+                              paymentsByTicket[ticket.id].length > 0 ? (
+                                <table
+                                  style={{
+                                    width: "100%",
+                                    borderCollapse: "collapse",
+                                    background: "#fff",
+                                  }}
+                                >
+                                  <thead>
+                                    <tr>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        Payment Date
+                                      </th>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        Amount
+                                      </th>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        Payment Method
+                                      </th>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        Received By
+                                      </th>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        Receipt
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {paymentsByTicket[ticket.id].map(
+                                      (payment) => (
+                                        <tr key={payment.id}>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {payment.paymentDate
+                                              ?.toDate()
+                                              .toLocaleString() || "N/A"}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            JOD{" "}
+                                            {Number(payment.amount).toFixed(2)}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {payment.paymentMethod}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {payment.receivedBy}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                              textAlign: "center",
+                                            }}
+                                          >
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation(); // Prevent row click
+                                                navigate(
+                                                  `/receipt/${ticket.id}/${payment.id}`
+                                                );
+                                              }}
+                                              style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                color: "#1976d2",
+                                              }}
+                                            >
+                                              <FaReceipt size={20} />
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      )
+                                    )}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <p style={{ margin: 0, color: "#888" }}>
+                                  No payments recorded for this ticket.
+                                </p>
+                              )
+                            ) : (
+                              <p style={{ margin: 0 }}>Loading payments...</p>
                             )}
                           </div>
                         </td>
