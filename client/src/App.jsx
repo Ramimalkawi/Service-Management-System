@@ -18,6 +18,7 @@ import SystemAdminRoute from "./routes/SystemAdminRoute";
 import DeliveryPage from "./pages/DeliveryPage";
 import PartsDeliveryPage from "./pages/PartsDeliveryPage";
 import ReceiptPage from "./pages/ReceiptPage";
+import ReceivePayment from "./pages/ReceivePayment";
 
 function App() {
   return (
@@ -128,6 +129,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Accounting />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/receive-payment/:ticketId"
+            element={
+              <PrivateRoute>
+                <ReceivePayment />
               </PrivateRoute>
             }
           />
