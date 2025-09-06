@@ -17,6 +17,7 @@ export default function Accounting() {
   const [expandedRow, setExpandedRow] = useState(null);
   const [partsByTicket, setPartsByTicket] = useState({});
   const [paymentsByTicket, setPaymentsByTicket] = useState({});
+  const [refundsByTicket, setRefundsByTicket] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,6 +110,23 @@ export default function Accounting() {
           setPaymentsByTicket((prev) => ({
             ...prev,
             [ticketId]: paymentsData,
+          }));
+        });
+      }
+
+      // Fetch refunds if not already loaded
+      if (!refundsByTicket[ticketId]) {
+        const refundsQuery = query(
+          collection(db, "tickets", ticketId, "refunds")
+        );
+        onSnapshot(refundsQuery, (snapshot) => {
+          const refundsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setRefundsByTicket((prev) => ({
+            ...prev,
+            [ticketId]: refundsData,
           }));
         });
       }
@@ -353,6 +371,21 @@ export default function Accounting() {
                         >
                           Receive Payment (JOD)
                         </button>
+                        <button
+                          onClick={() => navigate(`/refund/${ticket.id}`)}
+                          disabled={dueAmount <= 0}
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: dueAmount > 0 ? "#f44336" : "#ccc",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: dueAmount > 0 ? "pointer" : "not-allowed",
+                            marginLeft: "8px",
+                          }}
+                        >
+                          Refund
+                        </button>
                       </td>
                     </tr>
                     {expandedRow === ticket.id && (
@@ -470,7 +503,7 @@ export default function Accounting() {
                               <p style={{ margin: 0 }}>Loading parts...</p>
                             )}
 
-                            {/* Payment History Section */}
+                            {/* Transaction History Section */}
                             <h4
                               style={{
                                 margin: "20px 0 12px 0",
@@ -478,10 +511,42 @@ export default function Accounting() {
                                 color: "#1976d2",
                               }}
                             >
-                              Payment History
+                              Transaction History
                             </h4>
-                            {paymentsByTicket[ticket.id] ? (
-                              paymentsByTicket[ticket.id].length > 0 ? (
+                            {(() => {
+                              const payments =
+                                paymentsByTicket[ticket.id] || [];
+                              const refunds = refundsByTicket[ticket.id] || [];
+
+                              if (
+                                payments.length === 0 &&
+                                refunds.length === 0
+                              ) {
+                                return (
+                                  <p style={{ margin: 0, color: "#888" }}>
+                                    No transactions recorded for this ticket.
+                                  </p>
+                                );
+                              }
+
+                              const transactions = [
+                                ...payments.map((p) => ({
+                                  ...p,
+                                  type: "payment",
+                                  date: p.paymentDate,
+                                })),
+                                ...refunds.map((r) => ({
+                                  ...r,
+                                  type: "refund",
+                                  date: r.refundDate,
+                                })),
+                              ].sort(
+                                (a, b) =>
+                                  (b.date?.toDate() || 0) -
+                                  (a.date?.toDate() || 0)
+                              );
+
+                              return (
                                 <table
                                   style={{
                                     width: "100%",
@@ -498,7 +563,16 @@ export default function Accounting() {
                                           textAlign: "left",
                                         }}
                                       >
-                                        Payment Date
+                                        Date
+                                      </th>
+                                      <th
+                                        style={{
+                                          padding: "8px",
+                                          borderBottom: "1px solid #eee",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        Type
                                       </th>
                                       <th
                                         style={{
@@ -516,7 +590,7 @@ export default function Accounting() {
                                           textAlign: "left",
                                         }}
                                       >
-                                        Payment Method
+                                        Method / Reason
                                       </th>
                                       <th
                                         style={{
@@ -525,7 +599,7 @@ export default function Accounting() {
                                           textAlign: "left",
                                         }}
                                       >
-                                        Received By
+                                        Processed By
                                       </th>
                                       <th
                                         style={{
@@ -539,56 +613,83 @@ export default function Accounting() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {paymentsByTicket[ticket.id].map(
-                                      (payment) => (
-                                        <tr key={payment.id}>
-                                          <td
+                                    {transactions.map((tx) => (
+                                      <tr key={`${tx.type}-${tx.id}`}>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                          }}
+                                        >
+                                          {tx.date?.toDate().toLocaleString() ||
+                                            "N/A"}
+                                        </td>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                          }}
+                                        >
+                                          <span
                                             style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
+                                              color:
+                                                tx.type === "payment"
+                                                  ? "green"
+                                                  : "red",
+                                              textTransform: "capitalize",
                                             }}
                                           >
-                                            {payment.paymentDate
-                                              ?.toDate()
-                                              .toLocaleString() || "N/A"}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            JOD{" "}
-                                            {Number(payment.amount).toFixed(2)}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {payment.paymentMethod}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {payment.receivedBy}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                              textAlign: "center",
-                                            }}
-                                          >
+                                            {tx.type}
+                                          </span>
+                                        </td>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            color:
+                                              tx.type === "refund"
+                                                ? "red"
+                                                : "inherit",
+                                          }}
+                                        >
+                                          JOD{" "}
+                                          {tx.type === "payment"
+                                            ? Number(tx.amount).toFixed(2)
+                                            : `-${Number(tx.amount).toFixed(2)}`}
+                                        </td>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                          }}
+                                        >
+                                          {tx.type === "payment"
+                                            ? tx.paymentMethod
+                                            : tx.reason}
+                                        </td>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                          }}
+                                        >
+                                          {tx.type === "payment"
+                                            ? tx.receivedBy
+                                            : tx.refundedBy}
+                                        </td>
+                                        <td
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          {tx.type === "payment" ? (
                                             <button
                                               onClick={(e) => {
-                                                e.stopPropagation(); // Prevent row click
+                                                e.stopPropagation();
                                                 navigate(
-                                                  `/receipt/${ticket.id}/${payment.id}`
+                                                  `/receipt/${ticket.id}/${tx.id}`
                                                 );
                                               }}
                                               style={{
@@ -600,20 +701,16 @@ export default function Accounting() {
                                             >
                                               <FaReceipt size={20} />
                                             </button>
-                                          </td>
-                                        </tr>
-                                      )
-                                    )}
+                                          ) : (
+                                            "N/A"
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
                                   </tbody>
                                 </table>
-                              ) : (
-                                <p style={{ margin: 0, color: "#888" }}>
-                                  No payments recorded for this ticket.
-                                </p>
-                              )
-                            ) : (
-                              <p style={{ margin: 0 }}>Loading payments...</p>
-                            )}
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
