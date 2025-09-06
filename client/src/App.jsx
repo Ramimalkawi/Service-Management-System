@@ -21,6 +21,7 @@ import ReceiptPage from "./pages/ReceiptPage";
 import ReceivePayment from "./pages/ReceivePayment";
 import PaymentReceipt from "./pages/PaymentReceipt";
 import RefundPage from "./pages/RefundPage";
+import RefundReceipt from "./pages/RefundReceipt";
 
 function App() {
   return (
@@ -155,6 +156,14 @@ function App() {
             element={
               <PrivateRoute>
                 <RefundPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/refund-receipt/:ticketId/:refundId"
+            element={
+              <PrivateRoute>
+                <RefundReceipt />
               </PrivateRoute>
             }
           />

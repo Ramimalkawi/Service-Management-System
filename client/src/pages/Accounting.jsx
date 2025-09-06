@@ -684,26 +684,28 @@ export default function Accounting() {
                                             textAlign: "center",
                                           }}
                                         >
-                                          {tx.type === "payment" ? (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (tx.type === "payment") {
                                                 navigate(
                                                   `/receipt/${ticket.id}/${tx.id}`
                                                 );
-                                              }}
-                                              style={{
-                                                background: "none",
-                                                border: "none",
-                                                cursor: "pointer",
-                                                color: "#1976d2",
-                                              }}
-                                            >
-                                              <FaReceipt size={20} />
-                                            </button>
-                                          ) : (
-                                            "N/A"
-                                          )}
+                                              } else {
+                                                navigate(
+                                                  `/refund-receipt/${ticket.id}/${tx.id}`
+                                                );
+                                              }
+                                            }}
+                                            style={{
+                                              background: "none",
+                                              border: "none",
+                                              cursor: "pointer",
+                                              color: "#1976d2",
+                                            }}
+                                          >
+                                            <FaReceipt size={20} />
+                                          </button>
                                         </td>
                                       </tr>
                                     ))}
