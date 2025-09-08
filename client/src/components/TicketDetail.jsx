@@ -199,6 +199,11 @@ export default function TicketDetail({ ticket, onClose }) {
   };
 
   const handleDeliver = () => {
+    // Check for invoice requirement and payment status
+    if (ticket.shouldHaveInvoice && ticket.invoiceStatus !== "Paid") {
+      alert("You must collect the invoice payment before closing the ticket.");
+      return;
+    }
     if (!ticket.deliveryNoteURL) {
       navigate(`/tickets/${ticket.id}/deliver`);
     } else {

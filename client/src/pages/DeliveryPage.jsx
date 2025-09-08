@@ -32,7 +32,9 @@ const DeliveryPage = () => {
       if (snap.exists()) {
         const ticketData = { id: snap.id, ...snap.data() };
         setTicket(ticketData);
-        setShowNextButton(snap.data().partDeliveryNote ? true : false);
+        if (snap.data().partDeliveryNote && !snap.data().partsDeliveryNoteURL) {
+          setShowNextButton(true);
+        }
 
         // Test email functionality immediately (for debugging)
         console.log("🧪 Testing email function with current ticket data");
@@ -507,9 +509,14 @@ const DeliveryPage = () => {
                   minWidth={0.5}
                   maxWidth={1.5}
                   canvasProps={{
-                    width: 100,
+                    width: 150,
                     height: 100,
                     className: "sig-canvas",
+                    style: {
+                      width: "150px",
+                      height: "100px",
+                      touchAction: "none",
+                    },
                   }}
                   onEnd={() => setIsSigned(!sigCanvas.current.isEmpty())}
                 />
@@ -555,21 +562,6 @@ const DeliveryPage = () => {
               disabled={!isSigned}
             >
               Save
-            </button>
-            {/* Test button for debugging email */}
-            <button
-              style={{
-                backgroundColor: "#007bff",
-                color: "white",
-                padding: "10px 15px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                marginLeft: "10px",
-              }}
-              onClick={() => sendTicketClosedEmail(ticket)}
-            >
-              🧪 Test Email
             </button>
           </div>
         </div>

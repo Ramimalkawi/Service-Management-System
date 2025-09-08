@@ -41,7 +41,9 @@ const PartsDeliveryPage = () => {
             const hasPricedParts = noteData.parts?.some(
               (part) => parseFloat(part.price || 0) > 0
             );
-            setShowNextArrow(hasPricedParts);
+            if (!data.invoiceURL && data.shouldHaveInvoice) {
+              setShowNextArrow(true);
+            }
           }
         }
       }
@@ -199,6 +201,11 @@ const PartsDeliveryPage = () => {
                   width: 200,
                   height: 100,
                   className: "sig-canvas",
+                  style: {
+                    width: "200px",
+                    height: "100px",
+                    touchAction: "none",
+                  },
                 }}
                 ref={sigCanvas1}
               />
@@ -217,6 +224,11 @@ const PartsDeliveryPage = () => {
                   width: 200,
                   height: 100,
                   className: "sig-canvas",
+                  style: {
+                    width: "200px",
+                    height: "100px",
+                    touchAction: "none",
+                  },
                 }}
                 ref={sigCanvas2}
                 onEnd={handleEndSignature}

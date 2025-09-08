@@ -88,7 +88,7 @@ export default function ReceivePayment() {
       // 2. Update the total amountPaid and status on the ticket document
       await updateDoc(ticketRef, {
         amountPaid: newAmountPaid,
-        status: newStatus,
+        invoiceStatus: newStatus,
       });
 
       alert("Payment updated successfully!");

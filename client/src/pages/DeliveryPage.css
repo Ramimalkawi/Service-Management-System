@@ -68,12 +68,22 @@
   font-weight: bold;
 }
 
+/* Signature box and canvas should match in size and not be scaled */
 .signature-box {
   border: 1px solid #aaa;
   height: 100px;
   width: 150px;
   margin-top: 8px;
   margin-bottom: 20px;
+  box-sizing: content-box;
+  overflow: hidden;
+}
+.sig-canvas {
+  width: 150px !important;
+  height: 100px !important;
+  box-sizing: content-box;
+  touch-action: none;
+  display: block;
 }
 .customer-info {
   display: flex;
@@ -150,7 +160,9 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, opacity 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    opacity 0.3s ease;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   min-width: 120px;
 }

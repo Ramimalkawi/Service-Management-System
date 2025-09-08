@@ -104,6 +104,7 @@ const NewTicket = () => {
 
   const handleCompleteContract = async (contractURL) => {
     setSignatureBlob(signatureBlob);
+    setLoading(true);
     console.log("The URL", contractURL);
     try {
       // Upload signature
@@ -138,6 +139,8 @@ const NewTicket = () => {
     } catch (error) {
       console.error("Error creating ticket:", error);
       alert("Failed to create ticket.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -308,7 +311,41 @@ const NewTicket = () => {
   //   };
 
   return (
-    <div className="ticket-container">
+    <div className="ticket-container" style={{ position: "relative" }}>
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(255,255,255,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="spinner"
+            style={{
+              width: "60px",
+              height: "60px",
+              border: "8px solid #eee",
+              borderTop: "8px solid #1976d2",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
       <div className="ticket-card">
         <h2>Create New Ticket</h2>
         <form onSubmit={(e) => e.preventDefault()} className="ticket-form">

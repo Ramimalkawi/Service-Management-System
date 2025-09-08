@@ -21,7 +21,6 @@ const statusOptions = [
   "Parts Allocated",
   "In Repair",
   "Ready For Pickup",
-  "Repair Marked Complete",
 ];
 
 const statusMap = {
@@ -32,7 +31,6 @@ const statusMap = {
   4: "Parts Allocated",
   5: "In Repair",
   6: "Ready For Pickup",
-  7: "Repair Marked Complete",
 };
 
 const ProcessTicketPage = () => {
@@ -124,14 +122,49 @@ const ProcessTicketPage = () => {
       updates.approvalStatus = "pending";
     }
 
-    await updateDoc(docRef, updates);
-
-    // Send email notification if status is "Ready For Pickup"
+    // If status is Ready For Pickup, check for parts delivery note and prices
+    let invoiceMessage = "";
     if (parseInt(selectedStatus) === 6) {
+      if (
+        ticket.partDeliveryNote &&
+        typeof ticket.partDeliveryNote === "string" &&
+        ticket.partDeliveryNote.trim() !== ""
+      ) {
+        // Fetch parts delivery note document
+        try {
+          const partsDocRef = doc(
+            db,
+            "partsDeliveryNotes",
+            ticket.partDeliveryNote
+          );
+          const partsSnap = await getDoc(partsDocRef);
+          if (partsSnap.exists()) {
+            const partsData = partsSnap.data();
+            if (Array.isArray(partsData.parts)) {
+              const hasPricedPart = partsData.parts.some(
+                (part) => Number(part.price) > 0
+              );
+              if (hasPricedPart) {
+                updates.shouldHaveInvoice = true;
+                invoiceMessage =
+                  "This ticket now requires an invoice because at least one part has a price.";
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error checking parts for invoice:", err);
+        }
+      }
       await sendReadyForPickupEmail();
     }
 
-    alert("Status and note updated successfully");
+    await updateDoc(docRef, updates);
+
+    let finalMessage = "Status and note updated successfully";
+    if (invoiceMessage) {
+      finalMessage += "\n" + invoiceMessage;
+    }
+    alert(finalMessage);
 
     setTicket((prev) => ({
       ...prev,
@@ -140,6 +173,10 @@ const ProcessTicketPage = () => {
       technicions: [...prev.technicions, technician.name],
       approvalRequired: selectedStatus === 1 ? true : prev.approvalRequired,
       approvalStatus: selectedStatus === 1 ? "pending" : prev.approvalStatus,
+      shouldHaveInvoice:
+        parseInt(selectedStatus) === 6 && updates.shouldHaveInvoice
+          ? true
+          : prev.shouldHaveInvoice,
     }));
 
     setNote("");
@@ -200,8 +237,8 @@ const ProcessTicketPage = () => {
                 <h3 style="color: #28a745;">Service Completion Details</h3>
                 <div class="info-row">
                   <span class="label">Ticket Number:</span> ${ticket.location}${
-        ticket.ticketNum
-      }
+                    ticket.ticketNum
+                  }
                 </div>
                 <div class="info-row">
                   <span class="label">Completion Date:</span> ${currentDateTime}

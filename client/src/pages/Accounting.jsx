@@ -304,21 +304,21 @@ export default function Accounting() {
                             padding: "4px 8px",
                             borderRadius: "12px",
                             color:
-                              ticket.status === "Paid"
+                              ticket.invoiceStatus === "Paid"
                                 ? "#2e7d32"
-                                : ticket.status === "Partially Paid"
+                                : ticket.invoiceStatus === "Partially Paid"
                                   ? "#e65100"
                                   : "#b71c1c",
                             backgroundColor:
-                              ticket.status === "Paid"
+                              ticket.invoiceStatus === "Paid"
                                 ? "#c8e6c9"
-                                : ticket.status === "Partially Paid"
+                                : ticket.invoiceStatus === "Partially Paid"
                                   ? "#ffe0b2"
                                   : "#ffcdd2",
                             border: `1px solid ${
-                              ticket.status === "Paid"
+                              ticket.invoiceStatus === "Paid"
                                 ? "#2e7d32"
-                                : ticket.status === "Partially Paid"
+                                : ticket.invoiceStatus === "Partially Paid"
                                   ? "#e65100"
                                   : "#b71c1c"
                             }`,
@@ -326,7 +326,7 @@ export default function Accounting() {
                             display: "inline-block",
                           }}
                         >
-                          {ticket.status || "Pending"}
+                          {ticket.invoiceStatus || "Pending"}
                         </span>
                       </td>
                       <td

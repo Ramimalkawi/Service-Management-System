@@ -92,10 +92,21 @@
   flex: 1;
 }
 
+/* Signature box and canvas should match in size and not be scaled */
 .signature-box {
   border: 1px solid #ccc;
   height: 100px;
+  width: 200px;
   background-color: #fdfdfd;
+  box-sizing: content-box;
+  overflow: hidden;
+}
+.sig-canvas {
+  width: 200px !important;
+  height: 100px !important;
+  box-sizing: content-box;
+  touch-action: none;
+  display: block;
 }
 
 .empty-box {

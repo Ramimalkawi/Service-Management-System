@@ -11,6 +11,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import "./PartsModal.css";
+import { useUser } from "../context/userContext";
 
 Modal.setAppElement("#root");
 
@@ -30,6 +31,8 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
   const [partsList, setPartsList] = useState([]);
   const [migrationAvailable, setMigrationAvailable] = useState(false);
   const [originalOldData, setOriginalOldData] = useState(null);
+
+  const { technician } = useUser();
 
   useEffect(() => {
     const fetchDeliveryNote = async () => {
@@ -395,7 +398,7 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
               <strong>Product Type:</strong> {ticket?.machineType}
             </p>
             <p>
-              <strong>Repair ID:</strong> {ticket?.id}
+              <strong>Repair ID:</strong> {ticket?.caseID}
             </p>
           </div>
           <div className="right">
@@ -409,10 +412,10 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
               <strong>Warranty Status:</strong> {ticket?.warrantyStatus || ""}
             </p>
             <p>
-              <strong>Technician:</strong> {ticket?.technician || ""}
+              <strong>Technician:</strong> {technician?.name || ""}
             </p>
             <p>
-              <strong>Tech ID:</strong>
+              <strong>Tech ID:</strong> {technician?.techID || ""}
             </p>
           </div>
         </div>
