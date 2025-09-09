@@ -1,0 +1,139 @@
+/* Parts table input styling */
+.parts-input {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+/* Row layout for section + textarea */
+.report-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.report-textarea {
+  flex: 1;
+  min-width: 220px;
+  max-width: 400px;
+  padding: 6px 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+}
+/* Gray background for all <strong> tags in the modal */
+.technical-report-modal strong {
+  background: #a7a7a7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.technical-report-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.technical-report-modal {
+  background: #fff;
+  padding: 32px 24px;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+  font-family: Arial, sans-serif;
+}
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+/* Header layout for logo left, title right */
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.report-header-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.report-logo {
+  height: 60px;
+  object-fit: contain;
+}
+.report-header-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+.report-title {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-align: right;
+}
+.apple-logo {
+  height: 40px;
+  margin-bottom: 0.25rem;
+  align-self: flex-end;
+}
+.asp-label {
+  font-size: 1rem;
+  color: #333;
+  text-align: right;
+}
+.report-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 32px;
+  margin: 24px 0 16px 0;
+}
+.report-details > div {
+  margin-bottom: 8px;
+}
+.report-section {
+  font-weight: bold;
+  margin: 18px 0 8px 0;
+}
+.parts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+}
+.parts-table th,
+.parts-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+.arabic-notes {
+  margin: 18px 0;
+  font-size: 1rem;
+  direction: rtl;
+  color: #222;
+}
+.report-footer {
+  margin-top: 24px;
+  font-size: 0.95rem;
+  color: #444;
+  text-align: center;
+}

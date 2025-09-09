@@ -116,6 +116,10 @@ export default function TicketDetail({ ticket, onClose }) {
       setDocumentsLinks((prev) => [...prev, "View Contract"]);
     }
 
+    if (ticket.techReportURL) {
+      setDocumentsLinks((prev) => [...prev, "View Technical Report"]);
+    }
+
     if (ticket.deliveryNoteURL) {
       setDocumentsLinks((prev) => [...prev, "View Delivery Note"]);
     }
@@ -165,6 +169,10 @@ export default function TicketDetail({ ticket, onClose }) {
 
     if (link === "View No Responsibility Note") {
       filePath = ticket.noResponsibilityURL;
+    }
+
+    if (link === "View Technical Report") {
+      filePath = ticket.techReportURL;
     }
 
     if (link === "View Invoice") {

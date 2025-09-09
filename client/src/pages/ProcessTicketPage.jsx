@@ -7,6 +7,8 @@ import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { useEffect, useState } from "react";
 import "./ProcessTicketPage.css";
 import { useUser } from "../context/userContext";
+import TechnicalReportModal from "../components/TechnicalReportModal";
+import { useRef } from "react";
 import PartsModal from "../components/PartsModal";
 import PriceQuotationModal from "../components/PriceQuotationModal";
 import { API_ENDPOINTS } from "../config/api";
@@ -34,6 +36,7 @@ const statusMap = {
 };
 
 const ProcessTicketPage = () => {
+  const [showReportModal, setShowReportModal] = useState(false);
   const { id } = useParams();
   const { technician } = useUser();
   const [ticket, setTicket] = useState(null);
@@ -546,7 +549,12 @@ const ProcessTicketPage = () => {
         <button className="side-button" onClick={() => setShowMediaModal(true)}>
           Media
         </button>
-        <button className="side-button">Report</button>
+        <button
+          className="side-button"
+          onClick={() => setShowReportModal(true)}
+        >
+          Report
+        </button>
         <button className="side-button" onClick={openPartsModal}>
           Parts
         </button>
@@ -571,6 +579,46 @@ const ProcessTicketPage = () => {
         setMediaURLs={setMediaURLs}
         ticket={ticket}
       />
+      {showReportModal && ticket?.techReportURL ? (
+        <div
+          className="pdf-modal-overlay"
+          onClick={() => setShowReportModal(false)}
+        >
+          <div className="pdf-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="close-btn"
+              style={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                zIndex: 2,
+                background: "#fff",
+                border: "none",
+                fontSize: "2rem",
+                cursor: "pointer",
+                borderRadius: "50%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              }}
+              onClick={() => setShowReportModal(false)}
+            >
+              &times;
+            </button>
+            <iframe
+              src={ticket.techReportURL}
+              title="Technical Report PDF"
+              width="100%"
+              height="700px"
+              style={{ border: "none", borderRadius: "8px" }}
+            />
+          </div>
+        </div>
+      ) : (
+        <TechnicalReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          ticket={ticket}
+        />
+      )}
       {/* <Modal
         isOpen={isPartsModalOpen}
         onRequestClose={closePartsModal}
