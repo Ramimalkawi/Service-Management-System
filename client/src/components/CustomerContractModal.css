@@ -1,0 +1,84 @@
+.customer-contract-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.customer-contract-modal {
+  background: #fff;
+  padding: 32px 24px;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+  font-family: Arial, sans-serif;
+  max-height: 95vh;
+  overflow-y: auto;
+}
+.contract-content {
+  width: 100%;
+}
+.contract-img {
+  width: 100%;
+  max-width: 800px;
+  display: block;
+  margin: 0 auto 18px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.contract-signature-section {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  margin-top: 18px;
+}
+.contract-signature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.contract-signature-canvas {
+  border: 2px solid #1ccad4;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.contract-sign-label {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #222;
+}
+.contract-sign-info {
+  font-size: 1rem;
+  color: #222;
+}
+.contract-clear-btn {
+  background: #eee;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.contract-sign-btn {
+  margin-top: 24px;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  background: #1ccad4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.contract-sign-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

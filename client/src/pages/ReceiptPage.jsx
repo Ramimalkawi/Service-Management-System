@@ -14,6 +14,8 @@ const ReceiptPage = () => {
   const { id } = useParams();
   const { technician } = useUser();
   const [isSigned, setIsSigned] = useState(false);
+  const [showSignatureImage, setShowSignatureImage] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState("");
   const sigCanvas1 = useRef(null);
   const sigCanvas2 = useRef(null);
   const pageRef = useRef(null);
@@ -60,15 +62,33 @@ const ReceiptPage = () => {
   }, [id]);
 
   const clearSignature = () => {
-    sigCanvas1.current.clear();
-    sigCanvas2.current.clear();
-    setIsSigned(false);
+    if (showSignatureImage) {
+      setShowSignatureImage(false);
+    } else {
+      sigCanvas2.current.clear();
+      sigCanvas1.current.clear();
+      setIsSigned(false);
+    }
+  };
+  const showSignatureFromStorage = async () => {
+    if (ticket?.customerSignatureURL) {
+      try {
+        const response = await fetch(ticket.customerSignatureURL);
+        const blob = await response.blob();
+        const reader = new window.FileReader();
+        reader.onloadend = () => {
+          setSignatureDataUrl(reader.result);
+          setShowSignatureImage(true);
+        };
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        alert("Failed to load signature image.");
+      }
+    }
   };
 
   const handleEndSignature = () => {
-    if (!sigCanvas2.current.isEmpty()) {
-      setIsSigned(true);
-    }
+    setIsSigned(!sigCanvas2.current.isEmpty());
   };
 
   const handleSave = async () => {
@@ -80,6 +100,30 @@ const ReceiptPage = () => {
       }
       setSaving(true);
       contentEl.classList.add("no-print-mode");
+
+      // If showing signature image, ensure it's visible and loaded before html2canvas
+      let imgEl = null;
+      if (showSignatureImage && ticket.customerSignatureURL) {
+        imgEl = contentEl.querySelector('img[alt="Customer Signature"]');
+        if (imgEl && !imgEl.complete) {
+          await new Promise((resolve) => {
+            imgEl.onload = resolve;
+            imgEl.onerror = resolve;
+          });
+        }
+      }
+
+      // Force image to be visible for capture
+      if (imgEl) {
+        imgEl.style.opacity = "1";
+      }
+
+      // Hide canvas if image is shown
+      const canvasDiv = contentEl.querySelector(".signature-box > div > div");
+      if (showSignatureImage && canvasDiv) {
+        canvasDiv.style.opacity = "0";
+      }
+
       const canvas = await html2canvas(contentEl, { scale: 2 });
       const image = canvas.toDataURL("image/jpeg");
       const pdf = new jsPDF("p", "mm", "a4");
@@ -97,6 +141,14 @@ const ReceiptPage = () => {
       });
       alert("Receipt saved successfully!");
       navigate(`/tickets/`);
+
+      // Restore UI
+      if (imgEl) {
+        imgEl.style.opacity = showSignatureImage ? "1" : "0";
+      }
+      if (canvasDiv) {
+        canvasDiv.style.opacity = showSignatureImage ? "0" : "1";
+      }
     } catch (error) {
       console.error("Failed to save PDF:", error);
       alert("An error occurred while saving.");
@@ -229,28 +281,59 @@ const ReceiptPage = () => {
             </p>
             <label>Signature:</label>
             <div className="signature-box">
-              <SignatureCanvas
-                penColor="black"
-                canvasProps={{
-                  width: 200,
-                  height: 100,
-                  className: "sig-canvas",
-                }}
-                ref={sigCanvas2}
-                onEnd={handleEndSignature}
-              />
+              <div style={{ position: "relative", width: 200, height: 100 }}>
+                {showSignatureImage && signatureDataUrl ? (
+                  <img
+                    src={signatureDataUrl}
+                    alt="Customer Signature"
+                    style={{
+                      width: 200,
+                      height: 100,
+                      objectFit: "contain",
+                      border: "1px solid #ccc",
+                      background: "#fff",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      opacity: 1,
+                      pointerEvents: "none",
+                    }}
+                  />
+                ) : (
+                  <SignatureCanvas
+                    penColor="black"
+                    canvasProps={{
+                      width: 200,
+                      height: 100,
+                      className: "sig-canvas",
+                    }}
+                    ref={sigCanvas2}
+                    onEnd={handleEndSignature}
+                  />
+                )}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <button className="clear-button" onClick={clearSignature}>
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={showSignatureFromStorage}
+                disabled={!ticket.customerSignatureURL}
+                className="sign-button"
+              >
+                Show Signature
+              </button>
             </div>
           </div>
         </div>
 
         <div className="action-buttons no-print">
-          <button className="clear-button" onClick={clearSignature}>
-            Clear
-          </button>
           <button
             className="save-button"
             onClick={handleSave}
-            disabled={!isSigned}
+            disabled={!(isSigned || showSignatureImage)}
           >
             Save Receipt
           </button>
@@ -261,3 +344,4 @@ const ReceiptPage = () => {
 };
 
 export default ReceiptPage;
+// ...existing code...

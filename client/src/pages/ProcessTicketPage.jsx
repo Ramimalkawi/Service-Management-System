@@ -42,6 +42,7 @@ const ProcessTicketPage = () => {
   const [ticket, setTicket] = useState(null);
   const [newStatus, setNewStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const [currentStatusIndex, setCurrentStatusIndex] = useState(0);
   const [selectedStatus, setSelectedStatus] = useState(0);
   const [note, setNote] = useState("");
@@ -99,7 +100,7 @@ const ProcessTicketPage = () => {
       alert("Please add a note.");
       return;
     }
-
+    setStatusUpdating(true);
     const docRef = doc(db, "tickets", id);
 
     const now = new Date();
@@ -183,6 +184,7 @@ const ProcessTicketPage = () => {
     }));
 
     setNote("");
+    setStatusUpdating(false);
   };
 
   const sendReadyForPickupEmail = async () => {
@@ -497,10 +499,34 @@ const ProcessTicketPage = () => {
           <button
             onClick={handleUpdateStatus}
             disabled={
-              selectedStatus <= currentStatusIndex || note.trim() === ""
+              selectedStatus <= currentStatusIndex ||
+              note.trim() === "" ||
+              statusUpdating
             }
+            style={{ position: "relative" }}
           >
+            {statusUpdating ? (
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 24,
+                  height: 24,
+                  border: "4px solid #eee",
+                  borderTop: "4px solid #1976d2",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                  verticalAlign: "middle",
+                  marginRight: 8,
+                }}
+              />
+            ) : null}
             Update Status
+            <style>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
           </button>
         </div>
         {technician?.permission === "Admin" &&

@@ -1,0 +1,128 @@
+.out-of-warranty-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.out-of-warranty-modal {
+  background: #fff;
+  padding: 32px 24px;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+  font-family: Arial, sans-serif;
+}
+.release-paper {
+  width: 100%;
+}
+.release-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.release-logo {
+  height: 60px;
+}
+.release-contact {
+  text-align: right;
+  font-size: 0.95rem;
+  color: #222;
+}
+.release-title-ar {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 12px 0 2px 0;
+  direction: rtl;
+}
+.release-title-en {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.release-section {
+  display: flex;
+  gap: 32px;
+  justify-content: space-between;
+  margin: 18px 0;
+}
+.release-info-block {
+  flex: 1;
+}
+.release-info-box {
+  background: #ededed;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 6px;
+  font-size: 1rem;
+}
+.release-ar {
+  font-size: 0.95rem;
+  color: #444;
+  direction: rtl;
+}
+.release-statement-ar {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 10px 0 2px 0;
+  direction: rtl;
+  text-align: right;
+}
+.release-statement {
+  margin: 12px 0;
+  font-size: 1rem;
+  color: #222;
+  direction: rtl;
+  background: #f7f7f7;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.release-signature-section {
+  display: flex;
+  align-items: flex-end;
+  gap: 32px;
+  margin-top: 18px;
+}
+.release-signature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.release-signature-canvas {
+  border: 1px solid #aaa;
+  background: #fff;
+  border-radius: 6px;
+}
+.release-sign-label {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #222;
+}
+.release-sign-info {
+  font-size: 1rem;
+  color: #222;
+}
+.release-sign-btn {
+  margin-top: 24px;
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  background: #1ccad4;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.release-sign-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

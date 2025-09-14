@@ -36,10 +36,10 @@ const SignaturePdfModal = ({
   };
 
   const handleAccept = async () => {
-    if (sigCanvas.current.isEmpty()) {
-      alert("Please provide a signature.");
-      return;
-    }
+    // if (sigCanvas.current.isEmpty()) {
+    //   alert("Please provide a signature.");
+    //   return;
+    // }
 
     setIsSaving(true);
 

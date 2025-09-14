@@ -20,7 +20,8 @@ const testPdfUrl =
   "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
 
 import "./NewTicket.css";
-import SignaturePdfModal from "../components/SignaturePdfModal";
+import CustomerContractModal from "../components/CustomerContractModal";
+import OutOfWarrantyReleaseModal from "../components/OutOfWarrantyReleaseModal";
 import { useUser } from "../context/userContext";
 
 const NewTicket = () => {
@@ -47,6 +48,10 @@ const NewTicket = () => {
 
   const [loading, setLoading] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [customerSignatureURL, setCustomerSignatureURL] = useState(null);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [releaseSignature, setReleaseSignature] = useState(null);
+  const [noResponsibilityURL, setNoResponsibilityURL] = useState(null);
   const [signatureBlob, setSignatureBlob] = useState(null);
   const [customDeviceType, setCustomDeviceType] = useState("");
   const [showCustomDeviceInput, setShowCustomDeviceInput] = useState(false);
@@ -99,20 +104,32 @@ const NewTicket = () => {
 
   const handleShowModal = (e) => {
     e.preventDefault();
-    setShowSignatureModal(true);
+    if (formData.warrantyStatus === "Out of warranty") {
+      setShowReleaseModal(true);
+    } else {
+      setShowSignatureModal(true);
+    }
   };
 
-  const handleCompleteContract = async (contractURL) => {
-    setSignatureBlob(signatureBlob);
+  const handleCompleteContract = async (contractURL, signatureUrl) => {
     setLoading(true);
-    console.log("The URL", contractURL);
     try {
-      // Upload signature
       const ticketNum = formData.ticketNum;
       const storage = getStorage();
-      const contractRef = ref(storage, `contracts/${ticketNum}.png`);
-      await uploadBytes(contractRef, signatureBlob);
-
+      // Upload customer signature for future use
+      if (customerSignatureURL) {
+        // Already uploaded
+      } else if (signatureBlob) {
+        const sigBlob = await (await fetch(signatureBlob)).blob();
+        const sigRef = ref(
+          storage,
+          `customerSignatures/${ticketNum}_${formData.customerName}.png`
+        );
+        await uploadBytes(sigRef, sigBlob);
+        const sigUrl = await getDownloadURL(sigRef);
+        setCustomerSignatureURL(sigUrl);
+      }
+      console.log("signatureUrl", signatureUrl);
       // Format created date
       const formattedDate = new Date().toLocaleString("en-GB", {
         day: "2-digit",
@@ -129,11 +146,11 @@ const NewTicket = () => {
         ...formData,
         date: formattedDate,
         contractURL,
+        noResponsibilityURL,
+        customerSignatureURL: signatureUrl || customerSignatureURL,
       });
 
-      // Send customer notification email
       await sendCustomerNotificationEmail(contractURL, formattedDate);
-
       alert("Ticket created successfully!");
       navigate("/tickets");
     } catch (error) {
@@ -534,14 +551,30 @@ const NewTicket = () => {
               required
             />
           </div>
+          <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Device stuff</label>
+              <textarea
+                name="deviceStuff"
+                value={formData.deviceStuff}
+                onChange={handleChange}
+                required
+                style={{ width: "100%" }}
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Notes</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                required
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
 
-          <button
-            className="submit-button"
-            onClick={(e) => {
-              e.preventDefault();
-              setShowSignatureModal(true);
-            }}
-          >
+          <button className="submit-button" onClick={handleShowModal}>
             Create Ticket
           </button>
         </form>
@@ -551,14 +584,106 @@ const NewTicket = () => {
         onClose={() => setShowSignatureModal(false)}
         onAccept={handleSignatureAccept}
       /> */}
-      <SignaturePdfModal
+      <CustomerContractModal
         isOpen={showSignatureModal}
         onClose={() => setShowSignatureModal(false)}
         customerData={formData}
-        ticketNum={formData.ticketNum}
-        location={formData.location}
-        onComplete={handleCompleteContract}
-        pdfFile={contractPdfFile}
+        contractHtml={`
+            <div style='direction:rtl; font-family:Arial, sans-serif;'>
+              <div style='display:flex; align-items:center; justify-content:space-between; gap:16px;'>
+              <div style='text-align:right; flex:1;'>
+                <h4 style='margin:0;'>شركة ثلاثمائة وخمس وستون للخدمات والحلول الالكترونية</h4>
+                <h5 style='margin:0;'>Three Hundred and Sixty-Five Solutions</h5>
+                <div style='color:#1976d2;'>Apple Authorised Service Provider</div>
+              </div>
+                <img src="/src/assets/logo_new.png" alt="365 Solutions" style="height:50px; margin-left:16px;" />
+              </div>
+                <hr style='margin:16px 0; border:0; border-top:2px solid #1976d2;' />
+              <h2 style='text-align:center;'>عقد صيانة</h2>
+              <h3>أولاً: شروط عامة متعلقة بعملية الاستلام لفنيات الفحص والصيانة.</h3>
+              <div style='font-size:15px; direction:rtl; text-align:right;'>
+                <div><span style='font-weight:bold; margin-left:8px;'>١.</span> يلتزم العميل بإحضار إيصال الصيانة الأصلي عند الاستلام، ويسلم الجهاز للإيصال فقط. وفي حالة فقدان الإيصال يجب على صاحب الجهاز إحضار الهوية لمطابقة البيانات المسجلة على النظام ولا تقبل صورة الهوية المخزنة على الهاتف.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٢.</span> حفظ البيانات والمعلومات من مسؤولية العميل حيث يتطلب الفحص للمنتجات محو الأنظمة والمحتويات، لذا فإن الشركة لا تتحمل مسؤولية فقدان المعلومات أو أسرارها.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٣.</span> الشركة غير مسؤولة عن فتح الأجهزة المغلقة على شبكة معينة حيث تبديلها في حال كانت مشفرة على شبكة أخرى سابقاً.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٤.</span> الشركة غير مسؤولة عن حفظ أي قطعة أو ملحقات تأتي مع الجهاز أثناء استلامه وتخلي مسؤوليتها من مطالبة الزبون بها.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٥.</span> تخصم الشركة الكفالة إذا الشركة قامت بالإجراءات المعتمدة من قبل الشركة الأم مع العلم أن الكفالة لا تشمل سوء الاستخدام مثل (السقوط، الكسر، السوائل، آثار فتح الجهاز).</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٦.</span> يتم تحديد تكلفة الكفالة النهائية بعد مراجعة الشركة الأم، وتدقيق من قبل الشركة الأم حسب طبيعة المشكلة حيث لا تشترط بعض الأعطال التي تظهر أثناء الفحص استبدال الكفالة أو مراجعة الشركة الأم لمعالجة المشكلة حسب المشكلة، إلا إذا تم تحديد المشكلة من قبل الشركة.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٧.</span> الزمن المتوقع لوصول القطعة أو الجهاز من (٧ أيام) ولغاية (٤٥ يوم) عمل، وقد تتجاوز تلك المدة في الظروف الاستثنائية الخارجة عن السيطرة.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٨.</span> الشركة غير مسؤولة عن أي ضرر أو عطل يظهر على الجهاز بعد فتحه (خلال عملية الفحص)، إذا تبين وجود تلاعب مسبق في الجهاز أو صيانة غير أصلية.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٩.</span> الكفالة المعتمدة للقطع والأجهزة المستبدلة هي (٩٠) يوماً بعد عملية استكمال إجراءات الصيانة، وإبلاغ العميل بذلك مع التنويه الى استمرار الكفالة للقطع والأجهزة المستبدلة على الجهاز الأصلي إذا زادت عن (٩٠) يوماً.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٠.</span> من حق الشركة مطالبة العميل بدفع كامل قيمة الإصلاح قبل استلام الجهاز، وسيتم وقف استلام الجهاز حتى يتم الدفع (للأجهزة خارج الكفالة).</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١١.</span> تخلي الشركة مسؤوليتها عن أي ضرر أو عطل يظهر على الجهاز بعد فتحه (خلال عملية الفحص)، إذا تبين وجود تلاعب مسبق في الجهاز أو صيانة غير أصلية.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٢.</span> لا يتم تسليم الجهاز إلا بعد دفع كامل قيمة الإصلاح.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٣.</span> العميل مسؤول عن الجهاز بعد الانتهاء من العمل، وفي حالة عدم الحضور لاستلام الجهاز عن ٣٠ يوم من تاريخ الإبلاغ يتم التخلص من الجهاز بالطريقة التي تراها الشركة مناسبة دون الرجوع للعميل، ولا يحق للعميل المطالبة بالجهاز ولا بأي تعويضات مهما كانت الأسباب.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٤.</span> تسوية الشركة أجرا مقداره (٣٥) دينار على أي تقرير صادر من الشركة بناء على طلب العميل لأي جهة كانت.</div>
+              </div>
+              <div style='font-size:15px; direction:rtl; text-align:right; margin-top:10px;'>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٥.</span> تُملأ المعلومات الشخصية المطلوبة التالية (الاسم والعنوان ورقم الهاتف وعنوان البريد الإلكتروني) أمراً ضرورياً لتلبية طلب الخدمة، ولا يلتزم مقدم الخدمة برفع الجهاز لخدمة رفع المعلومات من الطرف الخارجي لأغراض عمليات التدقيق وضمان الجودة، ويعتبر ذلك كخدمة إضافية للعميل، ويتم من خلال التوقيع أدناه التأكيد على هذا الأمر والإقرار بأن مقدم الخدمة غير مسؤول عن استلام استلام العملاء.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٦.</span> يحق للعميل استرداد أي رسوم تم استيفائها من قبل الشركة للمكونات خلال أي عودة المشكلة للأجهزة التي خضعت لإجراءات الـ software أو التنظيف أو أي إجراءات أخرى لم يتم حلها بالكامل حينها أو لم تخضع لأي إجراءات من خلال الإجراءات المعتمدة من قبل الشركة.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>١٧.</span> تُقر الموافقة النهائية من قبل العميل على الرسوم المدفوعة مقابل إجراءات محددة ومعلن عنها وفق نظام التسعير الخاص بالشركة بموجب الفاتورة ولا يمكن الاعتراض على الاعتراض عليها مستقبلاً.</div>
+              </div>
+              <h3>ثانياً: شروط خاصة متعلقة بأجهزة (iPhone, iPad, Apple Watch):</h3>
+              <div style='font-size:15px; direction:rtl; text-align:right;'>
+                <div><span style='font-weight:bold; margin-left:8px;'>١.</span> تستوفي الشركة أجرا مقداره (٢٥) دينار بدل فحص الأجهزة المكفولة (Software) إذا تطلبت حل المشكلة ذلك ولم يخضع الجهاز لأي إجراء أو فحص أو قطع.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٢.</span> تستوفي الشركة أجرا مقداره (٢٥) دينار بدل فحص للأجهزة غير المكفولة ولا تعتبر جزء من أجور القطع.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٣.</span> تستوفي الشركة أجرا مقداره (٢٥) دينار بدل فحص للأجهزة المكفولة في حال تبين سبب عطله سوء استخدام أو رفض العميل استكمال إجراءات الصيانة بعد إبلاغه بالإجراءات والفحص خلال المدة المحددة للفحص (سبع يوم وغاية ثلاث أيام) وتسقط هذه الرسوم في حال الفتحة.</div>
+                <div id="customer-signature-section-iPhone" style="margin-top:12px;"></div>
+              </div>
+              <h3>ثالثاً: شروط خاصة متعلقة بأجهزة (MacBook, IMAC, MAC Mini):</h3>
+              <div style='font-size:15px; direction:rtl; text-align:right;'>
+                <div><span style='font-weight:bold; margin-left:8px;'>١.</span> تستوفي الشركة أجرا مقداره (٢٥) دينار غير مستردة بدل فحص للأجهزة التي تكون الكفالة غير مشمولة بالأجور للقطع أو أجور الصيانة.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٢.</span> تستوفي الشركة أجرا مقداره (٢٥) دينار بدل فحص للأجهزة المكفولة في حال تبين سبب عطله سوء الاستخدام أو رفض العميل استكمال إجراءات الصيانة بعد إبلاغه بالإجراءات والفحص خلال المدة المحددة للفحص (سبع يوم وغاية ثلاث أيام) وتسقط هذه الرسوم في حال الفتحة.</div>
+                <div id="customer-signature-section-mac" style="margin-top:12px;"></div>
+              </div>
+              <h3>رابعاً: شروط خاصة متعلقة بأجهزة (AirPods, EarPods, Beats, Apple Pencil):</h3>
+              <div style='font-size:15px; direction:rtl; text-align:right;'>
+                <div><span style='font-weight:bold; margin-left:8px;'>١.</span> تستوفي الشركة أجرا مقداره (١٥) دينار غير مستردة بدل فحص للأجهزة التي تكون الكفالة غير مشمولة بالأجور للقطع أو أجور الصيانة.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٢.</span> تستوفي الشركة أجرا مقداره (١٥) دينار بدل فحص للأجهزة المكفولة في حال رفض العميل استكمال إجراءات الصيانة بعد إبلاغه بالإجراءات والفحص خلال المدة المحددة للفحص.</div>
+                <div><span style='font-weight:bold; margin-left:8px;'>٣.</span> تستوفي الشركة أجرا مقداره (١٥) دينار بدل فحص للأجهزة المكفولة في حال تبين عدم وجود مشكلة فيها (NTF) بعد الفحص أو سوء استخدام.</div>
+                <div id="customer-signature-section" style="margin-top:12px;"></div>
+              </div>
+              <hr/>
+            
+              <p style='font-size:15px;'>يرجى مراجعة الشروط والتوقيع أدناه.</p>
+              <div style='display:flex; justify-content:space-between; align-items:flex-end; margin-top:32px;'>
+              <img src="/src/assets/applelogo.png" alt="Apple Logo" style="height:40px;" />
+                <div style='text-align:left; font-size:15px;'>
+                  <span style='font-weight:bold; color:#222;'>3</span><span style='font-weight:bold; color:#999;'>6</span><span style='font-weight:bold; color:#1ccad4;'>5</span><span style='font-weight:bold;'> Solutions</span><br/>
+                  Amman, Jordan<br/>
+                  Mecca Street, Building No. 221<br/>
+                  <span style='font-weight:bold;'>Mob:</span> 00962 79 6818189<br/>
+                  <span style='font-weight:bold;'>Email:</span> help@365solutionsjo.com
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-around; align-items:center; margin-top:24px;">
+              <div style='font-size:15px;'>
+      
+                <strong>Customer Name:</strong> ${formData.customerName}<br/>
+                <strong>Device Type:</strong> ${formData.machineType}<br/>
+                <strong>Serial Number:</strong> ${formData.serialNum}<br/>
+                <strong>Warranty Status:</strong> ${formData.warrantyStatus}<br/>
+              </div>
+              <div style='font-size:15px;'>
+
+                <strong>Ticket#:</strong> ${formData.location}${formData.ticketNum}<br/>
+                <strong>Date:</strong> ${formData.date}<br/>
+                <strong>Ticket created by:</strong> ${technician.name}<br/>
+                <div id="customer-signature-section-info" style="margin-top:12px;"></div>
+              </div>
+              </div>
+            </div>
+          `}
+        onSign={handleCompleteContract}
+      />
+      <OutOfWarrantyReleaseModal
+        isOpen={showReleaseModal}
+        onClose={() => setShowReleaseModal(false)}
+        customerData={formData}
+        onSign={(pdfUrl) => {
+          setNoResponsibilityURL(pdfUrl);
+          setShowReleaseModal(false);
+          setShowSignatureModal(true);
+        }}
       />
     </div>
   );

@@ -241,8 +241,13 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
         parts: partsList,
       });
 
+      // Check if any part has price > 0 or all are 0
+      const hasPricedPart = partsList.some((part) => Number(part.price) > 0);
+      const allZero = partsList.every((part) => Number(part.price) === 0);
+
       await updateDoc(doc(db, "tickets", ticket.id), {
         partDeliveryNote: customDocId,
+        shouldHaveInvoice: hasPricedPart ? true : allZero ? false : undefined,
       });
 
       alert("Parts delivery note saved successfully.");

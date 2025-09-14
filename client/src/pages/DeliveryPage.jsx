@@ -22,6 +22,8 @@ const DeliveryPage = () => {
   const [saving, setSaving] = useState(false);
   const [showPartsModal, setShowPartsModal] = useState(false);
   const sigCanvas = useRef(null);
+  const [showSignatureImage, setShowSignatureImage] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState("");
   const printRef = useRef();
   const navigate = useNavigate();
 
@@ -458,8 +460,29 @@ const DeliveryPage = () => {
 
   const today = new Date().toLocaleDateString("en-GB");
   const clearSignature = () => {
-    sigCanvas.current.clear();
-    setIsSigned(false);
+    if (showSignatureImage) {
+      setShowSignatureImage(false);
+      setSignatureDataUrl("");
+    } else {
+      sigCanvas.current.clear();
+      setIsSigned(false);
+    }
+  };
+  const showSignatureFromStorage = async () => {
+    if (ticket?.customerSignatureURL) {
+      try {
+        const response = await fetch(ticket.customerSignatureURL);
+        const blob = await response.blob();
+        const reader = new window.FileReader();
+        reader.onloadend = () => {
+          setSignatureDataUrl(reader.result);
+          setShowSignatureImage(true);
+        };
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        alert("Failed to load signature image.");
+      }
+    }
   };
 
   if (!ticket) return <p>Loading...</p>;
@@ -469,7 +492,6 @@ const DeliveryPage = () => {
       {saving && (
         <div className="saving-overlay">
           <div className="spinner-PDF" />
-
           <p>Saving PDF, please wait...</p>
         </div>
       )}
@@ -503,23 +525,44 @@ const DeliveryPage = () => {
             <div className="form-group">
               <label>التوقيع:</label>
               <div className="signature-box">
-                <SignatureCanvas
-                  ref={sigCanvas}
-                  penColor="black"
-                  minWidth={0.5}
-                  maxWidth={1.5}
-                  canvasProps={{
-                    width: 150,
-                    height: 100,
-                    className: "sig-canvas",
-                    style: {
-                      width: "150px",
-                      height: "100px",
-                      touchAction: "none",
-                    },
-                  }}
-                  onEnd={() => setIsSigned(!sigCanvas.current.isEmpty())}
-                />
+                <div style={{ position: "relative", width: 150, height: 100 }}>
+                  {showSignatureImage && signatureDataUrl ? (
+                    <img
+                      src={signatureDataUrl}
+                      alt="Customer Signature"
+                      style={{
+                        width: 150,
+                        height: 100,
+                        objectFit: "contain",
+                        border: "1px solid #ccc",
+                        background: "#fff",
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        opacity: 1,
+                        pointerEvents: "none",
+                      }}
+                    />
+                  ) : (
+                    <SignatureCanvas
+                      ref={sigCanvas}
+                      penColor="black"
+                      minWidth={0.5}
+                      maxWidth={1.5}
+                      canvasProps={{
+                        width: 150,
+                        height: 100,
+                        className: "sig-canvas",
+                        style: {
+                          width: "150px",
+                          height: "100px",
+                          touchAction: "none",
+                        },
+                      }}
+                      onEnd={() => setIsSigned(!sigCanvas.current.isEmpty())}
+                    />
+                  )}
+                </div>
               </div>
             </div>
             <div className="form-group">
@@ -553,13 +596,23 @@ const DeliveryPage = () => {
           </div>
 
           <div className="button-row no-print">
-            <button className="clear-button" onClick={clearSignature}>
-              Clear
-            </button>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <button className="clear-button" onClick={clearSignature}>
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={showSignatureFromStorage}
+                disabled={!ticket.customerSignatureURL}
+                className="sign-button"
+              >
+                Show Signature
+              </button>
+            </div>
             <button
               className="save-button"
               onClick={handleSavePDF}
-              disabled={!isSigned}
+              disabled={!(isSigned || showSignatureImage)}
             >
               Save
             </button>

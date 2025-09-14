@@ -15,6 +15,8 @@ const PartsDeliveryPage = () => {
   const { id } = useParams();
   const { technician } = useUser();
   const [isSigned, setIsSigned] = useState(false);
+  const [showSignatureImage, setShowSignatureImage] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState("");
   const sigCanvas1 = useRef(null);
   const sigCanvas2 = useRef(null);
   const pageRef = useRef(null);
@@ -52,15 +54,33 @@ const PartsDeliveryPage = () => {
   }, [id]);
 
   const clearSignature = () => {
-    sigCanvas1.current.clear();
-    sigCanvas2.current.clear();
-    setIsSigned(false);
+    if (showSignatureImage) {
+      setShowSignatureImage(false);
+      setSignatureDataUrl("");
+    } else {
+      sigCanvas2.current.clear();
+      setIsSigned(false);
+    }
+  };
+  const showSignatureFromStorage = async () => {
+    if (ticket?.customerSignatureURL) {
+      try {
+        const response = await fetch(ticket.customerSignatureURL);
+        const blob = await response.blob();
+        const reader = new window.FileReader();
+        reader.onloadend = () => {
+          setSignatureDataUrl(reader.result);
+          setShowSignatureImage(true);
+        };
+        reader.readAsDataURL(blob);
+      } catch (err) {
+        alert("Failed to load signature image.");
+      }
+    }
   };
 
   const handleEndSignature = () => {
-    if (!sigCanvas2.current.isEmpty()) {
-      setIsSigned(true);
-    }
+    setIsSigned(!sigCanvas2.current.isEmpty());
   };
 
   const handleSave = async () => {
@@ -218,33 +238,64 @@ const PartsDeliveryPage = () => {
             </p>
             <label>Signature:</label>
             <div className="signature-box">
-              <SignatureCanvas
-                penColor="black"
-                canvasProps={{
-                  width: 200,
-                  height: 100,
-                  className: "sig-canvas",
-                  style: {
-                    width: "200px",
-                    height: "100px",
-                    touchAction: "none",
-                  },
-                }}
-                ref={sigCanvas2}
-                onEnd={handleEndSignature}
-              />
+              <div style={{ position: "relative", width: 200, height: 100 }}>
+                {showSignatureImage && signatureDataUrl ? (
+                  <img
+                    src={signatureDataUrl}
+                    alt="Customer Signature"
+                    style={{
+                      width: 200,
+                      height: 100,
+                      objectFit: "contain",
+                      border: "1px solid #ccc",
+                      background: "#fff",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      opacity: 1,
+                      pointerEvents: "none",
+                    }}
+                  />
+                ) : (
+                  <SignatureCanvas
+                    penColor="black"
+                    canvasProps={{
+                      width: 200,
+                      height: 100,
+                      className: "sig-canvas",
+                      style: {
+                        width: "200px",
+                        height: "100px",
+                        touchAction: "none",
+                      },
+                    }}
+                    ref={sigCanvas2}
+                    onEnd={handleEndSignature}
+                  />
+                )}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <button className="clear-button" onClick={clearSignature}>
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={showSignatureFromStorage}
+                disabled={!ticket.customerSignatureURL}
+                className="sign-button"
+              >
+                Show Signature
+              </button>
             </div>
           </div>
         </div>
 
         <div className="action-buttons no-print">
-          <button className="clear-button" onClick={clearSignature}>
-            Clear
-          </button>
           <button
             className="save-button"
             onClick={handleSave}
-            disabled={!isSigned}
+            disabled={!(isSigned || showSignatureImage)}
           >
             Save
           </button>
