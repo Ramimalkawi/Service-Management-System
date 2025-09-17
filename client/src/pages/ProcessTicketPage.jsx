@@ -273,8 +273,8 @@ const ProcessTicketPage = () => {
                 
                 <p><strong>Business Hours:</strong></p>
                 <ul>
-                  <li>Sunday - Thursday: 9:00 AM - 6:00 PM</li>
-                  <li>Saturday: 9:00 AM - 2:00 PM</li>
+                  <li>Sunday - Thursday: 9:00 AM - 9:00 PM</li>
+                  <li>Saturday: 10:00 AM - 9:00 PM</li>
                   <li>Friday: Closed</li>
                 </ul>
                 
@@ -295,8 +295,8 @@ const ProcessTicketPage = () => {
                 }</li>
                 <li>Phone: ${
                   ticket.location === "M"
-                    ? "+962-6-XXX-XXXX"
-                    : "+962-2-XXX-XXXX"
+                    ? "+962-79-681-8189"
+                    : "+962-79-668-8831"
                 }</li>
               </ul>
               

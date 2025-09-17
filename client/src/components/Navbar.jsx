@@ -44,32 +44,50 @@ const Navbar = () => {
       <div className="navbar-title">🍏 Apple Service System</div>
 
       <div className="navbar-links">
-        <NavLink to="/tickets" activeClassName="active">
+        <NavLink
+          to="/tickets"
+          className={({ isActive }) => (isActive ? "active" : undefined)}
+        >
           Tickets
         </NavLink>
-        <NavLink to="/customers" activeClassName="active">
+        <NavLink
+          to="/customers"
+          className={({ isActive }) => (isActive ? "active" : undefined)}
+        >
           Customers
         </NavLink>
         {/* 👇 Conditionally render Admin Dashboard link */}
         {technician?.permission === "Admin" && (
-          <NavLink to="/admin" activeClassName="active">
+          <NavLink
+            to="/admin"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
             Admin Dashboard
           </NavLink>
         )}
         {/* 👇 Conditionally render User Management link for System Admin only */}
         {(technician?.name === "System Admin" ||
           technician?.permission === "SystemAdmin") && (
-          <NavLink to="/user-management" activeClassName="active">
+          <NavLink
+            to="/user-management"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
             👥 User Management
           </NavLink>
         )}
         {/* 👇 Conditionally render Accounting link for accountants only */}
         {technician?.isAccountant && (
-          <NavLink to="/accounting" activeClassName="active">
+          <NavLink
+            to="/accounting"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
             Accounting
           </NavLink>
         )}
-        <NavLink to="/archived" activeClassName="active">
+        <NavLink
+          to="/archived"
+          className={({ isActive }) => (isActive ? "active" : undefined)}
+        >
           Archived
         </NavLink>
       </div>
