@@ -1,3 +1,10 @@
+/* Two-column grid for modal input fields */
+.modal-form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px 32px;
+  margin-bottom: 24px;
+}
 .modal-overlay {
   background-color: rgba(0, 0, 0, 0.5);
 }
@@ -6,7 +13,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 700px;
+  width: 900px;
   height: 100vh;
   background-color: #fff;
   display: flex;
@@ -31,21 +38,21 @@
   margin-bottom: 10px;
 }
 
-.delivery-header {
-  margin-top: 1.5rem;
-  border-top: 1px solid #ccc;
-  padding-top: 1rem;
+.delivery-header2 {
+  margin-top: 0.5rem;
+
+  padding-top: 0.5rem;
 }
 
-.delivery-details {
+.delivery-details2 {
   display: flex;
-  justify-content: space-between;
+
   flex-wrap: wrap;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   padding-left: 20px;
 }
 
-.delivery-details .left,
+.delivery-details2 .left,
 .delivery-details .right {
   width: 48%;
 }

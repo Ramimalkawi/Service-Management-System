@@ -31,6 +31,21 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
   const [partsList, setPartsList] = useState([]);
   const [migrationAvailable, setMigrationAvailable] = useState(false);
   const [originalOldData, setOriginalOldData] = useState(null);
+  const [editIndex, setEditIndex] = useState(null); // index of part being edited
+
+  const resetForm = () => {
+    setPartNumber("");
+    setNewSN("");
+    setOldSN("");
+    setWarrantyStatus("Apple limited warranty");
+    setDescription("");
+    setQuantity("");
+    setPrice("");
+    setService(false);
+    setServiceType("");
+    setCustomServiceType("");
+    setEditIndex(null);
+  };
 
   const { technician } = useUser();
 
@@ -193,20 +208,69 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
           ? customServiceType
           : serviceType
         : description,
-      quantity: quantity || "1", // Default to "1" if empty
-      price: price || "0", // Default to "0" if empty
+      quantity: quantity || "1",
+      price: price || "0",
     };
-    setPartsList([...partsList, newPart]);
-    setPartNumber("");
-    setNewSN("");
-    setOldSN("");
-    setWarrantyStatus("Apple limited warranty");
-    setDescription("");
-    setQuantity("");
-    setPrice("");
-    setService(false);
-    setServiceType(""); // Reset service type
-    setCustomServiceType(""); // Reset custom service type
+    if (editIndex !== null) {
+      // Update existing part
+      const updatedParts = partsList.map((part, idx) =>
+        idx === editIndex ? newPart : part
+      );
+      setPartsList(updatedParts);
+    } else {
+      // Add new part
+      setPartsList([...partsList, newPart]);
+    }
+    resetForm();
+  };
+
+  const handleEditPart = (idx) => {
+    const part = partsList[idx];
+    setEditIndex(idx);
+    setPartNumber(part.partNumber || "");
+    setNewSN(part.newSN || "");
+    setOldSN(part.oldSN || "");
+    setWarrantyStatus(part.warrantyStatus || "Apple limited warranty");
+    setDescription(part.description || "");
+    setQuantity(part.quantity || "");
+    setPrice(part.price || "");
+    // If it's a service, set service fields
+    const isService =
+      !part.partNumber && !part.newSN && !part.oldSN && !part.warrantyStatus;
+    setService(isService);
+    if (isService) {
+      setServiceType(
+        part.description &&
+          [
+            "Software",
+            "Upgrade system",
+            "Transfer data",
+            "Cleaning",
+            "Miss use",
+            "NTF",
+          ].includes(part.description)
+          ? part.description
+          : part.description === "Other"
+            ? "Other"
+            : part.description || ""
+      );
+      setCustomServiceType(
+        part.description &&
+          ![
+            "Software",
+            "Upgrade system",
+            "Transfer data",
+            "Cleaning",
+            "Miss use",
+            "NTF",
+          ].includes(part.description)
+          ? part.description
+          : ""
+      );
+    } else {
+      setServiceType("");
+      setCustomServiceType("");
+    }
   };
 
   const handleDeletePart = (indexToDelete) => {
@@ -272,69 +336,79 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
       </button>
 
       <div className="modal-form">
-        <label>Part#:</label>
-        <input
-          type="text"
-          value={partNumber}
-          onChange={(e) => setPartNumber(e.target.value)}
-          placeholder="Enter Part#"
-          disabled={service}
-        />
-
-        <label>New SN:</label>
-        <input
-          type="text"
-          value={newSN}
-          onChange={(e) => setNewSN(e.target.value)}
-          placeholder="Enter New SN"
-          disabled={service}
-        />
-
-        <label>Old SN:</label>
-        <input
-          type="text"
-          value={oldSN}
-          onChange={(e) => setOldSN(e.target.value)}
-          placeholder="Enter Old SN"
-          disabled={service}
-        />
-
-        <label>Warranty Status:</label>
-        <select
-          value={warrantyStatus}
-          onChange={(e) => setWarrantyStatus(e.target.value)}
-          disabled={service}
-        >
-          <option>Apple limited warranty</option>
-          <option>Out of warranty</option>
-          <option>CS code</option>
-          <option>Quality program</option>
-        </select>
-
-        <label>Part Description:</label>
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter Description"
-          disabled={service}
-        />
-
-        <label>Quantity:</label>
-        <input
-          type="number"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          placeholder="Enter Quantity"
-        />
-
-        <label>Price:</label>
-        <input
-          type="text"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="Enter Price"
-        />
+        <div className="modal-form-fields">
+          <div>
+            <label>Part#:</label>
+            <input
+              type="text"
+              value={partNumber}
+              onChange={(e) => setPartNumber(e.target.value)}
+              placeholder="Enter Part#"
+              disabled={service}
+            />
+          </div>
+          <div>
+            <label>New SN:</label>
+            <input
+              type="text"
+              value={newSN}
+              onChange={(e) => setNewSN(e.target.value)}
+              placeholder="Enter New SN"
+              disabled={service}
+            />
+          </div>
+          <div>
+            <label>Old SN:</label>
+            <input
+              type="text"
+              value={oldSN}
+              onChange={(e) => setOldSN(e.target.value)}
+              placeholder="Enter Old SN"
+              disabled={service}
+            />
+          </div>
+          <div>
+            <label>Warranty Status:</label>
+            <select
+              value={warrantyStatus}
+              onChange={(e) => setWarrantyStatus(e.target.value)}
+              disabled={service}
+            >
+              <option>Apple limited warranty</option>
+              <option>Out of warranty</option>
+              <option>CS code</option>
+              <option>Quality program</option>
+            </select>
+          </div>
+          <div>
+            <label>Part Description:</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter Description"
+              disabled={service}
+            />
+          </div>
+          <div>
+            <label>Quantity:</label>
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="Enter Quantity"
+            />
+          </div>
+          <div>
+            <label>Price:</label>
+            <input
+              type="text"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Enter Price"
+            />
+          </div>
+        </div>
 
         <div className="service-section">
           <div className="service-row">
@@ -377,18 +451,27 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
           </div>
 
           <button onClick={handleApply} className="apply-button">
-            Apply
+            {editIndex !== null ? "Update" : "Apply"}
           </button>
+          {editIndex !== null && (
+            <button
+              onClick={resetForm}
+              className="cancel-edit-button"
+              style={{ marginLeft: 8 }}
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="delivery-header">
+      <div className="delivery-header2">
         <div className="logo-section">
-          <img src="/path/to/your/logo.png" alt="Logo" className="logo-img" />
+          {/* <img src="/path/to/your/logo.png" alt="Logo" className="logo-img" /> */}
           <h2>Delivery Note</h2>
           <div className="underline"></div>
         </div>
-        <div className="delivery-details">
+        <div className="delivery-details2">
           <div className="left">
             <p>
               <strong>Delivery Date:</strong> {today}
@@ -435,6 +518,8 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
             <th>New Serial #</th>
             <th>Quantity</th>
             <th>Warranty Status</th>
+            <th>Price</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -446,7 +531,16 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
               <td>{part.newSN}</td>
               <td>{part.quantity}</td>
               <td>{part.warrantyStatus}</td>
-              <td>
+              <td>{part.price}</td>
+              <td style={{ display: "flex", gap: 4 }}>
+                <button
+                  className="edit-part-button"
+                  onClick={() => handleEditPart(idx)}
+                  title="Edit part"
+                  style={{ marginRight: 4 }}
+                >
+                  ✏️
+                </button>
                 <button
                   className="delete-part-button"
                   onClick={() => handleDeletePart(idx)}

@@ -306,7 +306,7 @@ export default function Accounting() {
                             color:
                               ticket.invoiceStatus === "Paid"
                                 ? "#2e7d32"
-                                : ticket.invoiceStatus === "Partially Paid"
+                                : ticket.status === "Partially Paid"
                                   ? "#e65100"
                                   : "#b71c1c",
                             backgroundColor:
