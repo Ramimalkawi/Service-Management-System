@@ -57,6 +57,9 @@ const NewTicket = () => {
   const [showCustomDeviceInput, setShowCustomDeviceInput] = useState(false);
   const navigate = useNavigate();
 
+  const logoUrlForEmail =
+    "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+
   useEffect(() => {
     const fetchLatestTicketNum = async () => {
       const ticketsRef = collection(db, "tickets");
@@ -596,7 +599,7 @@ const NewTicket = () => {
                 <h5 style='margin:0;'>Three Hundred and Sixty-Five Solutions</h5>
                 <div style='color:#1976d2;'>Apple Authorised Service Provider</div>
               </div>
-                <img src="/src/assets/logo_new.png" alt="365 Solutions" style="height:50px; margin-left:16px;" />
+                <img src="https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e" alt="365 Solutions" style="height:50px; margin-left:16px;" />
               </div>
                 <hr style='margin:16px 0; border:0; border-top:2px solid #1976d2;' />
               <h2 style='text-align:center;'>عقد صيانة</h2>
@@ -645,8 +648,8 @@ const NewTicket = () => {
               <hr/>
             
               <p style='font-size:15px;'>يرجى مراجعة الشروط والتوقيع أدناه.</p>
-              <div style='display:flex; justify-content:space-between; align-items:flex-end; margin-top:32px;'>
-              <img src="/src/assets/applelogo.png" alt="Apple Logo" style="height:40px;" />
+              <div style='display:flex; margin-right:600px;  margin-top:32px;'>
+              
                 <div style='text-align:left; font-size:15px;'>
                   <span style='font-weight:bold; color:#222;'>3</span><span style='font-weight:bold; color:#999;'>6</span><span style='font-weight:bold; color:#1ccad4;'>5</span><span style='font-weight:bold;'> Solutions</span><br/>
                   Amman, Jordan<br/>
