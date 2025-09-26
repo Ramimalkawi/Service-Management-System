@@ -250,8 +250,8 @@ const DeliveryPage = () => {
                 }</li>
                 <li>Phone: ${
                   ticketData.location === "M"
-                    ? "+962-6-XXX-XXXX"
-                    : "+962-2-XXX-XXXX"
+                    ? "+962-79-681-8189"
+                    : "+962-79-668-8831"
                 }</li>
               </ul>
               

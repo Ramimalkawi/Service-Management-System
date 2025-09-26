@@ -27,7 +27,7 @@ router.post("/", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "help@365solutionsjo.com", // must be a verified sender in Resend
+        from: "365 Solutions <help@365solutionsjo.com>", // must be a verified sender in Resend
         to,
         subject,
         html,
