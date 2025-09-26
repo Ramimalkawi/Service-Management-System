@@ -111,31 +111,12 @@ const CustomerContractModal = ({
         format: [pdfWidth, pdfHeight],
       });
 
-      // Calculate scaled height for 2 pages
-      const totalPdfHeight = pdfHeight * 2;
-      const scale = totalPdfHeight / contractCanvas.height;
-      const scaledWidth = contractCanvas.width * scale;
-      const scaledHeight = contractCanvas.height * scale;
-
-      // First page
+      // Scale the image to fit exactly one page
       pdf.addImage(
         imgData,
         "PNG",
         0,
         0,
-        pdfWidth,
-        pdfHeight,
-        undefined,
-        "FAST"
-      );
-
-      // Second page
-      pdf.addPage([pdfWidth, pdfHeight], "p");
-      pdf.addImage(
-        imgData,
-        "PNG",
-        0,
-        -pdfHeight,
         pdfWidth,
         pdfHeight,
         undefined,
