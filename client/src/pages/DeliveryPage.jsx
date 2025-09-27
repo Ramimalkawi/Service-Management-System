@@ -8,7 +8,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useUser } from "../context/userContext";
-import logoImage from "../assets/logo_new.png";
+
 import { API_ENDPOINTS } from "../config/api";
 
 import "./DeliveryPage.css";
@@ -498,7 +498,11 @@ const DeliveryPage = () => {
       <div className="delivery-page-content" ref={printRef}>
         <div className="modal-contents">
           <div className="header-section">
-            <img src={logoImage} alt="365 Solutions Logo" className="logo" />
+            <img
+              src="/logo_new.png"
+              alt="365 Solutions Logo"
+              className="logo"
+            />
             <h2 className="modal-title">إقرار استلام جهاز</h2>
           </div>
           <p className="arabic-text">
