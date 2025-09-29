@@ -356,7 +356,15 @@ const Tickets = () => {
 
         {/* On desktop, show TicketDetail on the right only if selectedTicket exists */}
         {selectedTicket && (
-          <div className="ticket-detail-panel">
+          // <div className="ticket-detail-panel">
+          //   <TicketDetail
+          //     ticket={selectedTicket}
+          //     onClose={() => {
+          //       navigate("/tickets");
+          //     }}
+          //   />
+          // </div>
+          <div className="ticket-detail-fixed-style">
             <TicketDetail
               ticket={selectedTicket}
               onClose={() => {

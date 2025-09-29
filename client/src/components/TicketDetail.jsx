@@ -337,8 +337,14 @@ export default function TicketDetail({ ticket, onClose }) {
             🖼️ Media
           </button>
           <button
-            className={`ticket-action-button ${isEditing ? "edit-active" : ""}`}
+            className={`ticket-action-button ${isEditing ? "edit-active" : ""} ${ticket.ticketStates?.slice(-1)[0] === 7 ? "disabled" : ""}`}
             onClick={handleEditToggle}
+            disabled={ticket.ticketStates?.slice(-1)[0] === 7}
+            style={
+              ticket.ticketStates?.slice(-1)[0] === 7
+                ? { opacity: 0.5, cursor: "not-allowed" }
+                : {}
+            }
           >
             {isEditing ? <FaUndo /> : <FaEdit />}{" "}
             {isEditing ? "Cancel" : "Edit"}

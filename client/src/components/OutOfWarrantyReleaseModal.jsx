@@ -98,7 +98,7 @@ const OutOfWarrantyReleaseModal = ({
       <div className="release-paper" ref={releaseRef}>
         <div className="release-header">
           <img
-            src="/src/assets/logo-and-apple.png"
+            src="/logo-and-apple.png"
             alt="365 Solutions Logo"
             className="release-logo"
           />
