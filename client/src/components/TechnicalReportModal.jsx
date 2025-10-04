@@ -71,7 +71,7 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
           <div className="report-header">
             <div className="report-header-left">
               <img
-                src="/src/assets/logo-and-apple.png"
+                src="/logo-and-apple.png"
                 alt="Apple ASP"
                 className="apple-logo"
               />
@@ -100,7 +100,7 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
               <strong>Customer Name:</strong> {ticket.customerName || ""}
             </div>
             <div>
-              <strong>Reporter Position:</strong> Technician
+              <strong>Technician ID:</strong> {technician.techID || ""}
             </div>
           </div>
           <div className="report-details">
@@ -108,7 +108,7 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
               <strong>Device Type:</strong> {ticket.machineType}
             </div>
             <div>
-              <strong>Description:</strong> {ticket.machineType}
+              <strong>Description:</strong> {ticket.deviceDescription}
             </div>
             <div>
               <strong>Device SN:</strong> {ticket.serialNum}
@@ -129,7 +129,7 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
               Out of warranty
             </div>
             <div>
-              <strong>Receipt Number:</strong> {ticket.location}
+              <strong>Ticket Number:</strong> {ticket.location}
               {ticket.ticketNum}
             </div>
             <div>

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
@@ -40,6 +42,7 @@ const statusMap = {
 };
 
 export default function TicketDetail({ ticket, onClose }) {
+  const [isDownloading, setIsDownloading] = useState(false);
   const [mediaURLs, setMediaURLs] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
@@ -95,6 +98,107 @@ export default function TicketDetail({ ticket, onClose }) {
   });
 
   const [contractURL, setContractURL] = useState(null);
+  // Helper to fetch a file from Firebase Storage and add to zip
+  const fetchAndAddFileToZip = async (zip, folder, fileName, filePath) => {
+    if (!filePath) return;
+    try {
+      const fileRef = ref(storage, filePath);
+      const url = await getDownloadURL(fileRef);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      zip.folder(folder).file(fileName, blob);
+    } catch (err) {
+      console.error(`Failed to fetch ${fileName}:`, err);
+    }
+  };
+
+  // Main download handler
+  const handleDownloadTicketFolder = async () => {
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      // Add ticket details as JSON
+      zip.file("ticket-details.json", JSON.stringify(ticket, null, 2));
+
+      // Add signed documents
+      await Promise.all([
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "contract.pdf",
+          ticket.contractURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "delivery-note.pdf",
+          ticket.deliveryNoteURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "device-delivery-note.pdf",
+          ticket.deviceDeliveryNoteURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "parts-delivery-note.pdf",
+          ticket.partsDeliveryNoteURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "no-responsibility-note.pdf",
+          ticket.noResponsibilityURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "technical-report.pdf",
+          ticket.techReportURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "invoice.pdf",
+          ticket.invoiceURL
+        ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "price-quotation.pdf",
+          ticket.priceQuotationURL
+        ),
+      ]);
+
+      // Add uploaded media
+      if (ticket.mediaURLs && ticket.mediaURLs.length > 0) {
+        await Promise.all(
+          ticket.mediaURLs.map(async (path, idx) => {
+            // Try to get file extension from path
+            const extMatch = path.match(/\.([a-zA-Z0-9]+)$/);
+            const ext = extMatch ? extMatch[1] : "bin";
+            await fetchAndAddFileToZip(
+              zip,
+              "media",
+              `media_${idx + 1}.${ext}`,
+              path
+            );
+          })
+        );
+      }
+
+      // Generate ZIP and trigger download
+      zip.generateAsync({ type: "blob" }).then((content) => {
+        saveAs(content, `ticket_${ticket.ticketNum || ticket.id}.zip`);
+        setIsDownloading(false);
+      });
+    } catch (err) {
+      setIsDownloading(false);
+      alert("Failed to download ticket folder. Please try again.");
+    }
+  };
   const [loadingContract, setLoadingContract] = useState(false);
   const [showDocumentsLinks, setShowDocumentsLinks] = useState(false);
   const [documentsLinks, setDocumentsLinks] = useState([]);
@@ -358,6 +462,40 @@ export default function TicketDetail({ ticket, onClose }) {
               <FaSave /> {isSaving ? "Saving..." : "Save"}
             </button>
           )}
+          <button
+            className="ticket-action-button"
+            onClick={handleDownloadTicketFolder}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <span style={{ display: "flex", alignItems: "center" }}>
+                <span
+                  className="spinner"
+                  style={{
+                    marginRight: 6,
+                    width: 18,
+                    height: 18,
+                    border: "2px solid #ccc",
+                    borderTop: "2px solid #333",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></span>
+                Downloading...
+              </span>
+            ) : (
+              <>📁 Download Ticket Folder</>
+            )}
+          </button>
+          {/* Spinner animation CSS */}
+          <style>
+            {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+          </style>
         </div>
         {ticket.ticketStates?.slice(-1)[0] === 6 && (
           <div className="deliver-button-wrapper">

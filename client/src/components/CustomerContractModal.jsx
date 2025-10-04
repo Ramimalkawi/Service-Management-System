@@ -15,35 +15,60 @@ const CustomerContractModal = ({
   onSign,
   contractHtml,
 }) => {
-  const sigCanvas = useRef();
-  const [hasDrawn, setHasDrawn] = useState(false);
+  const customerSigCanvas = useRef();
+  const technicianSigCanvas = useRef();
+  const [hasDrawnCustomer, setHasDrawnCustomer] = useState(false);
+  const [hasDrawnTechnician, setHasDrawnTechnician] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const handleClear = () => {
-    sigCanvas.current.clear();
-    setHasDrawn(false);
+  const handleClearCustomer = () => {
+    customerSigCanvas.current.clear();
+    setHasDrawnCustomer(false);
+  };
+  const handleClearTechnician = () => {
+    technicianSigCanvas.current.clear();
+    setHasDrawnTechnician(false);
   };
 
   const handleAccept = async () => {
-    if (sigCanvas.current.isEmpty()) {
-      alert("Please provide a signature.");
+    if (
+      customerSigCanvas.current.isEmpty() ||
+      technicianSigCanvas.current.isEmpty()
+    ) {
+      alert("Please provide both signatures.");
       return;
     }
     setSaving(true);
-    const signature = sigCanvas.current.getCanvas().toDataURL("image/png");
+    const customerSignature = customerSigCanvas.current
+      .getCanvas()
+      .toDataURL("image/png");
+    const technicianSignature = technicianSigCanvas.current
+      .getCanvas()
+      .toDataURL("image/png");
 
     try {
-      // Upload signature image to Firebase Storage
+      // Upload customer signature
       const storage = getStorage();
-      const signatureRef = ref(
+      const customerSignatureRef = ref(
         storage,
         `customerSignatures/${customerData.ticketNum}_${customerData.customerName}.png`
       );
-      // Convert dataURL to Blob
-      const response = await fetch(signature);
-      const signatureBlob = await response.blob();
-      await uploadBytes(signatureRef, signatureBlob);
-      const signatureUrl = await getDownloadURL(signatureRef);
+      const customerResponse = await fetch(customerSignature);
+      const customerSignatureBlob = await customerResponse.blob();
+      await uploadBytes(customerSignatureRef, customerSignatureBlob);
+      const customerSignatureUrl = await getDownloadURL(customerSignatureRef);
+
+      // Upload technician signature
+      const technicianSignatureRef = ref(
+        storage,
+        `technicianSignatures/${customerData.ticketNum}_${customerData.customerName}.png`
+      );
+      const technicianResponse = await fetch(technicianSignature);
+      const technicianSignatureBlob = await technicianResponse.blob();
+      await uploadBytes(technicianSignatureRef, technicianSignatureBlob);
+      const technicianSignatureUrl = await getDownloadURL(
+        technicianSignatureRef
+      );
 
       // Create a temporary container for rendering
       const tempDiv = document.createElement("div");
@@ -54,13 +79,13 @@ const CustomerContractModal = ({
       tempDiv.style.textAlign = "right";
       tempDiv.innerHTML = contractHtml;
 
-      // Inject signature image into both placeholders
-      const injectSignature = (sectionId) => {
+      // Inject both signatures
+      const injectSignature = (sectionId, signature, label) => {
         const section = tempDiv.querySelector(sectionId);
         if (section) {
           const img = document.createElement("img");
           img.src = signature;
-          img.alt = "Customer Signature";
+          img.alt = label;
           img.style.maxWidth = "150px";
           img.style.height = "50px";
           img.style.display = "block";
@@ -69,10 +94,17 @@ const CustomerContractModal = ({
           section.appendChild(img);
         }
       };
-      injectSignature("#customer-signature-section");
-      injectSignature("#customer-signature-section-mac");
-      injectSignature("#customer-signature-section-iPhone");
-      injectSignature("#customer-signature-section-info"); // In case there's a fourth section in future
+      injectSignature(
+        "#customer-signature-section",
+        customerSignature,
+        "Customer Signature"
+      );
+      injectSignature(
+        "#technician-signature-section",
+        technicianSignature,
+        "Technician Signature"
+      );
+
       setTimeout(() => {
         tempDiv.querySelectorAll("ol").forEach((ol) => {
           ol.style.direction = "rtl";
@@ -93,12 +125,6 @@ const CustomerContractModal = ({
       });
       document.body.removeChild(tempDiv);
 
-      //   // PDF page size
-      //   const pdfWidth = 800;
-      //   const pdfHeight = 1200;
-      //   const imgHeight = contractCanvas.height;
-      //   const imgData = contractCanvas.toDataURL("image/png");
-
       // PDF page size
       const pdfWidth = 800;
       const pdfHeight = 1200;
@@ -111,7 +137,6 @@ const CustomerContractModal = ({
         format: [pdfWidth, pdfHeight],
       });
 
-      // Scale the image to fit exactly one page
       pdf.addImage(
         imgData,
         "PNG",
@@ -122,33 +147,6 @@ const CustomerContractModal = ({
         undefined,
         "FAST"
       );
-
-      //   let remainingHeight = imgHeight;
-      //   let position = 0;
-      //   let pageNum = 1;
-
-      //   // Add contract image in pages
-      //   while (remainingHeight > 0) {
-      //     pdf.addImage(
-      //       imgData,
-      //       "PNG",
-      //       0,
-      //       0,
-      //       pdfWidth,
-      //       Math.min(pdfHeight, remainingHeight),
-      //       undefined,
-      //       "FAST",
-      //       position
-      //     );
-      //     remainingHeight -= pdfHeight;
-      //     position += pdfHeight;
-      //     if (remainingHeight > 0) pdf.addPage([pdfWidth, pdfHeight], "p");
-      //     pageNum++;
-      //   }
-
-      //   // Add signature at the end of the last page
-      //   pdf.setPage(pageNum - 1);
-      //   pdf.addImage(signature, "PNG", 250, pdfHeight - 120, 300, 100);
 
       // Save PDF to blob
       const pdfBlob = pdf.output("blob");
@@ -161,9 +159,9 @@ const CustomerContractModal = ({
       await uploadBytes(contractRef, pdfBlob);
       const contractUrl = await getDownloadURL(contractRef);
 
-      await onSign(contractUrl, signatureUrl); // Pass contract PDF URL and signature URL to parent
+      await onSign(contractUrl, customerSignatureUrl, technicianSignatureUrl);
     } catch (err) {
-      alert("Failed to generate or upload contract PDF or signature.");
+      alert("Failed to generate or upload contract PDF or signatures.");
       console.error(err);
     }
     setSaving(false);
@@ -183,37 +181,75 @@ const CustomerContractModal = ({
           className="contract-html-content"
           dangerouslySetInnerHTML={{ __html: contractHtml }}
         />
-        <div className="contract-signature-section">
-          <div className="contract-signature-box">
+        <div
+          className="contract-signature-section"
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "32px",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            marginBottom: "16px",
+          }}
+        >
+          <div className="contract-signature-box" style={{ flex: 1 }}>
             <SignatureCanvas
-              ref={sigCanvas}
+              ref={technicianSigCanvas}
               penColor="#222"
               canvasProps={{
                 width: 300,
                 height: 100,
                 className: "contract-signature-canvas",
               }}
-              onBegin={() => setHasDrawn(true)}
+              onBegin={() => setHasDrawnTechnician(true)}
             />
-            <div className="contract-sign-label">Signature / التوقيع</div>
+            <div className="contract-sign-label">
+              Technician Signature / توقيع الفني
+            </div>
             <button
               className="contract-clear-btn"
               type="button"
-              onClick={handleClear}
+              onClick={handleClearTechnician}
               style={{ marginTop: 8 }}
             >
               Clear
             </button>
           </div>
-          <div className="contract-sign-info">
-            <div>Full Name: {customerData.customerName}</div>
-            <div>Date: {new Date().toLocaleDateString("en-GB")}</div>
+          <div className="contract-signature-box" style={{ flex: 1 }}>
+            <SignatureCanvas
+              ref={customerSigCanvas}
+              penColor="#222"
+              canvasProps={{
+                width: 300,
+                height: 100,
+                className: "contract-signature-canvas",
+              }}
+              onBegin={() => setHasDrawnCustomer(true)}
+            />
+            <div className="contract-sign-label">
+              Customer Signature / توقيع العميل
+            </div>
+            <button
+              className="contract-clear-btn"
+              type="button"
+              onClick={handleClearCustomer}
+              style={{ marginTop: 8 }}
+            >
+              Clear
+            </button>
           </div>
+        </div>
+        <div
+          className="contract-sign-info"
+          style={{ marginBottom: "16px", textAlign: "center" }}
+        >
+          <div>Full Name: {customerData.customerName}</div>
+          <div>Date: {new Date().toLocaleDateString("en-GB")}</div>
         </div>
         <button
           className="contract-sign-btn"
           onClick={handleAccept}
-          disabled={!hasDrawn || saving}
+          disabled={!hasDrawnCustomer || !hasDrawnTechnician || saving}
         >
           {saving ? "Saving..." : "Accept & Save"}
         </button>

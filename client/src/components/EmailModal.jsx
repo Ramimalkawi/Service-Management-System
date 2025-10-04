@@ -17,7 +17,8 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
     htmlContentPartContract,
     htmlContentPartDN,
     htmlContentPartPDN,
-    htmlContentPartInvoice
+    htmlContentPartInvoice,
+    htmlContentPartTR
   ) => {
     setIsLoading(true);
 
@@ -56,14 +57,15 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
           <p>Please find below the download links for your requested documents related to Ticket #${
             ticket.location
           }${ticket.ticketNum} for device ${
-        ticket.machineType
-      } with serial number ${ticket.serialNum}.</p>
+            ticket.machineType
+          } with serial number ${ticket.serialNum}.</p>
           
           ${htmlContentPartContract}
           ${htmlContentPartPDN}
           ${htmlContentPartInvoice}
           ${htmlContentPartDN}
           ${htmlContentLast}
+          ${htmlContentPartTR}
       `;
 
       // Send email via server endpoint using SMTP
@@ -115,13 +117,14 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
     var htmlContentPartDN = "";
     var htmlContentPartPDN = "";
     var htmlContentPartInvoice = "";
+    var htmlContentPartTR = "";
 
     try {
       const storage = getStorage();
 
       // Load logos for email (using local assets approach like PriceQuotationModal)
-      const headerLogoPath = "/src/assets/logo_new.png";
-      const footerLogoPath = "/src/assets/email_logo.png";
+      const headerLogoPath = "/logo_new.png";
+      const footerLogoPath = "/email_logo.png";
       let headerLogoBase64 = "";
       let footerLogoBase64 = "";
 
@@ -179,13 +182,20 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
         htmlContentPartDN = `<p><strong>Delivery Note:</strong> <a href="${url}" style="color: #094549; text-decoration: none;">Click here to download</a></p>`;
       }
 
+      if (selectedDocs.includes("technical report") && ticket.techReportURL) {
+        const fileRef = ref(storage, ticket.techReportURL);
+        const url = await getDownloadURL(fileRef);
+        htmlContentPartTR = `<p><strong>Technical Report:</strong> <a href="${url}" style="color: #094549; text-decoration: none;">Click here to download</a></p>`;
+      }
+
       await sendEmailViaSMTP(
         headerLogoBase64,
         footerLogoBase64,
         htmlContentPartContract,
         htmlContentPartDN,
         htmlContentPartPDN,
-        htmlContentPartInvoice
+        htmlContentPartInvoice,
+        htmlContentPartTR
       );
     } catch (error) {
       console.error("Failed to get download URLs or send email:", error);
@@ -297,6 +307,17 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
                 onChange={handleCheckboxChange}
               />
               delivery note
+            </label>
+          )}
+          {ticket.techReportURL && (
+            <label>
+              <input
+                type="checkbox"
+                value="technical report"
+                checked={selectedDocs.includes("technical report")}
+                onChange={handleCheckboxChange}
+              />
+              technical report
             </label>
           )}
         </div>

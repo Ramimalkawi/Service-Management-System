@@ -44,6 +44,7 @@ const NewTicket = () => {
     ticketStates: [0],
     technicions: [technician.name],
     countryCode: "962",
+    date: new Date().toLocaleDateString("en-GB"),
   });
 
   const [loading, setLoading] = useState(false);
@@ -643,7 +644,7 @@ const NewTicket = () => {
                 <div><span style='font-weight:bold; margin-left:8px;'>١.</span> تستوفي الشركة أجرا مقداره (١٥) دينار غير مستردة بدل فحص للأجهزة التي تكون الكفالة غير مشمولة بالأجور للقطع أو أجور الصيانة.</div>
                 <div><span style='font-weight:bold; margin-left:8px;'>٢.</span> تستوفي الشركة أجرا مقداره (١٥) دينار بدل فحص للأجهزة المكفولة في حال رفض العميل استكمال إجراءات الصيانة بعد إبلاغه بالإجراءات والفحص خلال المدة المحددة للفحص.</div>
                 <div><span style='font-weight:bold; margin-left:8px;'>٣.</span> تستوفي الشركة أجرا مقداره (١٥) دينار بدل فحص للأجهزة المكفولة في حال تبين عدم وجود مشكلة فيها (NTF) بعد الفحص أو سوء استخدام.</div>
-                <div id="customer-signature-section" style="margin-top:12px;"></div>
+                
               </div>
               <hr/>
             
@@ -665,13 +666,22 @@ const NewTicket = () => {
                 <strong>Device Type:</strong> ${formData.machineType}<br/>
                 <strong>Serial Number:</strong> ${formData.serialNum}<br/>
                 <strong>Warranty Status:</strong> ${formData.warrantyStatus}<br/>
+                <div>
+                <strong>Customer Signature</strong>
+                <div id="customer-signature-section"></div>
+                </div>
+                
               </div>
               <div style='font-size:15px;'>
 
                 <strong>Ticket#:</strong> ${formData.location}${formData.ticketNum}<br/>
                 <strong>Date:</strong> ${formData.date}<br/>
                 <strong>Ticket created by:</strong> ${technician.name}<br/>
-                <div id="customer-signature-section-info" style="margin-top:12px;"></div>
+                <div>
+                <strong>Technician Signature</strong>
+                <div id="technician-signature-section"></div>
+                </div>
+                
               </div>
               </div>
             </div>

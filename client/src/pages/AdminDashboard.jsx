@@ -12,8 +12,137 @@ import { db } from "../firebase";
 import { useUser } from "../context/userContext";
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 const AdminDashboard = () => {
+  // Range download state
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
+  const [isDownloadingRange, setIsDownloadingRange] = useState(false);
+  const storage = getStorage();
+  const fetchAndAddFileToZip = async (zip, folder, fileName, filePath) => {
+    if (!filePath) return;
+    try {
+      const fileRef = ref(storage, filePath);
+      const url = await getDownloadURL(fileRef);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      zip.folder(folder).file(fileName, blob);
+    } catch (err) {
+      console.error(`Failed to fetch ${fileName}:`, err);
+    }
+  };
+
+  // Download tickets in range as separate ZIPs
+  const handleDownloadRange = async () => {
+    if (!rangeStart || !rangeEnd) {
+      alert("Please enter both start and end ticket numbers.");
+      return;
+    }
+    setIsDownloadingRange(true);
+    try {
+      // Query tickets in range
+      const startNum = parseInt(rangeStart);
+      const endNum = parseInt(rangeEnd);
+      if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) {
+        alert("Invalid range.");
+        setIsDownloadingRange(false);
+        return;
+      }
+      const ticketsRef = collection(db, "tickets");
+      const q = query(
+        ticketsRef,
+        where("ticketNum", ">=", startNum),
+        where("ticketNum", "<=", endNum)
+      );
+      const snapshot = await getDocs(q);
+      const tickets = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      if (tickets.length === 0) {
+        alert("No tickets found in this range.");
+        setIsDownloadingRange(false);
+        return;
+      }
+      for (const ticket of tickets) {
+        const zip = new JSZip();
+        zip.file("ticket-details.json", JSON.stringify(ticket, null, 2));
+        await Promise.all([
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "contract.pdf",
+            ticket.contractURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "delivery-note.pdf",
+            ticket.deliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "device-delivery-note.pdf",
+            ticket.deviceDeliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "parts-delivery-note.pdf",
+            ticket.partsDeliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "no-responsibility-note.pdf",
+            ticket.noResponsibilityURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "technical-report.pdf",
+            ticket.techReportURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "invoice.pdf",
+            ticket.invoiceURL
+          ),
+          fetchAndAddFileToZip(
+            zip,
+            "signed-documents",
+            "price-quotation.pdf",
+            ticket.priceQuotationURL
+          ),
+        ]);
+        if (ticket.mediaURLs && ticket.mediaURLs.length > 0) {
+          await Promise.all(
+            ticket.mediaURLs.map(async (path, idx) => {
+              const extMatch = path.match(/\.([a-zA-Z0-9]+)$/);
+              const ext = extMatch ? extMatch[1] : "bin";
+              await fetchAndAddFileToZip(
+                zip,
+                "media",
+                `media_${idx + 1}.${ext}`,
+                path
+              );
+            })
+          );
+        }
+        await zip.generateAsync({ type: "blob" }).then((content) => {
+          saveAs(content, `ticket_${ticket.ticketNum || ticket.id}.zip`);
+        });
+      }
+    } catch (err) {
+      alert("Failed to download ticket ZIPs. Please try again.");
+    }
+    setIsDownloadingRange(false);
+  };
   const { technician } = useUser();
   const navigate = useNavigate();
   const [pendingTickets, setPendingTickets] = useState([]);
@@ -179,6 +308,50 @@ const AdminDashboard = () => {
           >
             📚 View Archived
           </button>
+        </div>
+        {/* Ticket Range Download UI */}
+        <div
+          className="range-download-box"
+          style={{
+            marginTop: 24,
+            padding: 16,
+            border: "1px solid #eee",
+            borderRadius: 8,
+          }}
+        >
+          <h3>⬇️ Download Ticket Range as ZIPs</h3>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <label>
+              From Ticket #
+              <input
+                type="number"
+                value={rangeStart}
+                onChange={(e) => setRangeStart(e.target.value)}
+                style={{ marginLeft: 6, width: 100 }}
+                min={0}
+              />
+            </label>
+            <label>
+              To Ticket #
+              <input
+                type="number"
+                value={rangeEnd}
+                onChange={(e) => setRangeEnd(e.target.value)}
+                style={{ marginLeft: 6, width: 100 }}
+                min={0}
+              />
+            </label>
+            <button
+              className="action-btn"
+              onClick={handleDownloadRange}
+              disabled={isDownloadingRange}
+            >
+              {isDownloadingRange ? "Downloading..." : "Download Range"}
+            </button>
+          </div>
+          <small style={{ color: "#888" }}>
+            Each ticket will be downloaded as a separate ZIP file.
+          </small>
         </div>
       </div>
 
