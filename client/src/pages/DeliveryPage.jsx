@@ -49,6 +49,7 @@ const DeliveryPage = () => {
 
   const sendTicketClosedEmail = async (updatedTicketData = null) => {
     try {
+      const storage = getStorage();
       const ticketData = updatedTicketData || ticket;
       console.log(
         "🔄 Starting to send ticket closed email for:",
@@ -79,9 +80,12 @@ const DeliveryPage = () => {
 
       // // Add service contract link if available
       if (ticketData.contractURL) {
-        const contractUrl = `https://firebasestorage.googleapis.com/v0/b/solutions-system-1e0f5.appspot.com/o/${encodeURIComponent(
-          ticketData.contractURL
-        )}?alt=media`;
+        const fileRef = ref(storage, ticket.contractURL);
+        const url = await getDownloadURL(fileRef);
+        // const contractUrl = `https://firebasestorage.googleapis.com/v0/b/solutions-system-1e0f5.appspot.com/o/${encodeURIComponent(
+        //   ticketData.contractURL
+        // )}?alt=media`;
+        const contractUrl = url;
         documentLinks.push({
           name: "Service Agreement Contract",
           url: contractUrl,

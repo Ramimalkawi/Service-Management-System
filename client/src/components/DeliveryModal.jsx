@@ -107,7 +107,7 @@ const DeliveryModal = ({ isOpen, onClose, ticket }) => {
           <div className="modal-contents">
             <img src="/logo.png" alt="Company Logo" className="logo" />
             <h2 className="modal-title">إقرار استلام جهاز</h2>
-            <h2>OKKKKKKK</h2>
+
             <p className="arabic-text">
               أقر أنا <strong>{ticket.customerName}</strong> بأني قد استلمت جهاز{" "}
               <strong>{ticket.machineType}</strong>
