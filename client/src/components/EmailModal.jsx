@@ -30,7 +30,7 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
           ${
             footerLogoBase64
               ? `<div style="margin-bottom: 15px;">
-            <img src="${footerLogoBase64}" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
+            <img src="/email_logo.png" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
           </div>`
               : ""
           }
@@ -45,7 +45,7 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
           <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #094549; padding-bottom: 15px;">
             ${
               headerLogoBase64
-                ? `<img src="${headerLogoBase64}" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
+                ? `<img src="/logo_new.png" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
                 : ""
             }
             <h2 style="color: #094549; margin: 0; flex-grow: 1;">Document Download - Ticket #${
@@ -64,8 +64,8 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
           ${htmlContentPartPDN}
           ${htmlContentPartInvoice}
           ${htmlContentPartDN}
-          ${htmlContentLast}
           ${htmlContentPartTR}
+          ${htmlContentLast}
       `;
 
       // Send email via server endpoint using SMTP
