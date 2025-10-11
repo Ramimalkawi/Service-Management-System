@@ -102,6 +102,7 @@ const PartsDeliveryModal = ({ isOpen, onClose, ticket }) => {
         <h2 className="modal-title">Delivery Note</h2>
         <div className="info-row">
           <div>
+            <p>OOOOOO</p>
             <p>
               <strong>Delivery Date:</strong>{" "}
               {new Date().toLocaleDateString("en-GB")}

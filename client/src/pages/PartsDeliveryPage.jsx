@@ -8,8 +8,11 @@ import { ref, uploadBytes, getDownloadURL, getStorage } from "firebase/storage";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "../context/userContext";
 import { FaArrowRight } from "react-icons/fa";
+
 import logoImage from "../assets/logo_new.png";
 import "./PartsDeliveryPage.css";
+import PartsModal from "../components/PartsModal";
+import PriceQuotationModal from "../components/PriceQuotationModal";
 
 const PartsDeliveryPage = () => {
   const { id } = useParams();
@@ -24,6 +27,9 @@ const PartsDeliveryPage = () => {
   const [ticket, setTicket] = useState(null);
   const [partsData, setPartsData] = useState(null);
   const [showNextArrow, setShowNextArrow] = useState(false);
+  const [isPartsModalOpen, setIsPartsModalOpen] = useState(false);
+  const [isPriceQuotationModalOpen, setIsPriceQuotationModalOpen] =
+    useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -129,11 +135,11 @@ const PartsDeliveryPage = () => {
       {saving && (
         <div className="saving-overlay">
           <div className="spinner-PDF" />
-
           <p>Saving PDF, please wait...</p>
         </div>
       )}
 
+      {/* Main Delivery Note UI */}
       <div className="parts-delivery-container" ref={pageRef}>
         <div className="header-section">
           <img src={logoImage} alt="365 Solutions Logo" className="logo" />
@@ -275,7 +281,10 @@ const PartsDeliveryPage = () => {
                 )}
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <div
+              className="no-print"
+              style={{ display: "flex", gap: "8px", marginTop: "8px" }}
+            >
               <button className="clear-button" onClick={clearSignature}>
                 Clear
               </button>
@@ -299,8 +308,17 @@ const PartsDeliveryPage = () => {
           >
             Save
           </button>
+          {/* Example button to open PartsModal for demonstration */}
+          <button
+            className="save-button"
+            style={{ marginLeft: 12, background: "#1976d2" }}
+            onClick={() => setIsPartsModalOpen(true)}
+          >
+            Edit/Add Parts
+          </button>
         </div>
       </div>
+
       {showNextArrow && !saving && (
         <button
           className="next-arrow-button no-print"
@@ -310,6 +328,24 @@ const PartsDeliveryPage = () => {
           <FaArrowRight />
         </button>
       )}
+
+      {/* PartsModal integration */}
+      <PartsModal
+        isOpen={isPartsModalOpen}
+        onClose={() => setIsPartsModalOpen(false)}
+        ticket={ticket}
+        onOpenPriceQuotationModal={() => {
+          setIsPartsModalOpen(false);
+          setIsPriceQuotationModalOpen(true);
+        }}
+      />
+
+      {/* PriceQuotationModal integration */}
+      <PriceQuotationModal
+        isOpen={isPriceQuotationModalOpen}
+        onClose={() => setIsPriceQuotationModalOpen(false)}
+        ticket={ticket}
+      />
     </div>
   );
 };

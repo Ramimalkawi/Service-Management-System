@@ -34,9 +34,12 @@ const DeliveryPage = () => {
       if (snap.exists()) {
         const ticketData = { id: snap.id, ...snap.data() };
         setTicket(ticketData);
-        if (snap.data().partDeliveryNote && !snap.data().partsDeliveryNoteURL) {
+        if (snap.data().priceQuotationRef && !snap.data().priceQuotationURL) {
           setShowNextButton(true);
         }
+        // if (snap.data().partDeliveryNote && !snap.data().partsDeliveryNoteURL) {
+        //   setShowNextButton(true);
+        // }
 
         // Test email functionality immediately (for debugging)
         console.log("🧪 Testing email function with current ticket data");
@@ -95,11 +98,11 @@ const DeliveryPage = () => {
 
       // // Add delivery receipt link if available
       if (ticketData.deliveryNoteURL) {
-        const deliveryUrl = `https://firebasestorage.googleapis.com/v0/b/solutions-system-1e0f5.appspot.com/o/${encodeURIComponent(
-          ticketData.deliveryNoteURL
-        )}?alt=media`;
+        const fileRef = ref(storage, ticketData.deliveryNoteURL);
+        const url = await getDownloadURL(fileRef);
+        const deliveryUrl = url;
         documentLinks.push({
-          name: "Delivery Receipt",
+          name: "Delivery Note",
           url: deliveryUrl,
           icon: "🧾",
         });
@@ -107,9 +110,9 @@ const DeliveryPage = () => {
 
       // // Add parts delivery note link if available
       if (ticketData.partsDeliveryNoteURL) {
-        const partsUrl = `https://firebasestorage.googleapis.com/v0/b/solutions-system-1e0f5.appspot.com/o/${encodeURIComponent(
-          ticketData.partsDeliveryNoteURL
-        )}?alt=media`;
+        const fileRef = ref(storage, ticketData.partsDeliveryNoteURL);
+        const url = await getDownloadURL(fileRef);
+        const partsUrl = url;
         documentLinks.push({
           name: "Parts Delivery Note",
           url: partsUrl,
@@ -630,13 +633,33 @@ const DeliveryPage = () => {
       {showNextButton && !saving && (
         <button
           className="next-arrow-button no-print"
+          onClick={() => {
+            if (ticket.priceQuotationRef) {
+              navigate(`/tickets/${ticket.id}/price-quotation`);
+            } else {
+              navigate(`/tickets/${ticket.id}/part-delivery`);
+            }
+          }}
+          title={
+            ticket.priceQuotationRef
+              ? "Next: Price Quotation"
+              : "Next: Sign Parts Delivery Note"
+          }
+        >
+          Next
+          <FaArrowRight />
+        </button>
+      )}
+      {/* {showNextButton && !saving && (
+        <button
+          className="next-arrow-button no-print"
           onClick={() => navigate(`/tickets/${ticket.id}/part-delivery`)}
           title="Next: Sign Parts Delivery Note"
         >
           Next
           <FaArrowRight />
         </button>
-      )}
+      )} */}
     </div>
   );
 };

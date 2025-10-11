@@ -1,3 +1,27 @@
+/* Custom alert modal for price quotation prompt */
+.custom-alert-overlay {
+  background: rgba(0, 0, 0, 0.5) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-alert-modal {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  padding: 32px 28px 24px 28px;
+  max-width: 400px;
+  width: 90vw;
+  text-align: center;
+  color: #222;
+}
 /* Two-column grid for modal input fields */
 .modal-form-fields {
   display: grid;

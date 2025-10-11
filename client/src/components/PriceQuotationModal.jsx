@@ -15,7 +15,7 @@ import "./PriceQuotationModal.css";
 
 Modal.setAppElement("#root");
 
-const PriceQuotationModal = ({ isOpen, onClose, ticket }) => {
+const PriceQuotationModal = ({ isOpen, onClose, ticket, initialPart }) => {
   const [partNumber, setPartNumber] = useState("");
   const [description, setDescription] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -25,6 +25,21 @@ const PriceQuotationModal = ({ isOpen, onClose, ticket }) => {
   const [customServiceType, setCustomServiceType] = useState("");
   const [quotesList, setQuotesList] = useState([]);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
+
+  // Populate fields from initialPart when modal opens
+  useEffect(() => {
+    if (isOpen && initialPart) {
+      setPartNumber(initialPart.partNumber || "");
+      setDescription(initialPart.description || "");
+      setQuantity(initialPart.quantity || "1");
+      setPrice(initialPart.price || "0");
+    } else if (isOpen && !initialPart) {
+      setPartNumber("");
+      setDescription("");
+      setQuantity("1");
+      setPrice("0");
+    }
+  }, [isOpen, initialPart]);
 
   useEffect(() => {
     const fetchQuotation = async () => {
@@ -103,7 +118,7 @@ const PriceQuotationModal = ({ isOpen, onClose, ticket }) => {
       let documentId = ticket.priceQuotationRef || generateCustomDocumentId();
 
       const quoteData = {
-        ticketId: ticket.ticketId,
+        ticketNum: ticket.ticketNum,
         customer: ticket.customerName,
         location: ticket.location,
         quotes: updatedQuotes,
@@ -248,7 +263,7 @@ const PriceQuotationModal = ({ isOpen, onClose, ticket }) => {
           <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #094549; padding-bottom: 15px;">
             ${
               headerLogoBase64
-                ? `<img src="${headerLogoBase64}" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
+                ? `<img src="/logo-and-apple.png" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
                 : ""
             }
             <h2 style="color: #094549; margin: 0; flex-grow: 1;">Price Quotation</h2>
@@ -291,7 +306,7 @@ const PriceQuotationModal = ({ isOpen, onClose, ticket }) => {
             ${
               footerLogoBase64
                 ? `<div style="margin-bottom: 15px;">
-              <img src="${footerLogoBase64}" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
+              <img src="/email_logo.png" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
             </div>`
                 : ""
             }

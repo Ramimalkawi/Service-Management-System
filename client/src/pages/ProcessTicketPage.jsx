@@ -51,28 +51,47 @@ const ProcessTicketPage = () => {
   const [isPartsModalOpen, setIsPartsModalOpen] = useState(false);
   const [isPriceQuotationModalOpen, setIsPriceQuotationModalOpen] =
     useState(false);
+  // State to hold part info to pass to PriceQuotationModal
+  const [pendingQuotationPart, setPendingQuotationPart] = useState(null);
   const [mediaURLs, setMediaURLs] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const storage = getStorage();
   const openPartsModal = () => setIsPartsModalOpen(true);
   const closePartsModal = () => setIsPartsModalOpen(false);
-  const openPriceQuotationModal = () => setIsPriceQuotationModalOpen(true);
-  const closePriceQuotationModal = () => setIsPriceQuotationModalOpen(false);
+  const openPriceQuotationModal = (partInfo) => {
+    if (partInfo) setPendingQuotationPart(partInfo);
+    setIsPriceQuotationModalOpen(true);
+  };
+  // Refetch ticket after closing price quotation modal to get updated priceQuotationRef
+  const fetchTicket = async () => {
+    const docRef = doc(db, "tickets", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const latestStatusIndex = data.ticketStates?.slice(-1)[0] || 0;
+      setTicket({ id: docSnap.id, ...data });
+      setCurrentStatusIndex(latestStatusIndex);
+      setSelectedStatus(latestStatusIndex);
+    }
+  };
+
+  const closePriceQuotationModal = () => {
+    setIsPriceQuotationModalOpen(false);
+    setPendingQuotationPart(null);
+    // Refetch ticket to get updated priceQuotationRef
+    setTimeout(fetchTicket, 300); // slight delay to ensure DB update
+  };
 
   useEffect(() => {
-    const fetchTicket = async () => {
+    const fetchTicketAndMedia = async () => {
       const docRef = doc(db, "tickets", id);
       const docSnap = await getDoc(docRef);
-
       if (docSnap.exists()) {
         const data = docSnap.data();
         const latestStatusIndex = data.ticketStates?.slice(-1)[0] || 0;
-
         setTicket({ id: docSnap.id, ...data });
         setCurrentStatusIndex(latestStatusIndex);
         setSelectedStatus(latestStatusIndex);
-        // setRepairID(data.caseID || ""); // Initialize repair ID from existing data
-
         if (data.mediaURLs)
           try {
             const urls = await Promise.all(
@@ -85,14 +104,10 @@ const ProcessTicketPage = () => {
           } catch (error) {
             console.error("Failed to fetch media URLs:", error);
           }
-        // ✅ Extract media URLs if they exist
-        // if (data.mediaURLs && Array.isArray(data.mediaURLs)) {
-        //   setMediaURLs(data.mediaFiles);
-        // }
         setLoading(false);
       }
     };
-    fetchTicket();
+    fetchTicketAndMedia();
   }, [id]);
 
   const handleUpdateStatus = async () => {
@@ -592,11 +607,16 @@ const ProcessTicketPage = () => {
         isOpen={isPartsModalOpen}
         onClose={closePartsModal}
         ticket={ticket}
+        onOpenPriceQuotationModal={(partInfo) => {
+          closePartsModal();
+          openPriceQuotationModal(partInfo);
+        }}
       />
       <PriceQuotationModal
         isOpen={isPriceQuotationModalOpen}
         onClose={closePriceQuotationModal}
         ticket={ticket}
+        initialPart={pendingQuotationPart}
       />
       <MediaModal
         isOpen={showMediaModal}

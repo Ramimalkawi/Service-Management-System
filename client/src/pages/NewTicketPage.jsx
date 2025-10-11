@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import {
   collection,
   addDoc,
-  getDocs,
-  query,
-  orderBy,
-  limit,
+  runTransaction,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
@@ -61,26 +60,6 @@ const NewTicket = () => {
   const logoUrlForEmail =
     "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
 
-  useEffect(() => {
-    const fetchLatestTicketNum = async () => {
-      const ticketsRef = collection(db, "tickets");
-      console.log("ref", ticketsRef);
-      const q = query(ticketsRef, orderBy("ticketNum", "desc"), limit(1));
-      const querySnapshot = await getDocs(q);
-      const latestNum = querySnapshot.empty
-        ? 1000
-        : querySnapshot.docs[0].data().ticketNum + 1;
-      console.log("TECH in new", technician.name);
-
-      setFormData((prev) => ({
-        ...prev,
-        ticketNum: latestNum,
-      }));
-    };
-
-    fetchLatestTicketNum();
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -106,8 +85,25 @@ const NewTicket = () => {
     setFormData((prev) => ({ ...prev, machineType: value }));
   };
 
-  const handleShowModal = (e) => {
+  const handleShowModal = async (e) => {
     e.preventDefault();
+    // Only increment if ticketNum is not set
+    if (!formData.ticketNum) {
+      const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
+      let newTicketNum = null;
+      await runTransaction(db, async (transaction) => {
+        const ticketNumDoc = await transaction.get(ticketNumDocRef);
+        if (!ticketNumDoc.exists()) {
+          transaction.set(ticketNumDocRef, { number: 1000 });
+          newTicketNum = 1000;
+        } else {
+          const current = ticketNumDoc.data().number || 1000;
+          newTicketNum = current + 1;
+          transaction.update(ticketNumDocRef, { number: newTicketNum });
+        }
+      });
+      setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+    }
     if (formData.warrantyStatus === "Out of warranty") {
       setShowReleaseModal(true);
     } else {
@@ -133,7 +129,6 @@ const NewTicket = () => {
         const sigUrl = await getDownloadURL(sigRef);
         setCustomerSignatureURL(sigUrl);
       }
-      console.log("signatureUrl", signatureUrl);
       // Format created date
       const formattedDate = new Date().toLocaleString("en-GB", {
         day: "2-digit",
@@ -148,6 +143,7 @@ const NewTicket = () => {
       // Save ticket
       await addDoc(collection(db, "tickets"), {
         ...formData,
+        ticketNum: ticketNum,
         date: formattedDate,
         contractURL,
         noResponsibilityURL,
@@ -555,7 +551,13 @@ const NewTicket = () => {
               required
             />
           </div>
-          <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              width: "100%",
+            }}
+          >
             <div className="form-group" style={{ flex: 1 }}>
               <label>Device stuff</label>
               <textarea

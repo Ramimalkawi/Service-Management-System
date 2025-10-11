@@ -15,7 +15,8 @@ import { useUser } from "../context/userContext";
 
 Modal.setAppElement("#root");
 
-const PartsModal = ({ isOpen, onClose, ticket }) => {
+const PartsModal = ({ isOpen, onClose, ticket, onOpenPriceQuotationModal }) => {
+  const [showQuotationPrompt, setShowQuotationPrompt] = useState(false);
   const [partNumber, setPartNumber] = useState("");
   const [newSN, setNewSN] = useState("");
   const [oldSN, setOldSN] = useState("");
@@ -198,6 +199,11 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
   };
 
   const handleApply = () => {
+    // If part has a price and no priceQuotationRef, show prompt and do not add
+    if (price && Number(price) > 0 && (!ticket || !ticket.priceQuotationRef)) {
+      setShowQuotationPrompt(true);
+      return;
+    }
     const newPart = {
       partNumber: service ? "" : partNumber,
       newSN: service ? "" : newSN,
@@ -331,6 +337,53 @@ const PartsModal = ({ isOpen, onClose, ticket }) => {
       className="right-modal"
       overlayClassName="modal-overlay"
     >
+      {/* Price Quotation Required Modal */}
+      {showQuotationPrompt && (
+        <div
+          className="custom-alert-overlay"
+          style={{ zIndex: 3000, position: "fixed" }}
+        >
+          <div className="custom-alert-modal">
+            <p style={{ marginBottom: 16 }}>
+              <strong>You should create a price quotation.</strong>
+              <br />
+              A price quotation must be created first.
+              <br />
+              Do you want to create the price quotation now?
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button
+                className="save-button"
+                onClick={() => {
+                  setShowQuotationPrompt(false);
+                  setTimeout(() => {
+                    if (onOpenPriceQuotationModal) {
+                      onOpenPriceQuotationModal({
+                        partNumber: service ? "" : partNumber,
+                        description: service
+                          ? serviceType === "Other"
+                            ? customServiceType
+                            : serviceType
+                          : description,
+                        quantity: quantity || "1",
+                        price: price || "0",
+                      });
+                    }
+                  }, 200);
+                }}
+              >
+                Create Price Quotation
+              </button>
+              <button
+                className="cancel-edit-button"
+                onClick={() => setShowQuotationPrompt(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <button className="modal-close-button" onClick={onClose}>
         ×
       </button>

@@ -295,10 +295,8 @@ export default function TicketDetail({ ticket, onClose }) {
 
     try {
       const url = await getDownloadURL(fileRef);
-      const viewerUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(
-        url
-      )}`;
-      window.open(viewerUrl, "_blank");
+      // Open the direct PDF URL for best print quality
+      window.open(url, "_blank");
     } catch (error) {
       console.error("Error opening contract PDF:", error);
       alert("Failed to open contract.");
@@ -324,7 +322,9 @@ export default function TicketDetail({ ticket, onClose }) {
   };
 
   const handleSignOtherDocuments = () => {
-    if (!ticket.partsDeliveryNoteURL && ticket.partDeliveryNote) {
+    if (!ticket.priceQuotationURL && ticket.priceQuotationRef) {
+      navigate(`/tickets/${ticket.id}/price-quotation`);
+    } else if (!ticket.partsDeliveryNoteURL && ticket.partDeliveryNote) {
       navigate(`/tickets/${ticket.id}/part-delivery`);
     } else if (!ticket.invoiceURL && ticket.hasAnInvoice) {
       navigate(`/tickets/${ticket.id}/receipt-page`);

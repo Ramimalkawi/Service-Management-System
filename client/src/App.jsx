@@ -22,6 +22,7 @@ import ReceivePayment from "./pages/ReceivePayment";
 import PaymentReceipt from "./pages/PaymentReceipt";
 import RefundPage from "./pages/RefundPage";
 import RefundReceipt from "./pages/RefundReceipt";
+import PriceQuotationPage from "./pages/PriceQuotationPage";
 
 function App() {
   return (
@@ -124,6 +125,14 @@ function App() {
             element={
               <PrivateRoute>
                 <ReceiptPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tickets/:id/price-quotation"
+            element={
+              <PrivateRoute>
+                <PriceQuotationPage />
               </PrivateRoute>
             }
           />
