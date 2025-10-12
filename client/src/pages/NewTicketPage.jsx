@@ -167,6 +167,12 @@ const NewTicket = () => {
       //   contractURL
       // )}?alt=media`;
 
+      const companyEmail =
+        formData.location === "M"
+          ? "help@365solutionsjo.com"
+          : "irbid@365solutionsjo.com";
+      const logoUrl =
+        "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -175,6 +181,7 @@ const NewTicket = () => {
           <style>
             .email-container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; }
             .header { background-color: #1ccad4; color: white; padding: 20px; text-align: center; }
+            .logo-img { max-height: 60px; margin-bottom: 10px; }
             .content { padding: 20px; background-color: #f9f9f9; }
             .ticket-info { background-color: white; padding: 15px; margin: 15px 0; border-radius: 8px; }
             .info-row { margin: 8px 0; }
@@ -194,6 +201,7 @@ const NewTicket = () => {
         <body>
           <div class="email-container">
             <div class="header">
+              <img src="${logoUrl}" alt="365Solutions Logo" class="logo-img" />
               <h2>Device Received - 365Solutions</h2>
               <p>Apple Authorized Service Center</p>
             </div>
@@ -236,6 +244,9 @@ const NewTicket = () => {
                     formData.warrantyStatus
                   }
                 </div>
+                <div class="info-row">
+                  <span class="label">Company Email:</span> ${companyEmail}
+                </div>
               </div>
               
               <p><strong>What happens next?</strong></p>
@@ -250,11 +261,7 @@ const NewTicket = () => {
               
               <p>If you have any questions, please contact us at:</p>
               <ul>
-                <li>Email: ${
-                  formData.location === "M"
-                    ? "help@365solutionsjo.com"
-                    : "irbid@365solutionsjo.com"
-                }</li>
+                <li>Email: ${companyEmail}</li>
                 <li>Phone: ${
                   formData.location === "M"
                     ? "+962-79-681-8189"

@@ -54,13 +54,6 @@ const DeliveryPage = () => {
     try {
       const storage = getStorage();
       const ticketData = updatedTicketData || ticket;
-      console.log(
-        "🔄 Starting to send ticket closed email for:",
-        ticketData.customerName
-      );
-      console.log("📧 Customer email:", ticketData.emailAddress);
-      console.log("🎫 Ticket ID:", ticketData.id);
-      console.log("📍 Location:", ticketData.location);
 
       // Check if customer email exists
       if (!ticketData.emailAddress || ticketData.emailAddress.trim() === "") {
@@ -122,6 +115,10 @@ const DeliveryPage = () => {
 
       // console.log("📋 Document links found:", documentLinks.length);
 
+      const logoUrl =
+        "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+      const emailFooterLogo =
+        "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/email_logo.png?alt=media&token=8691c5b9-a58b-4076-891c-d1d3d4275a6b";
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -130,6 +127,7 @@ const DeliveryPage = () => {
           <style>
             .email-container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; }
             .header { background-color: #28a745; color: white; padding: 20px; text-align: center; }
+            .logo-img { max-height: 60px; margin-bottom: 10px; }
             .content { padding: 20px; background-color: #f9f9f9; }
             .ticket-info { background-color: white; padding: 15px; margin: 15px 0; border-radius: 8px; }
             .info-row { margin: 8px 0; }
@@ -161,11 +159,13 @@ const DeliveryPage = () => {
             }
             .document-link:hover { background-color: #16b1bd; }
             .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .footer-logo-img { max-height: 40px; margin-top: 10px; }
           </style>
         </head>
         <body>
           <div class="email-container">
             <div class="header">
+              <img src="${logoUrl}" alt="365Solutions Logo" class="logo-img" />
               <h2>✅ Service Completed - Ticket Closed</h2>
               <p>365Solutions - Apple Authorized Service Center</p>
             </div>
@@ -263,6 +263,7 @@ const DeliveryPage = () => {
               </ul>
               
               <div class="footer">
+                <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
                 <p>365Solutions - Apple Authorized Service Center</p>
                 <p>Professional device repair services you can trust</p>
                 <p><strong>Thank you for your business!</strong></p>
