@@ -167,6 +167,10 @@ const Tickets = () => {
       TicketNumber: `${t.location}${t.ticketNum}`,
       Date: t.date,
       CustomerName: t.customerName,
+      OpenedBy:
+        Array.isArray(t.technicions) && t.technicions.length > 0
+          ? t.technicions[0]
+          : "",
       Email: t.emailAddress,
       Mobile: t.mobileNumber,
       MachineType: t.machineType,
@@ -176,7 +180,8 @@ const Tickets = () => {
       Symptom: t.symptom,
       RepairID: t.caseID,
       Notes: t.notes,
-      StatusTimeline: t.ticketStates ? t.ticketStates.join(", ") : "",
+      Invoice: t.hasAnInvoice === true ? "Yes" : "No",
+      // StatusTimeline: t.ticketStates ? t.ticketStates.join(", ") : "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();

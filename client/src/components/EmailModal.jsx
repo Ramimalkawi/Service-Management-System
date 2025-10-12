@@ -3,6 +3,12 @@ import { API_ENDPOINTS } from "../config/api";
 import React, { useState } from "react";
 import "./EmailModal.css"; // optional external styling
 
+const emailHeaderLogo =
+  "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+
+const emailFooterLogo =
+  "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/email_logo.png?alt=media&token=5f3e2c3b-1f3e-4dcb-8f7a-2f3b8e4c6d1e";
+
 const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [useCustomerEmail, setUseCustomerEmail] = useState(true);
@@ -30,7 +36,7 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
           ${
             footerLogoBase64
               ? `<div style="margin-bottom: 15px;">
-            <img src="/email_logo.png" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
+            <img src="${emailFooterLogo}" alt="365 Solutions Email Logo" style="max-height: 40px; height: auto;" />
           </div>`
               : ""
           }
@@ -43,11 +49,12 @@ const EmailModal = ({ isOpen, onClose, onSend, ticket }) => {
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
           <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #094549; padding-bottom: 15px;">
-            ${
-              headerLogoBase64
-                ? `<img src="/logo_new.png" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
-                : ""
-            }
+            
+          ${
+            headerLogoBase64
+              ? `<img src="${emailHeaderLogo}" alt="Company Logo" alt="365 Solutions Logo" style="max-height: 60px; height: auto; margin-right: 20px;" />`
+              : ""
+          }
             <h2 style="color: #094549; margin: 0; flex-grow: 1;">Document Download - Ticket #${
               ticket.location
             }${ticket.ticketNum}</h2>
