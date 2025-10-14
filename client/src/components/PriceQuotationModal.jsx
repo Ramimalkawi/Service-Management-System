@@ -232,8 +232,10 @@ const PriceQuotationModal = ({ isOpen, onClose, ticket, initialPart }) => {
         "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
       const footerLogoPath =
         "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/email_logo.png?alt=media&token=8691c5b9-a58b-4076-891c-d1d3d4275a6b";
-      let headerLogoBase64 = "";
-      let footerLogoBase64 = "";
+      let headerLogoBase64 =
+        "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+      let footerLogoBase64 =
+        "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/email_logo.png?alt=media&token=8691c5b9-a58b-4076-891c-d1d3d4275a6b";
 
       try {
         // Load header logo (main logo for left side)

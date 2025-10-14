@@ -308,14 +308,6 @@ const PartsDeliveryPage = () => {
           >
             Save
           </button>
-          {/* Example button to open PartsModal for demonstration */}
-          <button
-            className="save-button"
-            style={{ marginLeft: 12, background: "#1976d2" }}
-            onClick={() => setIsPartsModalOpen(true)}
-          >
-            Edit/Add Parts
-          </button>
         </div>
       </div>
 

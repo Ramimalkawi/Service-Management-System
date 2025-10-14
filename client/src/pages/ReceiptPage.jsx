@@ -313,7 +313,10 @@ const ReceiptPage = () => {
                 )}
               </div>
             </div>
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <div
+              className="no-print"
+              style={{ display: "flex", gap: "8px", marginTop: "8px" }}
+            >
               <button className="clear-button" onClick={clearSignature}>
                 Clear
               </button>

@@ -6,6 +6,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { FaReceipt } from "react-icons/fa";
@@ -22,17 +23,81 @@ export default function Accounting() {
 
   useEffect(() => {
     setLoading(true);
+    // Listen for tickets with shouldHaveInvoice true (modern tickets)
     const q = query(
       collection(db, "tickets"),
       where("shouldHaveInvoice", "==", true)
     );
 
+    // Also fetch all tickets with a partDeliveryNote (legacy tickets)
+    const legacyQ = query(collection(db, "tickets"));
+
+    // Listen for modern tickets
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const ticketsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
+      // Now check for legacy tickets (missing shouldHaveInvoice but have partDeliveryNote)
+      const legacySnapshot = await getDocs(collection(db, "tickets"));
+      let legacyTickets = [];
+      if (legacySnapshot && legacySnapshot.docs) {
+        legacyTickets = legacySnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((ticket) => {
+            // Exclude if current status is 'Repair Marked Complete'
+            const statusArr = Array.isArray(ticket.ticketStates)
+              ? ticket.ticketStates
+              : [];
+            const lastStatus =
+              statusArr.length > 0 ? statusArr[statusArr.length - 1] : null;
+            // Adjust this value if your status code for 'Repair Marked Complete' is different
+            const isRepairMarkedComplete =
+              lastStatus === 7 || lastStatus === "Repair Marked Complete";
+            return (
+              (!ticket.shouldHaveInvoice ||
+                ticket.shouldHaveInvoice === false) &&
+              ticket.partDeliveryNote &&
+              typeof ticket.partDeliveryNote === "string" &&
+              ticket.partDeliveryNote.trim() !== "" &&
+              Number(ticket.ticketNum) >= 11480 &&
+              Number(ticket.ticketNum) <= 11499 &&
+              !isRepairMarkedComplete
+            );
+          });
+      }
+
+      // For each legacy ticket, check its partsDeliveryNotes for prices > 0
+      for (const ticket of legacyTickets) {
+        try {
+          const snap = await getDoc(
+            doc(db, "partsDeliveryNotes", ticket.partDeliveryNote)
+          );
+          if (snap.exists()) {
+            const docData = snap.data();
+            console.log("Legacy ticket parts data:", docData);
+            // Check for legacy format: arrays of partNumbers, prices, etc.
+            let hasInvoice = false;
+            if (Array.isArray(docData.prices)) {
+              hasInvoice = docData.prices.some((p) => Number(p) > 0);
+            }
+            // If any price > 0, update ticket to have shouldHaveInvoice: true
+            if (hasInvoice) {
+              await import("firebase/firestore").then(
+                ({ updateDoc, doc: fdoc }) =>
+                  updateDoc(fdoc(db, "tickets", ticket.id), {
+                    shouldHaveInvoice: true,
+                  })
+              );
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Now proceed as before for modern tickets
       const partsData = {};
       for (const ticket of ticketsData) {
         if (
@@ -45,9 +110,43 @@ export default function Accounting() {
           );
           if (snap.exists()) {
             const docData = snap.data();
-            partsData[ticket.id] = Array.isArray(docData.parts)
-              ? docData.parts
-              : [];
+            // Support both legacy (array fields) and modern (parts array) formats
+            if (Array.isArray(docData.parts) && docData.parts.length > 0) {
+              partsData[ticket.id] = docData.parts;
+            } else if (
+              Array.isArray(docData.partNumbers) &&
+              Array.isArray(docData.prices) &&
+              Array.isArray(docData.partDescriptions)
+            ) {
+              // Legacy format: reconstruct part objects from parallel arrays
+              const count = Math.max(
+                docData.partNumbers.length,
+                docData.prices.length,
+                docData.partDescriptions.length
+              );
+              partsData[ticket.id] = Array.from({ length: count }).map(
+                (_, i) => ({
+                  partNumber: docData.partNumbers[i] || "",
+                  price: docData.prices[i] || "",
+                  description:
+                    docData.partDescriptions[i] === ">"
+                      ? "service"
+                      : docData.partDescriptions[i],
+                  quantity: (docData.qtys && docData.qtys[i]) || "",
+                  warrantyStatus:
+                    (docData.warrantyStatus && docData.warrantyStatus[i]) || "",
+                  newSN:
+                    (docData.newSerialNumber && docData.newSerialNumber[i]) ||
+                    "",
+                  oldSN:
+                    (docData.oldSerialNumber && docData.oldSerialNumber[i]) ||
+                    "",
+                  service: (docData.services && docData.services[i]) || "",
+                })
+              );
+            } else {
+              partsData[ticket.id] = [];
+            }
           } else {
             partsData[ticket.id] = [];
           }
