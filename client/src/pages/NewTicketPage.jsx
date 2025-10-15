@@ -12,6 +12,7 @@ import { API_ENDPOINTS } from "../config/api";
 
 import { useNavigate } from "react-router-dom";
 import SignatureModal from "../components/SignatureModal"; // adjust path as needed
+import EmailVerifyModal from "../components/EmailVerifyModal";
 // Use public URL instead of import for PDF
 const contractPdfFile = `${window.location.origin}/Amman_new_contract.pdf`;
 // Fallback test PDF for debugging
@@ -55,6 +56,13 @@ const NewTicket = () => {
   const [signatureBlob, setSignatureBlob] = useState(null);
   const [customDeviceType, setCustomDeviceType] = useState("");
   const [showCustomDeviceInput, setShowCustomDeviceInput] = useState(false);
+  const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
+  const [pendingWarrantyStatus, setPendingWarrantyStatus] = useState(null);
+  const [emailVerificationLoading, setEmailVerificationLoading] =
+    useState(false);
+  const [emailVerificationError, setEmailVerificationError] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
   const navigate = useNavigate();
 
   const logoUrlForEmail =
@@ -85,30 +93,68 @@ const NewTicket = () => {
     setFormData((prev) => ({ ...prev, machineType: value }));
   };
 
-  const handleShowModal = async (e) => {
+  const handleShowModal = (e) => {
     e.preventDefault();
-    // Only increment if ticketNum is not set
-    if (!formData.ticketNum) {
-      const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
-      let newTicketNum = null;
-      await runTransaction(db, async (transaction) => {
-        const ticketNumDoc = await transaction.get(ticketNumDocRef);
-        if (!ticketNumDoc.exists()) {
-          transaction.set(ticketNumDocRef, { number: 1000 });
-          newTicketNum = 1000;
-        } else {
-          const current = ticketNumDoc.data().number || 1000;
-          newTicketNum = current + 1;
-          transaction.update(ticketNumDocRef, { number: newTicketNum });
-        }
+    setShowEmailVerifyModal(true);
+    setPendingEmail(formData.emailAddress);
+    setEmailVerificationError("");
+  };
+
+  const handleSendVerificationCode = async (email) => {
+    setEmailVerificationLoading(true);
+    setEmailVerificationError("");
+    const code = generate6DigitCode();
+    setVerificationCode(code);
+    try {
+      await fetch(API_ENDPOINTS.SEND_EMAIL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          subject: "365Solutions Ticket Email Verification Code",
+          html: `<p>Your verification code is: <b>${code}</b></p>`,
+        }),
       });
-      setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+    } catch (err) {
+      setEmailVerificationError(
+        "Failed to send verification code. Please try again."
+      );
     }
-    if (formData.warrantyStatus === "Out of warranty") {
-      setShowReleaseModal(true);
+    setEmailVerificationLoading(false);
+  };
+
+  const handleVerifyCode = async (inputCode) => {
+    setEmailVerificationLoading(true);
+    setEmailVerificationError("");
+    if (inputCode === verificationCode) {
+      setShowEmailVerifyModal(false);
+      setFormData((prev) => ({ ...prev, emailAddress: pendingEmail }));
+      // Only increment if ticketNum is not set
+      if (!formData.ticketNum) {
+        const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
+        let newTicketNum = null;
+        await runTransaction(db, async (transaction) => {
+          const ticketNumDoc = await transaction.get(ticketNumDocRef);
+          if (!ticketNumDoc.exists()) {
+            transaction.set(ticketNumDocRef, { number: 1000 });
+            newTicketNum = 1000;
+          } else {
+            const current = ticketNumDoc.data().number || 1000;
+            newTicketNum = current + 1;
+            transaction.update(ticketNumDocRef, { number: newTicketNum });
+          }
+        });
+        setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+      }
+      if (formData.warrantyStatus === "Out of warranty") {
+        setShowReleaseModal(true);
+      } else {
+        setShowSignatureModal(true);
+      }
     } else {
-      setShowSignatureModal(true);
+      setEmailVerificationError("Incorrect code. Please try again.");
     }
+    setEmailVerificationLoading(false);
   };
 
   const handleCompleteContract = async (contractURL, signatureUrl) => {
@@ -707,8 +753,22 @@ const NewTicket = () => {
           setShowSignatureModal(true);
         }}
       />
+      <EmailVerifyModal
+        isOpen={showEmailVerifyModal}
+        onClose={() => setShowEmailVerifyModal(false)}
+        email={pendingEmail}
+        onSendCode={handleSendVerificationCode}
+        onVerify={handleVerifyCode}
+        loading={emailVerificationLoading}
+        error={emailVerificationError}
+      />
     </div>
   );
 };
+
+// Utility function to generate a random 6-digit code
+function generate6DigitCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 
 export default NewTicket;

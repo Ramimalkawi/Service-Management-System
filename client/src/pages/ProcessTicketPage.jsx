@@ -81,6 +81,54 @@ const ProcessTicketPage = () => {
     }
   };
 
+  // Admin-only: revert ticket status backward
+  const handleRevertStatus = async () => {
+    if (
+      !ticket ||
+      !Array.isArray(ticket.ticketStates) ||
+      ticket.ticketStates.length <= 1
+    ) {
+      alert("Cannot revert status further.");
+      return;
+    }
+    // Prevent revert if last status is 'Repair Marked Complete' (status 7)
+    const lastStatus = ticket.ticketStates[ticket.ticketStates.length - 1];
+    if (lastStatus === 7 || lastStatus === "Repair Marked Complete") {
+      alert(
+        "Cannot revert status: Ticket is marked as 'Repair Marked Complete'."
+      );
+      return;
+    }
+    if (
+      !window.confirm(
+        "Are you sure you want to revert the ticket status? This will remove the last status, technician, and note."
+      )
+    )
+      return;
+    const docRef = doc(db, "tickets", ticket.id);
+    const newStates = ticket.ticketStates.slice(0, -1);
+    const newTechs = Array.isArray(ticket.technicions)
+      ? ticket.technicions.slice(0, -1)
+      : [];
+    const newDetails = Array.isArray(ticket.details)
+      ? ticket.details.slice(0, -1)
+      : [];
+    await updateDoc(docRef, {
+      ticketStates: newStates,
+      technicions: newTechs,
+      details: newDetails,
+    });
+    setTicket((prev) => ({
+      ...prev,
+      ticketStates: newStates,
+      technicions: newTechs,
+      details: newDetails,
+    }));
+    setCurrentStatusIndex(newStates[newStates.length - 1] || 0);
+    setSelectedStatus(newStates[newStates.length - 1] || 0);
+    alert("Ticket status reverted successfully.");
+  };
+
   const closePriceQuotationModal = () => {
     setIsPriceQuotationModalOpen(false);
     setPendingQuotationPart(null);
@@ -490,7 +538,7 @@ const ProcessTicketPage = () => {
       // Update the local ticket state
       setTicket((prev) => ({
         ...prev,
-        caseIDID: newRepairID.trim(),
+        caseID: newRepairID.trim(),
       }));
     } catch (error) {
       console.error("Error updating repair ID:", error);
@@ -503,6 +551,24 @@ const ProcessTicketPage = () => {
   return (
     <div className="process-ticket-layout">
       <div className="process-ticket-container">
+        {/* Admin-only: Revert status button */}
+        {technician?.permission === "Admin" &&
+          ticket.ticketStates?.length > 1 && (
+            <button
+              style={{
+                marginBottom: 16,
+                background: "#e53935",
+                color: "#fff",
+                border: "none",
+                borderRadius: 4,
+                padding: "8px 16px",
+                cursor: "pointer",
+              }}
+              onClick={handleRevertStatus}
+            >
+              Revert Ticket Status (Admin Only)
+            </button>
+          )}
         {ticket.approvalRequired && (
           <div className="approval-toast">
             <span className="pulse-indicator" />
@@ -569,11 +635,19 @@ const ProcessTicketPage = () => {
             onChange={(e) => setNewRepairID(e.target.value)}
             placeholder="Enter repair ID"
             className="repair-id-input"
+            disabled={
+              ticket.ticketStates?.slice(-1)[0] === 7 ||
+              ticket.ticketStates?.slice(-1)[0] === "Repair Marked Complete"
+            }
           />
           <button
             className="repair-id-update-button"
             onClick={handleUpdateRepairID}
-            disabled={!newRepairID.trim()}
+            disabled={
+              !newRepairID.trim() ||
+              ticket.ticketStates?.slice(-1)[0] === 7 ||
+              ticket.ticketStates?.slice(-1)[0] === "Repair Marked Complete"
+            }
           >
             Update Repair ID
           </button>
