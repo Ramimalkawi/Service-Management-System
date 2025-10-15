@@ -41,7 +41,14 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <div className="navbar-title">🍏 Apple Service System</div>
+      <div className="navbar-title">
+        <img
+          src="/logo_new.png"
+          style={{ marginRight: "8px", width: "80px" }}
+          alt="Logo"
+        />{" "}
+        365 Solutions Service System
+      </div>
 
       <div className="navbar-links">
         <NavLink

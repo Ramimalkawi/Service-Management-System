@@ -1,15 +1,19 @@
 import React, { useState } from "react";
 import Modal from "react-modal";
 
-const EmailVerifyModal = ({
-  isOpen,
-  onClose,
-  email,
-  onSendCode,
-  onVerify,
-  loading,
-  error,
-}) => {
+const EmailVerifyModal = (props) => {
+  // Add support for verificationExpired and onUseFallback
+  const {
+    isOpen,
+    onClose,
+    email,
+    onSendCode,
+    onVerify,
+    loading,
+    error,
+    verificationExpired,
+    onUseFallback,
+  } = props;
   const [inputEmail, setInputEmail] = useState(email || "");
   const [codeSent, setCodeSent] = useState(false);
   const [inputCode, setInputCode] = useState("");
@@ -95,6 +99,7 @@ const EmailVerifyModal = ({
             }}
             placeholder="Enter 6-digit code"
             maxLength={6}
+            disabled={verificationExpired}
           />
           <button
             onClick={handleVerify}
@@ -106,10 +111,50 @@ const EmailVerifyModal = ({
               color: "#fff",
               width: "100%",
             }}
-            disabled={inputCode.length !== 6 || loading}
+            disabled={inputCode.length !== 6 || loading || verificationExpired}
           >
             {loading ? "Verifying..." : "Verify Code"}
           </button>
+          {verificationExpired && (
+            <>
+              <div style={{ color: "#e53935", marginTop: 12 }}>
+                Verification expired. You can resend the code or use a fallback
+                email.
+              </div>
+              <button
+                onClick={() => {
+                  setCodeSent(false);
+                  setInputCode("");
+                  setInputEmail(email);
+                  onSendCode(email);
+                }}
+                style={{
+                  marginTop: 12,
+                  padding: "8px 16px",
+                  borderRadius: 4,
+                  border: "none",
+                  background: "#1976d2",
+                  color: "#fff",
+                }}
+              >
+                Resend Code
+              </button>
+              <button
+                onClick={onUseFallback}
+                style={{
+                  marginTop: 12,
+                  marginLeft: 8,
+                  padding: "8px 16px",
+                  borderRadius: 4,
+                  border: "none",
+                  background: "#e53935",
+                  color: "#fff",
+                }}
+              >
+                Use refused@apple.com
+              </button>
+            </>
+          )}
         </>
       )}
       {error && <div style={{ color: "#e53935", marginTop: 12 }}>{error}</div>}

@@ -63,6 +63,8 @@ const NewTicket = () => {
   const [emailVerificationError, setEmailVerificationError] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
+  const [verificationTimeout, setVerificationTimeout] = useState(null);
+  const [verificationExpired, setVerificationExpired] = useState(false);
   const navigate = useNavigate();
 
   const logoUrlForEmail =
@@ -98,11 +100,13 @@ const NewTicket = () => {
     setShowEmailVerifyModal(true);
     setPendingEmail(formData.emailAddress);
     setEmailVerificationError("");
+    setVerificationExpired(false);
   };
 
   const handleSendVerificationCode = async (email) => {
     setEmailVerificationLoading(true);
     setEmailVerificationError("");
+    setVerificationExpired(false);
     const code = generate6DigitCode();
     setVerificationCode(code);
     try {
@@ -115,6 +119,12 @@ const NewTicket = () => {
           html: `<p>Your verification code is: <b>${code}</b></p>`,
         }),
       });
+      // Start 1 minute timer
+      if (verificationTimeout) clearTimeout(verificationTimeout);
+      const timeout = setTimeout(() => {
+        setVerificationExpired(true);
+      }, 60000);
+      setVerificationTimeout(timeout);
     } catch (err) {
       setEmailVerificationError(
         "Failed to send verification code. Please try again."
@@ -126,9 +136,10 @@ const NewTicket = () => {
   const handleVerifyCode = async (inputCode) => {
     setEmailVerificationLoading(true);
     setEmailVerificationError("");
-    if (inputCode === verificationCode) {
+    if (inputCode === verificationCode && !verificationExpired) {
       setShowEmailVerifyModal(false);
       setFormData((prev) => ({ ...prev, emailAddress: pendingEmail }));
+      if (verificationTimeout) clearTimeout(verificationTimeout);
       // Only increment if ticketNum is not set
       if (!formData.ticketNum) {
         const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
@@ -151,10 +162,49 @@ const NewTicket = () => {
       } else {
         setShowSignatureModal(true);
       }
+    } else if (verificationExpired) {
+      setEmailVerificationError(
+        "Verification expired. Please resend code or use fallback email."
+      );
     } else {
       setEmailVerificationError("Incorrect code. Please try again.");
     }
     setEmailVerificationLoading(false);
+  };
+
+  const handleUseFallbackEmail = () => {
+    setShowEmailVerifyModal(false);
+    setFormData((prev) => ({ ...prev, emailAddress: "refused@apple.com" }));
+    if (verificationTimeout) clearTimeout(verificationTimeout);
+    // Only increment if ticketNum is not set
+    if (!formData.ticketNum) {
+      const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
+      let newTicketNum = null;
+      runTransaction(db, async (transaction) => {
+        const ticketNumDoc = await transaction.get(ticketNumDocRef);
+        if (!ticketNumDoc.exists()) {
+          transaction.set(ticketNumDocRef, { number: 1000 });
+          newTicketNum = 1000;
+        } else {
+          const current = ticketNumDoc.data().number || 1000;
+          newTicketNum = current + 1;
+          transaction.update(ticketNumDocRef, { number: newTicketNum });
+        }
+      }).then(() => {
+        setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+        if (formData.warrantyStatus === "Out of warranty") {
+          setShowReleaseModal(true);
+        } else {
+          setShowSignatureModal(true);
+        }
+      });
+    } else {
+      if (formData.warrantyStatus === "Out of warranty") {
+        setShowReleaseModal(true);
+      } else {
+        setShowSignatureModal(true);
+      }
+    }
   };
 
   const handleCompleteContract = async (contractURL, signatureUrl) => {
@@ -761,6 +811,8 @@ const NewTicket = () => {
         onVerify={handleVerifyCode}
         loading={emailVerificationLoading}
         error={emailVerificationError}
+        verificationExpired={verificationExpired}
+        onUseFallback={handleUseFallbackEmail}
       />
     </div>
   );
