@@ -40,7 +40,7 @@ const NewTicket = () => {
     deviceDescription: "",
     warrantyStatus: "Apple limited warranty",
     symptom: "",
-    location: "M",
+    location: technician.location,
     ticketStates: [0],
     technicions: [technician.name],
     countryCode: "962",
@@ -240,13 +240,12 @@ const NewTicket = () => {
       await addDoc(collection(db, "tickets"), {
         ...formData,
         ticketNum: ticketNum,
-        location: technician.location || "M",
         date: formattedDate,
         contractURL,
         noResponsibilityURL,
         customerSignatureURL: signatureUrl || customerSignatureURL,
       });
-
+      console.log("location:", formData.location);
       await sendCustomerNotificationEmail(contractURL, formattedDate);
       alert("Ticket created successfully!");
       navigate("/tickets");
