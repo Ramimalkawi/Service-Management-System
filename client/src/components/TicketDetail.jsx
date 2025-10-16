@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import {
+  getStorage,
+  ref,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import MediaModal from "./MediaModal"; // adjust the path if necessary
 import emailjs from "@emailjs/browser";
 import DeliveryModal from "./DeliveryModal";
@@ -41,7 +46,7 @@ const statusMap = {
   7: "Repair Marked Complete",
 };
 
-export default function TicketDetail({ ticket, onClose }) {
+export default function TicketDetail({ ticket, onClose, onDelete }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [mediaURLs, setMediaURLs] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -397,6 +402,53 @@ export default function TicketDetail({ ticket, onClose }) {
     }
   };
 
+  const technician = JSON.parse(localStorage.getItem("technician"));
+
+  const canDeleteTicket =
+    technician?.permission === "Admin" &&
+    ticket.ticketStates?.slice(-1)[0] !== 7;
+
+  const handleDeleteTicket = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this ticket and all its documents? This action cannot be undone."
+      )
+    )
+      return;
+    try {
+      // Delete all related files from Firebase Storage
+      const fileFields = [
+        "contractURL",
+        "techReportURL",
+        "deliveryNoteURL",
+        "deviceDeliveryNoteURL",
+        "partsDeliveryNoteURL",
+        "noResponsibilityURL",
+        "invoiceURL",
+        "priceQuotationURL",
+        "customerSignatureURL",
+      ];
+      for (const field of fileFields) {
+        if (ticket[field]) {
+          try {
+            const fileRef = ref(storage, ticket[field]);
+            await deleteObject(fileRef);
+          } catch (err) {
+            // Ignore missing files
+          }
+        }
+      }
+      // Delete the ticket document
+      await deleteDoc(doc(db, "tickets", ticket.id));
+      alert("Ticket and all related documents deleted successfully.");
+      if (onDelete) onDelete(ticket.id);
+      if (onClose) onClose();
+    } catch (err) {
+      alert("Failed to delete ticket. Please try again.");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="ticket-detail-container">
       {/* Header with close button */}
@@ -487,6 +539,15 @@ export default function TicketDetail({ ticket, onClose }) {
               <>📁 Download Ticket Folder</>
             )}
           </button>
+          {canDeleteTicket && (
+            <button
+              className="ticket-action-button"
+              style={{ background: "#e53935", color: "#fff" }}
+              onClick={handleDeleteTicket}
+            >
+              🗑️ Delete Ticket
+            </button>
+          )}
           {/* Spinner animation CSS */}
           <style>
             {`

@@ -42,31 +42,31 @@ export default function Accounting() {
       // Now check for legacy tickets (missing shouldHaveInvoice but have partDeliveryNote)
       const legacySnapshot = await getDocs(collection(db, "tickets"));
       let legacyTickets = [];
-      if (legacySnapshot && legacySnapshot.docs) {
-        legacyTickets = legacySnapshot.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((ticket) => {
-            // Exclude if current status is 'Repair Marked Complete'
-            const statusArr = Array.isArray(ticket.ticketStates)
-              ? ticket.ticketStates
-              : [];
-            const lastStatus =
-              statusArr.length > 0 ? statusArr[statusArr.length - 1] : null;
-            // Adjust this value if your status code for 'Repair Marked Complete' is different
-            const isRepairMarkedComplete =
-              lastStatus === 7 || lastStatus === "Repair Marked Complete";
-            return (
-              (!ticket.shouldHaveInvoice ||
-                ticket.shouldHaveInvoice === false) &&
-              ticket.partDeliveryNote &&
-              typeof ticket.partDeliveryNote === "string" &&
-              ticket.partDeliveryNote.trim() !== "" &&
-              Number(ticket.ticketNum) >= 11480 &&
-              Number(ticket.ticketNum) <= 11499 &&
-              !isRepairMarkedComplete
-            );
-          });
-      }
+      // if (legacySnapshot && legacySnapshot.docs) {
+      //   legacyTickets = legacySnapshot.docs
+      //     .map((doc) => ({ id: doc.id, ...doc.data() }))
+      //     .filter((ticket) => {
+      //       // Exclude if current status is 'Repair Marked Complete'
+      //       const statusArr = Array.isArray(ticket.ticketStates)
+      //         ? ticket.ticketStates
+      //         : [];
+      //       const lastStatus =
+      //         statusArr.length > 0 ? statusArr[statusArr.length - 1] : null;
+      //       // Adjust this value if your status code for 'Repair Marked Complete' is different
+      //       const isRepairMarkedComplete =
+      //         lastStatus === 7 || lastStatus === "Repair Marked Complete";
+      //       return (
+      //         (!ticket.shouldHaveInvoice ||
+      //           ticket.shouldHaveInvoice === false) &&
+      //         ticket.partDeliveryNote &&
+      //         typeof ticket.partDeliveryNote === "string" &&
+      //         ticket.partDeliveryNote.trim() !== "" &&
+      //         Number(ticket.ticketNum) >= 11480 &&
+      //         Number(ticket.ticketNum) <= 11499 &&
+      //         !isRepairMarkedComplete
+      //       );
+      //     });
+      // }
 
       // For each legacy ticket, check its partsDeliveryNotes for prices > 0
       for (const ticket of legacyTickets) {

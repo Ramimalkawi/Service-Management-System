@@ -32,6 +32,9 @@ const Tickets = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStartNum, setExportStartNum] = useState("");
   const [exportEndNum, setExportEndNum] = useState("");
+  const [exportMode, setExportMode] = useState("ticketNumber"); // "ticketNumber" or "date"
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
   const exportRef = useRef();
 
   useEffect(() => {
@@ -136,29 +139,76 @@ const Tickets = () => {
     setShowExportModal(true);
   };
 
-  const handleConfirmExport = () => {
-    // Find indices for start and end ticketNum
-    const startIdx = filteredTickets.findIndex(
-      (t) => String(t.ticketNum) === exportStartNum
-    );
-    const endIdx = filteredTickets.findIndex(
-      (t) => String(t.ticketNum) === exportEndNum
-    );
-
-    if (startIdx === -1 || endIdx === -1) {
-      alert("Start or end ticket number not found in the filtered list.");
-      return;
+  // Helper to parse DD/MM/YYYY or YYYY-MM-DD to Date (UTC, no time)
+  function parseTicketDate(dateStr) {
+    if (!dateStr) return null;
+    // Remove time if present (e.g., '15/10/2025, 08:37:31 PM' => '15/10/2025')
+    const dateOnly = dateStr.split(",")[0].trim();
+    if (dateOnly.includes("/")) {
+      // DD/MM/YYYY
+      const [day, month, year] = dateOnly.split("/");
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    } else if (dateOnly.includes("-")) {
+      // YYYY-MM-DD
+      const [year, month, day] = dateOnly.split("-");
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
     }
+    return null;
+  }
 
-    // Ensure startIdx <= endIdx
-    const from = Math.min(startIdx, endIdx);
-    const to = Math.max(startIdx, endIdx);
+  // Helper to compare only the date part (ignore time)
+  function isDateInRange(ticketDate, fromDate, toDate) {
+    if (!ticketDate || !fromDate || !toDate) return false;
+    // All should be Date objects at UTC midnight
+    return ticketDate >= fromDate && ticketDate <= toDate;
+  }
 
-    const ticketsToExport = filteredTickets.slice(from, to + 1);
-
-    if (ticketsToExport.length === 0) {
-      alert("No tickets to export for the selected range.");
-      return;
+  const handleConfirmExport = () => {
+    let ticketsToExport = [];
+    if (exportMode === "ticketNumber") {
+      // Find indices for start and end ticketNum
+      const startIdx = filteredTickets.findIndex(
+        (t) => String(t.ticketNum) === exportStartNum
+      );
+      const endIdx = filteredTickets.findIndex(
+        (t) => String(t.ticketNum) === exportEndNum
+      );
+      if (startIdx === -1 || endIdx === -1) {
+        alert("Start or end ticket number not found in the filtered list.");
+        return;
+      }
+      // Ensure startIdx <= endIdx
+      const from = Math.min(startIdx, endIdx);
+      const to = Math.max(startIdx, endIdx);
+      ticketsToExport = filteredTickets.slice(from, to + 1);
+    } else if (exportMode === "date") {
+      if (!exportStartDate || !exportEndDate) {
+        alert("Please select both start and end dates.");
+        return;
+      }
+      const fromDate = parseTicketDate(exportStartDate);
+      const toDate = parseTicketDate(exportEndDate);
+      ticketsToExport = filteredTickets.filter((t, idx) => {
+        const ticketDate = parseTicketDate(t.date);
+        if (idx < 5) {
+          console.log("Ticket:", t);
+          console.log("Ticket date string:", t.date, "Parsed:", ticketDate);
+          console.log(
+            "Export range:",
+            exportStartDate,
+            exportEndDate,
+            "Parsed:",
+            fromDate,
+            toDate
+          );
+          console.log("In range:", isDateInRange(ticketDate, fromDate, toDate));
+        }
+        return isDateInRange(ticketDate, fromDate, toDate);
+      });
+      if (ticketsToExport.length === 0) {
+        alert("No tickets found in the selected date range.");
+        return;
+      }
     }
 
     // Prepare data for Excel
@@ -180,17 +230,24 @@ const Tickets = () => {
       Symptom: t.symptom,
       RepairID: t.caseID,
       Notes: t.notes,
-      Invoice: t.hasAnInvoice === true ? "Yes" : "No",
-      // StatusTimeline: t.ticketStates ? t.ticketStates.join(", ") : "",
+      Invoice: t.hasAnInvoice === true || t.shouldHaveInvoice ? "Yes" : "No",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Tickets");
-    XLSX.writeFile(
-      wb,
-      `tickets_export_${exportStartNum}_to_${exportEndNum}.xlsx`
-    );
+    let fileLabel =
+      exportMode === "ticketNumber"
+        ? `${exportStartNum}_to_${exportEndNum}`
+        : `${exportStartDate}_to_${exportEndDate}`;
+    XLSX.writeFile(wb, `tickets_export_${fileLabel}.xlsx`);
     setShowExportModal(false);
+  };
+
+  // Remove ticket from state after deletion
+  const handleDeleteTicketFromList = (deletedId) => {
+    setTickets((prev) => prev.filter((t) => t.id !== deletedId));
+    setFilteredTickets((prev) => prev.filter((t) => t.id !== deletedId));
+    navigate("/tickets");
   };
 
   if (loading) return <p>Loading...</p>;
@@ -351,6 +408,7 @@ const Tickets = () => {
                       onClose={() => {
                         navigate("/tickets");
                       }}
+                      onDelete={handleDeleteTicketFromList}
                     />
                   </div>
                 )}
@@ -375,6 +433,7 @@ const Tickets = () => {
               onClose={() => {
                 navigate("/tickets");
               }}
+              onDelete={handleDeleteTicketFromList}
             />
           </div>
         )}
@@ -385,26 +444,64 @@ const Tickets = () => {
           <div className="modal-content">
             <h3>Export Tickets to Excel</h3>
             <label>
-              Start Ticket Number:
-              <input
-                type="text"
-                value={exportStartNum}
-                onChange={(e) => setExportStartNum(e.target.value)}
-                style={{ marginLeft: "8px", width: "120px" }}
-                placeholder="e.g. 111097"
-              />
+              Export Mode:
+              <select
+                value={exportMode}
+                onChange={(e) => setExportMode(e.target.value)}
+                style={{ marginLeft: "8px", width: "180px" }}
+              >
+                <option value="ticketNumber">By Ticket Number</option>
+                <option value="date">By Date</option>
+              </select>
             </label>
             <br />
-            <label>
-              End Ticket Number:
-              <input
-                type="text"
-                value={exportEndNum}
-                onChange={(e) => setExportEndNum(e.target.value)}
-                style={{ marginLeft: "8px", width: "120px" }}
-                placeholder="e.g. 111101"
-              />
-            </label>
+            {exportMode === "ticketNumber" ? (
+              <>
+                <label>
+                  Start Ticket Number:
+                  <input
+                    type="text"
+                    value={exportStartNum}
+                    onChange={(e) => setExportStartNum(e.target.value)}
+                    style={{ marginLeft: "8px", width: "120px" }}
+                    placeholder="e.g. 111097"
+                  />
+                </label>
+                <br />
+                <label>
+                  End Ticket Number:
+                  <input
+                    type="text"
+                    value={exportEndNum}
+                    onChange={(e) => setExportEndNum(e.target.value)}
+                    style={{ marginLeft: "8px", width: "120px" }}
+                    placeholder="e.g. 111101"
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label>
+                  Start Date:
+                  <input
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    style={{ marginLeft: "8px", width: "160px" }}
+                  />
+                </label>
+                <br />
+                <label>
+                  End Date:
+                  <input
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    style={{ marginLeft: "8px", width: "160px" }}
+                  />
+                </label>
+              </>
+            )}
             <br />
             <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
               <button
@@ -439,14 +536,25 @@ const Tickets = () => {
             <p style={{ marginTop: "12px", color: "#888" }}>
               Number of tickets to export:{" "}
               {(() => {
-                const startIdx = filteredTickets.findIndex(
-                  (t) => String(t.ticketNum) === exportStartNum
-                );
-                const endIdx = filteredTickets.findIndex(
-                  (t) => String(t.ticketNum) === exportEndNum
-                );
-                if (startIdx === -1 || endIdx === -1) return 0;
-                return Math.abs(endIdx - startIdx) + 1;
+                if (exportMode === "ticketNumber") {
+                  const startIdx = filteredTickets.findIndex(
+                    (t) => String(t.ticketNum) === exportStartNum
+                  );
+                  const endIdx = filteredTickets.findIndex(
+                    (t) => String(t.ticketNum) === exportEndNum
+                  );
+                  if (startIdx === -1 || endIdx === -1) return 0;
+                  return Math.abs(endIdx - startIdx) + 1;
+                } else if (exportMode === "date") {
+                  if (!exportStartDate || !exportEndDate) return 0;
+                  const fromDate = parseTicketDate(exportStartDate);
+                  const toDate = parseTicketDate(exportEndDate);
+                  return filteredTickets.filter((t) => {
+                    const ticketDate = parseTicketDate(t.date);
+                    return isDateInRange(ticketDate, fromDate, toDate);
+                  }).length;
+                }
+                return 0;
               })()}
             </p>
           </div>
