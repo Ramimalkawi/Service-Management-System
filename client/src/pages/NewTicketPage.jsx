@@ -240,6 +240,7 @@ const NewTicket = () => {
       await addDoc(collection(db, "tickets"), {
         ...formData,
         ticketNum: ticketNum,
+        location: technician.location || "M",
         date: formattedDate,
         contractURL,
         noResponsibilityURL,
