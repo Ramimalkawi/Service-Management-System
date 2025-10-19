@@ -1,3 +1,8 @@
+/* Ensure status timeline bubbles are not clipped */
+.status-timeline,
+.ticket-detail-group {
+  overflow: visible !important;
+}
 /* .status-timeline {
   list-style: none;
   padding-left: 0;
@@ -135,7 +140,7 @@
 .status-step {
   position: relative;
   padding-left: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   font-size: 14px;
   color: #444;
 }
@@ -386,4 +391,26 @@
     width: 100vw;
     margin-bottom: 16px;
   }
+}
+
+.status-detail-bubble {
+  pointer-events: auto;
+  /* Optional: add a fade-in animation */
+  animation: fadeInBubble 0.15s;
+}
+
+@keyframes fadeInBubble {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(-50%);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(-50%);
+  }
+}
+
+.status-timeline,
+.ticket-detail-group {
+  overflow: visible !important;
 }

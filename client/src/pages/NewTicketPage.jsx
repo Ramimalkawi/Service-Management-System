@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   collection,
   addDoc,
+  setDoc,
   runTransaction,
   doc,
   getDoc,
@@ -23,11 +24,13 @@ import "./NewTicket.css";
 import CustomerContractModal from "../components/CustomerContractModal";
 import OutOfWarrantyReleaseModal from "../components/OutOfWarrantyReleaseModal";
 import { useUser } from "../context/userContext";
+import TermsAndConditionsPage from "../components/TermsAndConditions";
 
 const NewTicket = () => {
   const { technician } = useUser();
   const [formData, setFormData] = useState({
     ticketNum: null,
+    ticketId: "",
     customerName: "",
     mobileNumber: "",
     emailAddress: "",
@@ -133,6 +136,11 @@ const NewTicket = () => {
     setEmailVerificationLoading(false);
   };
 
+  // Utility to generate a random 3-digit number as string
+  function generate3DigitNumber() {
+    return Math.floor(100 + Math.random() * 900).toString();
+  }
+
   const handleVerifyCode = async (inputCode) => {
     setEmailVerificationLoading(true);
     setEmailVerificationError("");
@@ -155,7 +163,12 @@ const NewTicket = () => {
             transaction.update(ticketNumDocRef, { number: newTicketNum });
           }
         });
-        setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+        const random3 = generate3DigitNumber();
+        setFormData((prev) => ({
+          ...prev,
+          ticketNum: newTicketNum,
+          ticketId: `${prev.location}${newTicketNum}${random3}`
+        }));
       }
       if (formData.warrantyStatus === "Out of warranty") {
         setShowReleaseModal(true);
@@ -191,7 +204,12 @@ const NewTicket = () => {
           transaction.update(ticketNumDocRef, { number: newTicketNum });
         }
       }).then(() => {
-        setFormData((prev) => ({ ...prev, ticketNum: newTicketNum }));
+        const random3 = generate3DigitNumber();
+        setFormData((prev) => ({
+          ...prev,
+          ticketNum: newTicketNum,
+          ticketId: `${prev.location}${newTicketNum}${random3}`
+        }));
         if (formData.warrantyStatus === "Out of warranty") {
           setShowReleaseModal(true);
         } else {
@@ -236,8 +254,8 @@ const NewTicket = () => {
         hour12: true,
       });
 
-      // Save ticket
-      await addDoc(collection(db, "tickets"), {
+      // Save ticket with ticketId as document ID
+      await setDoc(doc(db, "tickets", formData.ticketId), {
         ...formData,
         ticketNum: ticketNum,
         date: formattedDate,
@@ -248,6 +266,7 @@ const NewTicket = () => {
       console.log("location:", formData.location);
       await sendCustomerNotificationEmail(contractURL, formattedDate);
       alert("Ticket created successfully!");
+      alert("Please add photos of the device before repair starts.");
       navigate("/tickets");
     } catch (error) {
       console.error("Error creating ticket:", error);
@@ -470,8 +489,8 @@ const NewTicket = () => {
         <h2>Create New Ticket</h2>
         <form onSubmit={(e) => e.preventDefault()} className="ticket-form">
           <div className="form-group readonly">
-            <label>Ticket Number</label>
-            <div className="readonly-value">{formData.ticketNum}</div>
+            <label>Ticket ID</label>
+            <div className="readonly-value">{formData.ticketId}</div>
           </div>
 
           <div className="form-group">

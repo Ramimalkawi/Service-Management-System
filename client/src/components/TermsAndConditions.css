@@ -1,0 +1,133 @@
+/* TermsAndConditions.css — PDF-matching screen + print styles */
+
+/* Page frame (A4-like canvas) */
+.t-page {
+  background: #ffffff;
+  color: #111;
+  font-family: "Times New Roman", Times, Georgia, "Noto Serif", serif;
+  line-height: 1.5;
+  margin: 0 auto;
+  padding: 18mm 18mm 22mm;
+  max-width: 210mm;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Headings */
+.t-header h1,
+.t-section > h2 {
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.t-header h1 {
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 14px;
+  text-transform: none;
+}
+
+.t-section > h2 {
+  font-size: 16px;
+  border-bottom: 1px solid #000;
+  padding-bottom: 4px;
+  margin-top: 18px;
+}
+
+.t-section h3 {
+  font-size: 15px;
+  margin: 10px 0 6px;
+}
+
+/* Paragraphs & lists */
+.t-section p {
+  margin: 6px 0;
+  text-align: justify;
+}
+
+.t-section ul,
+.t-section ol {
+  margin: 6px 0 6px 18px;
+}
+
+.t-section li {
+  margin: 3px 0;
+}
+
+/* Emphasis token inside headings (e.g., company name inline) */
+.t-emb {
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* Link look matches PDF (plain, underlined) */
+.t-link {
+  color: #000;
+  text-decoration: underline;
+}
+
+/* Note/sidenote */
+.t-note {
+  font-style: italic;
+}
+
+/* Signature area */
+.t-ack {
+  margin-top: 18px;
+}
+.t-signature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.t-signature-grid div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.t-line {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  min-width: 160px;
+  height: 0;
+}
+
+/* Footer and page break */
+.t-footer {
+  margin-top: 12px;
+  text-align: left;
+  font-size: 12px;
+}
+.t-break {
+  border: none;
+  border-top: 1px dashed #333;
+  margin: 18px 0;
+}
+
+/* Arabic block (RTL), try to respect PDF look with a simple serif/arabic font */
+.t-ar {
+  font-family:
+    "Noto Naskh Arabic", "Amiri", "Scheherazade New", Arial, sans-serif;
+}
+.t-ar p {
+  text-align: justify;
+}
+
+/* Print: remove shadow, full bleed A4 */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: #fff;
+  }
+  .t-page {
+    box-shadow: none;
+    max-width: none;
+    padding: 0;
+  }
+  .t-break {
+    page-break-after: always;
+  }
+}

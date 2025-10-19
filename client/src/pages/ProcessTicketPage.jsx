@@ -13,6 +13,7 @@ import PartsModal from "../components/PartsModal";
 import PriceQuotationModal from "../components/PriceQuotationModal";
 import { API_ENDPOINTS } from "../config/api";
 import MediaModal from "../components/MediaModal";
+import TicketStatusTimeline from "../components/TicketStatusTimeline";
 
 Modal.setAppElement("#root"); // for accessibility
 const statusOptions = [
@@ -794,7 +795,21 @@ const ProcessTicketPage = () => {
         <button className="side-button" onClick={openPriceQuotationModal}>
           Price Quotation
         </button>
+        <TicketStatusTimeline
+          states={ticket.ticketStates || []}
+          details={ticket.details || []}
+          isEditable={ticket.ticketStates?.slice(-1)[0] !== 7}
+          onUpdateDetail={async (idx, newDetail) => {
+            // Update Firestore
+            const docRef = doc(db, "tickets", ticket.id);
+            const newDetails = [...(ticket.details || [])];
+            newDetails[idx] = newDetail;
+            await updateDoc(docRef, { details: newDetails });
+            setTicket((prev) => ({ ...prev, details: newDetails }));
+          }}
+        />
       </div>
+
       <PartsModal
         isOpen={isPartsModalOpen}
         onClose={closePartsModal}

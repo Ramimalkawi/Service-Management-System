@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import ReactDOMServer from "react-dom/server";
 import JSZip from "jszip";
+import logo from "../assets/logo-and-apple.png";
 import { saveAs } from "file-saver";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -45,6 +47,74 @@ const statusMap = {
   6: "Ready For Pickup",
   7: "Repair Marked Complete",
 };
+
+const StatusStepWithBubble = React.memo(function StatusStepWithBubble({
+  statusCode,
+  statusText,
+  detail,
+}) {
+  const [showBubble, setShowBubble] = useState(false);
+  return (
+    <li
+      className="status-step"
+      style={{ position: "relative", cursor: "pointer" }}
+      onMouseEnter={() => console.log("detail:", detail) || setShowBubble(true)}
+      onMouseLeave={() => console.log("hide bubble") || setShowBubble(false)}
+    >
+      <span style={{ fontWeight: "bold" }}>{statusText} </span>
+      <p
+        style={{
+          margin: 2,
+          backgroundColor: detail ? "#f9f9f9" : "#fff0f0",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          border: detail ? "1px solid #eee" : "1px solid #e57373",
+        }}
+      >
+        {detail ? (
+          typeof detail === "string" ? (
+            detail
+          ) : (
+            JSON.stringify(detail, null, 2)
+          )
+        ) : (
+          <em>No detail available</em>
+        )}
+      </p>
+      {showBubble && (
+        <div
+          className="status-detail-bubble"
+          style={{
+            position: "absolute",
+            left: "calc(100% + 8px)",
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: detail ? "#fff" : "#ffeaea",
+            border: detail ? "1px solid #ccc" : "1px solid #e57373",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            padding: "10px 16px",
+            minWidth: "220px",
+            maxWidth: "350px",
+            zIndex: 1000,
+            whiteSpace: "pre-wrap",
+            color: detail ? undefined : "#a72828",
+          }}
+        >
+          {detail ? (
+            typeof detail === "string" ? (
+              detail
+            ) : (
+              JSON.stringify(detail, null, 2)
+            )
+          ) : (
+            <em>No detail available</em>
+          )}
+        </div>
+      )}
+    </li>
+  );
+});
 
 export default function TicketDetail({ ticket, onClose, onDelete }) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -98,9 +168,6 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
   }, [ticket]);
 
   const printRef = useRef(null);
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
 
   const [contractURL, setContractURL] = useState(null);
   // Helper to fetch a file from Firebase Storage and add to zip
@@ -449,6 +516,126 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     }
   };
 
+  const PrintableContent = ({ ticket }) => {
+    if (!ticket) {
+      return null;
+    }
+
+    // Inline styles for printing
+    const styles = `
+      .print-root { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 800px; }
+      .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px; }
+      .receipt-logo { max-width: 250px; height: auto; }
+      .receipt-header h1 { font-size: 2.5rem; color: #0056b3; margin: 0; }
+      .receipt-details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+      .receipt-section h2 { font-size: 1.5rem; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+      .receipt-section p { margin: 10px 0; font-size: 1rem; line-height: 1.6; }
+      .receipt-section p strong { color: #555; min-width: 120px; display: inline-block; }
+      .receipt-footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: center; font-size: 0.9rem; color: #777; }
+      .footer-contact { margin-top: 10px; }
+    `;
+
+    return (
+      <div className="print-root">
+        <style>{styles}</style>
+        <div className="receipt-container">
+          <h2 style={{ color: "#1ccad4", marginBottom: 16 }}>
+            Service Ticket #{ticket.location}
+            {ticket.ticketNum}
+          </h2>
+          <hr style={{ margin: "16px 0", borderColor: "#eee" }} />
+          <div style={{ marginBottom: 18 }}>
+            <strong>Date:</strong> {ticket.date}
+            <br />
+            <strong>ID:</strong> {ticket.id}
+          </div>
+          <div className="receipt-details">
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Customer Info</h3>
+              <p>
+                <strong>Name:</strong> {ticket.customerName}
+              </p>
+              <p>
+                <strong>Email:</strong> {ticket.emailAddress}
+              </p>
+              <p>
+                <strong>Mobile:</strong> {ticket.mobileNumber}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Device Info</h3>
+              <p>
+                <strong>Type:</strong> {ticket.machineType}
+              </p>
+              <p>
+                <strong>Description:</strong> {ticket.deviceDescription}
+              </p>
+              <p>
+                <strong>Serial Number:</strong> {ticket.serialNum}
+              </p>
+              <p>
+                <strong>Warranty Status:</strong> {ticket.warrantyStatus}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Repair Info</h3>
+              <p>
+                <strong>Symptom:</strong> {ticket.symptom}
+              </p>
+              <p>
+                <strong>Repair ID:</strong> {ticket.caseID}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Notes</h3>
+              <p>
+                {ticket.notes ? ticket.notes : <em>No notes added yet.</em>}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handlePrint2 = () => {
+    if (!ticket) return;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      const contentString = ReactDOMServer.renderToString(
+        <PrintableContent ticket={ticket} />
+      );
+      printWindow.document.write(contentString);
+      printWindow.document.close();
+      printWindow.focus();
+      // A small timeout can still help ensure rendering is complete.
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 50);
+    }
+
+    // image.onerror = () => {
+    //   console.error("Could not load logo for printing. Printing without it.");
+    //   // Fallback to printing without the image if it fails to load
+    //   const printWindow = window.open("", "_blank");
+    //   if (printWindow) {
+    //     const contentString = ReactDOMServer.renderToString(
+    //       <PrintableContent ticket={ticket} />
+    //     );
+    //     printWindow.document.write(contentString);
+    //     printWindow.document.close();
+    //     printWindow.focus();
+    //     setTimeout(() => {
+    //       printWindow.print();
+    //       printWindow.close();
+    //     }, 50);
+    //   }
+    // };
+  };
+
   return (
     <div className="ticket-detail-container">
       {/* Header with close button */}
@@ -467,7 +654,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
       {/* ✅ Sticky Action Bar */}
       <div className="ticket-detail-sticky-bar">
         <div style={{ display: "flex", width: "100%", gap: "12px" }}>
-          <button className="ticket-action-button" onClick={handlePrint}>
+          <button className="ticket-action-button" onClick={handlePrint2}>
             <FaPrint /> Print
           </button>
 
@@ -489,8 +676,26 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
           <button
             className="ticket-action-button"
             onClick={() => setShowMediaModal(true)}
+            style={{ position: 'relative' }}
           >
             🖼️ Media
+            {(!ticket.mediaURLs || ticket.mediaURLs.length === 0) && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 8,
+                  width: 10,
+                  height: 10,
+                  background: '#e53935',
+                  borderRadius: '50%',
+                  display: 'inline-block',
+                  border: '2px solid #fff',
+                  boxShadow: '0 0 2px #a72828',
+                }}
+                title="No media uploaded"
+              />
+            )}
           </button>
           <button
             className={`ticket-action-button ${isEditing ? "edit-active" : ""} ${ticket.ticketStates?.slice(-1)[0] === 7 ? "disabled" : ""}`}
@@ -596,19 +801,6 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
           No contract URL available for this ticket.
         </p>
       )}
-
-      {/* Hidden printable ticket */}
-      <div
-        style={{
-          visibility: "hidden",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: -1,
-        }}
-      >
-        <PrintableTicket ref={printRef} ticket={ticket} />
-      </div>
 
       <div className="ticket-detail-body">
         <div className="ticket-detail-group">
@@ -816,11 +1008,14 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
             <h3>📈 Status Timeline</h3>
             <ol className="status-timeline">
               {ticket.ticketStates.map((statusCode, index) => (
-                <li key={index} className="status-step">
-                  <span>
-                    {statusMap[statusCode] || `Unknown (${statusCode})`}
-                  </span>
-                </li>
+                <StatusStepWithBubble
+                  key={index}
+                  statusCode={statusCode}
+                  statusText={
+                    statusMap[statusCode] || `Unknown (${statusCode})`
+                  }
+                  detail={ticket.details?.[index]}
+                />
               ))}
             </ol>
           </div>
