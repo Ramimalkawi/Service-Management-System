@@ -1,5 +1,5 @@
 // ProcessTicketPage.jsx
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Modal from "react-modal";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -43,6 +43,7 @@ const emailFooterLogo =
   "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/email_logo.png?alt=media&token=8691c5b9-a58b-4076-891c-d1d3d4275a6b";
 
 const ProcessTicketPage = () => {
+  const navigate = useNavigate();
   const [showReportModal, setShowReportModal] = useState(false);
   const { id } = useParams();
   const { technician } = useUser();
@@ -551,6 +552,21 @@ const ProcessTicketPage = () => {
 
   return (
     <div className="process-ticket-layout">
+      <button
+        style={{
+          marginBottom: 16,
+          background: "#1976d2",
+          color: "#fff",
+          border: "none",
+          borderRadius: 4,
+          padding: "8px 16px",
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+        onClick={() => navigate(`/tickets/${id}`)}
+      >
+        ← Back to Tickets
+      </button>
       <div className="process-ticket-container">
         {/* Admin-only: Revert status button */}
         {technician?.permission === "Admin" &&
@@ -587,15 +603,33 @@ const ProcessTicketPage = () => {
 
         <div className="ticket-info-grid">
           <div className="ticket-info-item">
-            <label>Ticket#:</label>
-            <span>
-              {ticket.location}
-              {ticket.ticketNum}
-            </span>
+            <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+              <div style={{ flexGrow: 1 }}>
+                <label>Ticket#:</label>
+                <span>
+                  {ticket.location}
+                  {ticket.ticketNum}
+                </span>
+              </div>
+              <div style={{ flexGrow: 1 }}>
+                <label>Date:</label>
+                <span>{ticket.date}</span>
+              </div>
+            </div>
           </div>
           <div className="ticket-info-item">
-            <label>Customer:</label>
-            <span>{ticket.customerName}</span>
+            <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+              <div style={{ flexGrow: 1 }}>
+                <label>Customer:</label>
+                <span>{ticket.customerName}</span>
+              </div>
+              {ticket.customerType === "Business" && (
+                <div style={{ flexGrow: 1 }}>
+                  <label>Company:</label>
+                  <span>{ticket.companyName || "N/A"}</span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="ticket-info-item">
             <label>Mobile:</label>

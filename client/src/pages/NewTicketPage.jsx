@@ -167,7 +167,7 @@ const NewTicket = () => {
         setFormData((prev) => ({
           ...prev,
           ticketNum: newTicketNum,
-          ticketId: `${prev.location}${newTicketNum}${random3}`
+          ticketId: `${prev.location}${newTicketNum}${random3}`,
         }));
       }
       if (formData.warrantyStatus === "Out of warranty") {
@@ -208,7 +208,7 @@ const NewTicket = () => {
         setFormData((prev) => ({
           ...prev,
           ticketNum: newTicketNum,
-          ticketId: `${prev.location}${newTicketNum}${random3}`
+          ticketId: `${prev.location}${newTicketNum}${random3}`,
         }));
         if (formData.warrantyStatus === "Out of warranty") {
           setShowReleaseModal(true);

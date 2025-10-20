@@ -140,7 +140,7 @@ const ReceiptPage = () => {
         invoiceURL: filePath,
       });
       alert("Receipt saved successfully!");
-      navigate(`/tickets/`);
+      // navigate(`/tickets/`);
 
       // Restore UI
       if (imgEl) {

@@ -115,9 +115,9 @@ const PartsDeliveryPage = () => {
         hasAnInvoice: showNextArrow,
       });
       alert("Parts Delivery Note saved successfully!");
-      if (!showNextArrow) {
-        navigate(`/tickets/`);
-      }
+      // if (!showNextArrow) {
+      //   navigate(`/tickets/`);
+      // }
     } catch (error) {
       console.error("Failed to save PDF:", error);
       alert("An error occurred while saving.");

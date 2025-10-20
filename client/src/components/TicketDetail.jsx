@@ -676,22 +676,22 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
           <button
             className="ticket-action-button"
             onClick={() => setShowMediaModal(true)}
-            style={{ position: 'relative' }}
+            style={{ position: "relative" }}
           >
             🖼️ Media
             {(!ticket.mediaURLs || ticket.mediaURLs.length === 0) && (
               <span
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 6,
                   right: 8,
                   width: 10,
                   height: 10,
-                  background: '#e53935',
-                  borderRadius: '50%',
-                  display: 'inline-block',
-                  border: '2px solid #fff',
-                  boxShadow: '0 0 2px #a72828',
+                  background: "#e53935",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                  border: "2px solid #fff",
+                  boxShadow: "0 0 2px #a72828",
                 }}
                 title="No media uploaded"
               />
@@ -833,6 +833,22 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
                   className="edit-input"
                 />
               </div>
+              {ticket.customerType === "Business" && (
+                <div className="edit-field">
+                  <label>
+                    <strong>Company:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    value={editedTicket.companyName}
+                    onChange={(e) =>
+                      handleInputChange("companyName", e.target.value)
+                    }
+                    className="edit-input"
+                  />
+                </div>
+              )}
+
               <div className="edit-field">
                 <label>
                   <strong>Mobile:</strong>
@@ -855,6 +871,11 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Email:</strong> {ticket.emailAddress}
               </p>
+              {ticket.customerType === "Business" && (
+                <p>
+                  <strong>Company:</strong> {ticket.companyName}
+                </p>
+              )}
               <p>
                 <strong>Mobile:</strong> {ticket.mobileNumber}
               </p>

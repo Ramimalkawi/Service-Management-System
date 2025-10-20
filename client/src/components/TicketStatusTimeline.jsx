@@ -144,18 +144,21 @@ export default function TicketStatusTimeline({
               Edit Detail for:{" "}
               {statusMap[states[editingIdx]] || "Unknown Status"}
             </label>
-            <input
+            <textarea
               type="text"
               value={editValue}
               autoFocus
+              rows={4}
               style={{
                 padding: "8px 12px",
                 borderRadius: 4,
                 border: "1px solid #1ccad4",
                 fontSize: 16,
+                resize: "vertical",
               }}
               onChange={(e) => setEditValue(e.target.value)}
             />
+
             <div
               style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}
             >

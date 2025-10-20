@@ -401,9 +401,9 @@ const DeliveryPage = () => {
 
         alert("Delivery note was saved successfully");
         setSaving(false);
-        if (!showNextButton) {
-          navigate(`/tickets/`);
-        }
+        // if (!showNextButton) {
+        //   navigate(`/tickets/`);
+        // }
       }, 200); // slight delay ensures rendering is complete
     } catch (err) {
       console.error("Error saving delivery note:", err);
