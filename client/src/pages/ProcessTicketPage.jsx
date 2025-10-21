@@ -332,7 +332,7 @@ const ProcessTicketPage = () => {
               <p>Thank you for your patience and for choosing 365Solutions for your device repair needs.</p>
               <div class="footer">
                 <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
-                <p>365Solutions - Apple Authorized Service Center</p>
+                <p>365Solutions - Apple Authorized Service Provider</p>
                 <p>Email: <a href="mailto:${companyEmail}">${companyEmail}</a></p>
               </div>
             </div>

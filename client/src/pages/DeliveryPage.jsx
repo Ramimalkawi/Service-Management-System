@@ -264,7 +264,7 @@ const DeliveryPage = () => {
               
               <div class="footer">
                 <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
-                <p>365Solutions - Apple Authorized Service Center</p>
+                <p>365Solutions - Apple Authorized Service Provider</p>
                 <p>Professional device repair services you can trust</p>
                 <p><strong>Thank you for your business!</strong></p>
               </div>

@@ -385,7 +385,7 @@ const NewTicket = () => {
               </ul>
               
               <div class="footer">
-                <p>365Solutions - Apple Authorized Service Center</p>
+                <p>365Solutions - Apple Authorized Service Provider</p>
                 <p>Professional device repair services you can trust</p>
               </div>
             </div>
