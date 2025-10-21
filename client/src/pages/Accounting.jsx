@@ -19,6 +19,11 @@ export default function Accounting() {
   const [partsByTicket, setPartsByTicket] = useState({});
   const [paymentsByTicket, setPaymentsByTicket] = useState({});
   const [refundsByTicket, setRefundsByTicket] = useState({});
+  const [sortConfig, setSortConfig] = useState({
+    column: "ticketNum",
+    asc: true,
+  });
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -246,23 +251,27 @@ export default function Accounting() {
   const formatTicketDate = (d) => {
     if (!d) return "N/A";
     try {
-      if (typeof d === "string") return d;
-      if (d.toDate && typeof d.toDate === "function") {
-        return d.toDate().toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+      let dateObj = null;
+      if (typeof d === "string") {
+        // try parse string into Date, otherwise return date-part fallback
+        const parsed = new Date(d);
+        if (!isNaN(parsed)) dateObj = parsed;
+        else {
+          // fallback: try to strip time portion if present (ISO or ' ' separated)
+          const datePart = d.split("T")[0].split(" ")[0];
+          return datePart || d;
+        }
+      } else if (d.toDate && typeof d.toDate === "function") {
+        dateObj = d.toDate();
+      } else {
+        dateObj = new Date(d);
       }
-      // fallback for plain Date-like values
-      return new Date(d).toLocaleString("en-GB", {
+
+      if (!dateObj || isNaN(dateObj)) return String(d);
+      return dateObj.toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
       });
     } catch (e) {
       return String(d);
@@ -281,6 +290,22 @@ export default function Accounting() {
       >
         Accounting - Tickets Requiring Invoices
       </h2>
+      <div style={{ marginBottom: "1rem", maxWidth: 400 }}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by Ticket # or Customer Name"
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            fontSize: "1rem",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            marginBottom: 0,
+          }}
+        />
+      </div>
       {loading ? (
         <p>Loading...</p>
       ) : tickets.length === 0 ? (
@@ -297,83 +322,43 @@ export default function Accounting() {
           >
             <thead style={{ background: "#f5f5f5" }}>
               <tr>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Ticket #
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Date
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Customer
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Device
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Total Amount
-                </th>
-                <th
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #e0e0e0",
-                    textAlign: "left",
-                    fontWeight: 600,
-                    color: "#555",
-                  }}
-                >
-                  Due Amount
-                </th>
+                {[
+                  { key: "ticketNum", label: "Ticket #" },
+                  { key: "date", label: "Date" },
+                  { key: "customerName", label: "Customer" },
+                  { key: "machineType", label: "Device" },
+                  { key: "invoiceStatus", label: "Status" },
+                  { key: "totalAmount", label: "Total Amount" },
+                  { key: "dueAmount", label: "Due Amount" },
+                ].map((col) => (
+                  <th
+                    key={col.key}
+                    style={{
+                      padding: "12px 16px",
+                      borderBottom: "2px solid #e0e0e0",
+                      textAlign: col.key === "Actions" ? "center" : "left",
+                      fontWeight: 600,
+                      color: "#555",
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                    onClick={() => {
+                      setSortConfig((prev) =>
+                        prev.column === col.key
+                          ? { column: col.key, asc: !prev.asc }
+                          : { column: col.key, asc: true }
+                      );
+                    }}
+                    title={`Sort by ${col.label}`}
+                  >
+                    {col.label}
+                    {sortConfig.column === col.key
+                      ? sortConfig.asc
+                        ? " ▲"
+                        : " ▼"
+                      : ""}
+                  </th>
+                ))}
                 <th
                   style={{
                     padding: "12px 16px",
@@ -388,493 +373,556 @@ export default function Accounting() {
               </tr>
             </thead>
             <tbody>
-              {tickets.map((ticket, idx) => {
-                // Calculate totalAmount based on parts array, default to 0 if parts are undefined or empty
-                const totalAmount = partsByTicket[ticket.id]?.length
-                  ? Number(
-                      partsByTicket[ticket.id].reduce(
-                        (sum, part) => sum + Number(part.price || 0),
-                        0
-                      )
-                    ).toFixed(2)
-                  : "0.00";
-                const dueAmount = Number(ticket.amountPaid || 0).toFixed(2);
-                const remainingAmount =
-                  partsByTicket[ticket.id]?.reduce(
-                    (sum, part) => sum + Number(part.price || 0),
-                    0
-                  ) - (ticket.amountPaid || 0);
+              {[...tickets]
+                .filter((t) => {
+                  if (!searchQuery.trim()) return true;
+                  const q = searchQuery.trim().toLowerCase();
+                  const ticketNumStr = String(t.ticketNum || "").toLowerCase();
+                  const customerNameStr = String(
+                    t.customerName || ""
+                  ).toLowerCase();
+                  return (
+                    ticketNumStr.includes(q) || customerNameStr.includes(q)
+                  );
+                })
+                .sort((a, b) => {
+                  const { column, asc } = sortConfig;
+                  let av, bv;
+                  if (column === "ticketNum") {
+                    av = parseInt(a.ticketNum, 10) || 0;
+                    bv = parseInt(b.ticketNum, 10) || 0;
+                  } else if (column === "date") {
+                    // Use raw value for sorting, fallback to string
+                    av = a.date;
+                    bv = b.date;
+                    // Try to parse as Date
+                    try {
+                      av = new Date(av);
+                      bv = new Date(bv);
+                    } catch {}
+                    av = av instanceof Date && !isNaN(av) ? av.getTime() : 0;
+                    bv = bv instanceof Date && !isNaN(bv) ? bv.getTime() : 0;
+                  } else if (
+                    column === "customerName" ||
+                    column === "machineType" ||
+                    column === "invoiceStatus"
+                  ) {
+                    av = (a[column] || "").toString().toLowerCase();
+                    bv = (b[column] || "").toString().toLowerCase();
+                  } else if (column === "totalAmount") {
+                    av = partsByTicket[a.id]?.length
+                      ? partsByTicket[a.id].reduce(
+                          (sum, part) => sum + Number(part.price || 0),
+                          0
+                        )
+                      : 0;
+                    bv = partsByTicket[b.id]?.length
+                      ? partsByTicket[b.id].reduce(
+                          (sum, part) => sum + Number(part.price || 0),
+                          0
+                        )
+                      : 0;
+                  } else if (column === "dueAmount") {
+                    av = Number(a.amountPaid || 0);
+                    bv = Number(b.amountPaid || 0);
+                  } else {
+                    av = a[column];
+                    bv = b[column];
+                  }
+                  if (av < bv) return asc ? -1 : 1;
+                  if (av > bv) return asc ? 1 : -1;
+                  return 0;
+                })
+                .map((ticket, idx) => {
+                  // Calculate totalAmount based on parts array, default to 0 if parts are undefined or empty
+                  const totalAmount = partsByTicket[ticket.id]?.length
+                    ? Number(
+                        partsByTicket[ticket.id].reduce(
+                          (sum, part) => sum + Number(part.price || 0),
+                          0
+                        )
+                      ).toFixed(2)
+                    : "0.00";
+                  const dueAmount = Number(ticket.amountPaid || 0).toFixed(2);
+                  const remainingAmount =
+                    partsByTicket[ticket.id]?.reduce(
+                      (sum, part) => sum + Number(part.price || 0),
+                      0
+                    ) - (ticket.amountPaid || 0);
 
-                return (
-                  <>
-                    <tr
-                      key={ticket.id}
-                      style={{
-                        background: idx % 2 === 0 ? "#fafafa" : "#fff",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleRowClick(ticket.id)}
-                    >
-                      <td
+                  return (
+                    <>
+                      <tr
+                        key={ticket.id}
                         style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
+                          background: idx % 2 === 0 ? "#fafafa" : "#fff",
+                          cursor: "pointer",
                         }}
+                        onClick={() => handleRowClick(ticket.id)}
                       >
-                        {ticket.location}
-                        {ticket.ticketNum}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        {formatTicketDate(ticket.date)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        {ticket.customerName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        {ticket.machineType}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        <span
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: "12px",
-                            color:
-                              ticket.invoiceStatus === "Paid"
-                                ? "#2e7d32"
-                                : ticket.status === "Partially Paid"
-                                  ? "#e65100"
-                                  : "#b71c1c",
-                            backgroundColor:
-                              ticket.invoiceStatus === "Paid"
-                                ? "#c8e6c9"
-                                : ticket.invoiceStatus === "Partially Paid"
-                                  ? "#ffe0b2"
-                                  : "#ffcdd2",
-                            border: `1px solid ${
-                              ticket.invoiceStatus === "Paid"
-                                ? "#2e7d32"
-                                : ticket.invoiceStatus === "Partially Paid"
-                                  ? "#e65100"
-                                  : "#b71c1c"
-                            }`,
-                            fontWeight: 400,
-                            display: "inline-block",
-                          }}
-                        >
-                          {ticket.invoiceStatus || "Pending"}
-                        </span>
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        {`JOD ${totalAmount}`}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                        }}
-                      >
-                        {`JOD ${dueAmount}`}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          borderBottom: "1px solid #eee",
-                          textAlign: "center",
-                        }}
-                      >
-                        <button
-                          onClick={() =>
-                            remainingAmount > 0 &&
-                            navigate(`/receive-payment/${ticket.id}`)
-                          }
-                          disabled={remainingAmount <= 0}
-                          style={{
-                            padding: "8px 12px",
-                            backgroundColor:
-                              remainingAmount > 0 ? "#1976d2" : "#ccc",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor:
-                              remainingAmount > 0 ? "pointer" : "not-allowed",
-                          }}
-                        >
-                          Receive Payment (JOD)
-                        </button>
-                        <button
-                          onClick={() => navigate(`/refund/${ticket.id}`)}
-                          disabled={dueAmount <= 0}
-                          style={{
-                            padding: "8px 12px",
-                            backgroundColor: dueAmount > 0 ? "#f44336" : "#ccc",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: dueAmount > 0 ? "pointer" : "not-allowed",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Refund
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedRow === ticket.id && (
-                      <tr key={ticket.id + "-details"}>
                         <td
-                          colSpan={8}
-                          style={{ background: "#f9f9f9", padding: "0" }}
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
                         >
-                          <div style={{ padding: "16px" }}>
-                            <h4
-                              style={{
-                                margin: "0 0 12px 0",
-                                fontWeight: 600,
-                                color: "#1976d2",
-                              }}
-                            >
-                              Parts Details
-                            </h4>
-                            {partsByTicket[ticket.id] ? (
-                              partsByTicket[ticket.id].length > 0 ? (
-                                <table
-                                  style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse",
-                                    background: "#fff",
-                                  }}
-                                >
-                                  <thead>
-                                    <tr>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Part Number
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Description
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Quantity
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Price
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {partsByTicket[ticket.id].map(
-                                      (part, index) => (
-                                        <tr key={index}>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {part.partNumber}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {part.description}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {part.quantity}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px",
-                                              borderBottom: "1px solid #eee",
-                                            }}
-                                          >
-                                            {part.price}
-                                          </td>
-                                        </tr>
-                                      )
-                                    )}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <p style={{ margin: 0, color: "#888" }}>
-                                  No parts added for this ticket.
-                                </p>
-                              )
-                            ) : (
-                              <p style={{ margin: 0 }}>Loading parts...</p>
-                            )}
-
-                            {/* Transaction History Section */}
-                            <h4
-                              style={{
-                                margin: "20px 0 12px 0",
-                                fontWeight: 600,
-                                color: "#1976d2",
-                              }}
-                            >
-                              Transaction History
-                            </h4>
-                            {(() => {
-                              const payments =
-                                paymentsByTicket[ticket.id] || [];
-                              const refunds = refundsByTicket[ticket.id] || [];
-
-                              if (
-                                payments.length === 0 &&
-                                refunds.length === 0
-                              ) {
-                                return (
+                          {ticket.location}
+                          {ticket.ticketNum}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {formatTicketDate(ticket.date)}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {ticket.customerName}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {ticket.machineType}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          <span
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "12px",
+                              color:
+                                ticket.invoiceStatus === "Paid"
+                                  ? "#2e7d32"
+                                  : ticket.status === "Partially Paid"
+                                    ? "#e65100"
+                                    : "#b71c1c",
+                              backgroundColor:
+                                ticket.invoiceStatus === "Paid"
+                                  ? "#c8e6c9"
+                                  : ticket.invoiceStatus === "Partially Paid"
+                                    ? "#ffe0b2"
+                                    : "#ffcdd2",
+                              border: `1px solid ${
+                                ticket.invoiceStatus === "Paid"
+                                  ? "#2e7d32"
+                                  : ticket.invoiceStatus === "Partially Paid"
+                                    ? "#e65100"
+                                    : "#b71c1c"
+                              }`,
+                              fontWeight: 400,
+                              display: "inline-block",
+                            }}
+                          >
+                            {ticket.invoiceStatus || "Pending"}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {`JOD ${totalAmount}`}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {`JOD ${dueAmount}`}
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            borderBottom: "1px solid #eee",
+                            textAlign: "center",
+                          }}
+                        >
+                          <button
+                            onClick={() =>
+                              remainingAmount > 0 &&
+                              navigate(`/receive-payment/${ticket.id}`)
+                            }
+                            disabled={remainingAmount <= 0}
+                            style={{
+                              padding: "8px 12px",
+                              backgroundColor:
+                                remainingAmount > 0 ? "#1976d2" : "#ccc",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor:
+                                remainingAmount > 0 ? "pointer" : "not-allowed",
+                            }}
+                          >
+                            Receive Payment (JOD)
+                          </button>
+                          <button
+                            onClick={() => navigate(`/refund/${ticket.id}`)}
+                            disabled={dueAmount <= 0}
+                            style={{
+                              padding: "8px 12px",
+                              backgroundColor:
+                                dueAmount > 0 ? "#f44336" : "#ccc",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: dueAmount > 0 ? "pointer" : "not-allowed",
+                              marginLeft: "8px",
+                            }}
+                          >
+                            Refund
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedRow === ticket.id && (
+                        <tr key={ticket.id + "-details"}>
+                          <td
+                            colSpan={8}
+                            style={{ background: "#f9f9f9", padding: "0" }}
+                          >
+                            <div style={{ padding: "16px" }}>
+                              <h4
+                                style={{
+                                  margin: "0 0 12px 0",
+                                  fontWeight: 600,
+                                  color: "#1976d2",
+                                }}
+                              >
+                                Parts Details
+                              </h4>
+                              {partsByTicket[ticket.id] ? (
+                                partsByTicket[ticket.id].length > 0 ? (
+                                  <table
+                                    style={{
+                                      width: "100%",
+                                      borderCollapse: "collapse",
+                                      background: "#fff",
+                                    }}
+                                  >
+                                    <thead>
+                                      <tr>
+                                        <th
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            textAlign: "left",
+                                          }}
+                                        >
+                                          Part Number
+                                        </th>
+                                        <th
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            textAlign: "left",
+                                          }}
+                                        >
+                                          Description
+                                        </th>
+                                        <th
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            textAlign: "left",
+                                          }}
+                                        >
+                                          Quantity
+                                        </th>
+                                        <th
+                                          style={{
+                                            padding: "8px",
+                                            borderBottom: "1px solid #eee",
+                                            textAlign: "left",
+                                          }}
+                                        >
+                                          Price
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {partsByTicket[ticket.id].map(
+                                        (part, index) => (
+                                          <tr key={index}>
+                                            <td
+                                              style={{
+                                                padding: "8px",
+                                                borderBottom: "1px solid #eee",
+                                              }}
+                                            >
+                                              {part.partNumber}
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: "8px",
+                                                borderBottom: "1px solid #eee",
+                                              }}
+                                            >
+                                              {part.description}
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: "8px",
+                                                borderBottom: "1px solid #eee",
+                                              }}
+                                            >
+                                              {part.quantity}
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: "8px",
+                                                borderBottom: "1px solid #eee",
+                                              }}
+                                            >
+                                              {part.price}
+                                            </td>
+                                          </tr>
+                                        )
+                                      )}
+                                    </tbody>
+                                  </table>
+                                ) : (
                                   <p style={{ margin: 0, color: "#888" }}>
-                                    No transactions recorded for this ticket.
+                                    No parts added for this ticket.
                                   </p>
+                                )
+                              ) : (
+                                <p style={{ margin: 0 }}>Loading parts...</p>
+                              )}
+
+                              {/* Transaction History Section */}
+                              <h4
+                                style={{
+                                  margin: "20px 0 12px 0",
+                                  fontWeight: 600,
+                                  color: "#1976d2",
+                                }}
+                              >
+                                Transaction History
+                              </h4>
+                              {(() => {
+                                const payments =
+                                  paymentsByTicket[ticket.id] || [];
+                                const refunds =
+                                  refundsByTicket[ticket.id] || [];
+
+                                if (
+                                  payments.length === 0 &&
+                                  refunds.length === 0
+                                ) {
+                                  return (
+                                    <p style={{ margin: 0, color: "#888" }}>
+                                      No transactions recorded for this ticket.
+                                    </p>
+                                  );
+                                }
+
+                                const transactions = [
+                                  ...payments.map((p) => ({
+                                    ...p,
+                                    type: "payment",
+                                    date: p.paymentDate,
+                                  })),
+                                  ...refunds.map((r) => ({
+                                    ...r,
+                                    type: "refund",
+                                    date: r.refundDate,
+                                  })),
+                                ].sort(
+                                  (a, b) =>
+                                    (b.date?.toDate() || 0) -
+                                    (a.date?.toDate() || 0)
                                 );
-                              }
 
-                              const transactions = [
-                                ...payments.map((p) => ({
-                                  ...p,
-                                  type: "payment",
-                                  date: p.paymentDate,
-                                })),
-                                ...refunds.map((r) => ({
-                                  ...r,
-                                  type: "refund",
-                                  date: r.refundDate,
-                                })),
-                              ].sort(
-                                (a, b) =>
-                                  (b.date?.toDate() || 0) -
-                                  (a.date?.toDate() || 0)
-                              );
-
-                              return (
-                                <table
-                                  style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse",
-                                    background: "#fff",
-                                  }}
-                                >
-                                  <thead>
-                                    <tr>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Date
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Type
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Amount
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Method / Reason
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "left",
-                                        }}
-                                      >
-                                        Processed By
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "8px",
-                                          borderBottom: "1px solid #eee",
-                                          textAlign: "center",
-                                        }}
-                                      >
-                                        Receipt
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {transactions.map((tx) => (
-                                      <tr key={`${tx.type}-${tx.id}`}>
-                                        <td
+                                return (
+                                  <table
+                                    style={{
+                                      width: "100%",
+                                      borderCollapse: "collapse",
+                                      background: "#fff",
+                                    }}
+                                  >
+                                    <thead>
+                                      <tr>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
+                                            textAlign: "left",
                                           }}
                                         >
-                                          {tx.date?.toDate().toLocaleString() ||
-                                            "N/A"}
-                                        </td>
-                                        <td
+                                          Date
+                                        </th>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
+                                            textAlign: "left",
                                           }}
                                         >
-                                          <span
-                                            style={{
-                                              color:
-                                                tx.type === "payment"
-                                                  ? "green"
-                                                  : "red",
-                                              textTransform: "capitalize",
-                                            }}
-                                          >
-                                            {tx.type}
-                                          </span>
-                                        </td>
-                                        <td
+                                          Type
+                                        </th>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
-                                            color:
-                                              tx.type === "refund"
-                                                ? "red"
-                                                : "inherit",
+                                            textAlign: "left",
                                           }}
                                         >
-                                          JOD{" "}
-                                          {tx.type === "payment"
-                                            ? Number(tx.amount).toFixed(2)
-                                            : `-${Number(tx.amount).toFixed(2)}`}
-                                        </td>
-                                        <td
+                                          Amount
+                                        </th>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
+                                            textAlign: "left",
                                           }}
                                         >
-                                          {tx.type === "payment"
-                                            ? tx.paymentMethod
-                                            : tx.reason}
-                                        </td>
-                                        <td
+                                          Method / Reason
+                                        </th>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
+                                            textAlign: "left",
                                           }}
                                         >
-                                          {tx.type === "payment"
-                                            ? tx.receivedBy
-                                            : tx.refundedBy}
-                                        </td>
-                                        <td
+                                          Processed By
+                                        </th>
+                                        <th
                                           style={{
                                             padding: "8px",
                                             borderBottom: "1px solid #eee",
                                             textAlign: "center",
                                           }}
                                         >
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (tx.type === "payment") {
-                                                navigate(
-                                                  `/receipt/${ticket.id}/${tx.id}`
-                                                );
-                                              } else {
-                                                navigate(
-                                                  `/refund-receipt/${ticket.id}/${tx.id}`
-                                                );
-                                              }
-                                            }}
+                                          Receipt
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {transactions.map((tx) => (
+                                        <tr key={`${tx.type}-${tx.id}`}>
+                                          <td
                                             style={{
-                                              background: "none",
-                                              border: "none",
-                                              cursor: "pointer",
-                                              color: "#1976d2",
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
                                             }}
                                           >
-                                            <FaReceipt size={20} />
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              );
-                            })()}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                );
-              })}
+                                            {tx.date
+                                              ?.toDate()
+                                              .toLocaleString() || "N/A"}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            <span
+                                              style={{
+                                                color:
+                                                  tx.type === "payment"
+                                                    ? "green"
+                                                    : "red",
+                                                textTransform: "capitalize",
+                                              }}
+                                            >
+                                              {tx.type}
+                                            </span>
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                              color:
+                                                tx.type === "refund"
+                                                  ? "red"
+                                                  : "inherit",
+                                            }}
+                                          >
+                                            JOD{" "}
+                                            {tx.type === "payment"
+                                              ? Number(tx.amount).toFixed(2)
+                                              : `-${Number(tx.amount).toFixed(2)}`}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {tx.type === "payment"
+                                              ? tx.paymentMethod
+                                              : tx.reason}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                            }}
+                                          >
+                                            {tx.type === "payment"
+                                              ? tx.receivedBy
+                                              : tx.refundedBy}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px",
+                                              borderBottom: "1px solid #eee",
+                                              textAlign: "center",
+                                            }}
+                                          >
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (tx.type === "payment") {
+                                                  navigate(
+                                                    `/receipt/${ticket.id}/${tx.id}`
+                                                  );
+                                                } else {
+                                                  navigate(
+                                                    `/refund-receipt/${ticket.id}/${tx.id}`
+                                                  );
+                                                }
+                                              }}
+                                              style={{
+                                                background: "none",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                color: "#1976d2",
+                                              }}
+                                            >
+                                              <FaReceipt size={20} />
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
             </tbody>
           </table>
         </div>

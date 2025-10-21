@@ -455,10 +455,18 @@ const ProcessTicketPage = () => {
                 
                 <p><strong>Business Hours:</strong></p>
                 <ul>
-                  <li>Sunday - Thursday: 9:00 AM - 9:00 PM</li>
+                ${
+                  ticket.location === "M"
+                    ? `<li>Sunday - Thursday: 9:00 AM - 9:00 PM</li>
                   <li>Saturday: 10:00 AM - 9:00 PM</li>
+                  `
+                    : `<li>Saturday - Thursday: 10:00 AM - 9:00 PM</li>`
+                }
+                  
                   <li>Friday: Closed</li>
                 </ul>
+                
+                
                 
                 <p><strong>What to bring:</strong></p>
                 <ul>
@@ -486,7 +494,7 @@ const ProcessTicketPage = () => {
               
               <div class="footer">
                 <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
-                <p>365Solutions - Apple Authorized Service Center</p>
+                <p>365Solutions - Apple Authorized Service Provider</p>
                 <p>Professional device repair services you can trust</p>
               </div>
             </div>
@@ -979,3 +987,11 @@ const ProcessTicketPage = () => {
 };
 
 export default ProcessTicketPage;
+
+{
+  /* <ul>
+                  <li>Sunday - Thursday: 9:00 AM - 9:00 PM</li>
+                  <li>Saturday: 10:00 AM - 9:00 PM</li>
+                  <li>Friday: Closed</li>
+                </ul> */
+}
