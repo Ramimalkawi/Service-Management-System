@@ -524,7 +524,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     // Inline styles for printing
     const styles = `
       .print-root { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 800px; }
+      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 800px;max-height: 400px }
       .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px; }
       .receipt-logo { max-width: 250px; height: auto; }
       .receipt-header h1 { font-size: 2.5rem; color: #0056b3; margin: 0; }
@@ -556,6 +556,86 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Name:</strong> {ticket.customerName}
               </p>
+              {ticket.customerType == "Business" && (
+                <p>
+                  <strong>Company Name:</strong> {ticket.companyName}
+                </p>
+              )}
+              <p>
+                <strong>Email:</strong> {ticket.emailAddress}
+              </p>
+              <p>
+                <strong>Mobile:</strong> {ticket.mobileNumber}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Device Info</h3>
+              <p>
+                <strong>Type:</strong> {ticket.machineType}
+              </p>
+              <p>
+                <strong>Description:</strong> {ticket.deviceDescription}
+              </p>
+              <p>
+                <strong>Serial Number:</strong> {ticket.serialNum}
+              </p>
+              <p>
+                <strong>Warranty Status:</strong> {ticket.warrantyStatus}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Repair Info</h3>
+              <p>
+                <strong>Symptom:</strong> {ticket.symptom}
+              </p>
+              <p>
+                <strong>Repair ID:</strong> {ticket.caseID}
+              </p>
+            </div>
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Notes</h3>
+              <p>
+                {ticket.notes ? ticket.notes : <em>No notes added yet.</em>}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="receipt-container">
+          <hr style={{ margin: "30px 0px", borderColor: "#100f0fff" }} />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "flex-start",
+              textAlign: "space-between",
+              width: "100%",
+              justifyContent: "space-between",
+            }}
+          >
+            <h2 style={{ color: "#1ccad4", marginBottom: 16 }}>
+              Service Ticket #{ticket.location}
+              {ticket.ticketNum}
+            </h2>
+            <h6>Customer Copy</h6>
+          </div>
+          <hr style={{ margin: "16px 0", borderColor: "#eee" }} />
+          <div style={{ marginBottom: 18 }}>
+            <strong>Date:</strong> {ticket.date}
+            <br />
+            <strong>ID:</strong> {ticket.id}
+          </div>
+          <div className="receipt-details">
+            <div className="receipt-section">
+              <h3 style={{ color: "#333", marginBottom: 8 }}>Customer Info</h3>
+              <p>
+                <strong>Name:</strong> {ticket.customerName}
+              </p>
+              {ticket.customerType == "Business" && (
+                <p>
+                  <strong>Company Name:</strong> {ticket.companyName}
+                </p>
+              )}
               <p>
                 <strong>Email:</strong> {ticket.emailAddress}
               </p>

@@ -142,7 +142,8 @@ const PartsModal = ({ isOpen, onClose, ticket, onOpenPriceQuotationModal }) => {
         warrantyStatus: isService
           ? ""
           : warranties[i] || "Apple limited warranty",
-        description: descriptions[i] || "",
+        description:
+          descriptions[i] === ">" ? "Service" : descriptions[i] || "",
         quantity: quantities[i] || "1",
         price: prices[i] || "0",
       };
@@ -429,8 +430,10 @@ const PartsModal = ({ isOpen, onClose, ticket, onOpenPriceQuotationModal }) => {
             >
               <option>Apple limited warranty</option>
               <option>Out of warranty</option>
-              <option>CS code</option>
+              <option>Apple care protection</option>
               <option>Quality program</option>
+              <option>Repeate Service</option>
+              <option>CS code</option>
             </select>
           </div>
           <div>

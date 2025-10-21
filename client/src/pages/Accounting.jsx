@@ -24,6 +24,10 @@ export default function Accounting() {
   useEffect(() => {
     setLoading(true);
     // Listen for tickets with shouldHaveInvoice true (modern tickets)
+    // NOTE: removed the inequality on ticketNum from the Firestore query to
+    // avoid requiring a composite index. We will filter ticketNum > 11000
+    // client-side after receiving the snapshot. If you'd prefer a server-side
+    // filter, create the composite index using the URL in the Firestore error.
     const q = query(
       collection(db, "tickets"),
       where("shouldHaveInvoice", "==", true)
@@ -34,39 +38,45 @@ export default function Accounting() {
 
     // Listen for modern tickets
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const ticketsData = snapshot.docs.map((doc) => ({
+      let ticketsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
+      // Client-side filter for ticketNum > 11000 to avoid composite index requirement.
+      ticketsData = ticketsData.filter((t) => {
+        const n = parseInt(t.ticketNum, 10);
+        return !isNaN(n) && n > 11000;
+      });
+
       // Now check for legacy tickets (missing shouldHaveInvoice but have partDeliveryNote)
       const legacySnapshot = await getDocs(collection(db, "tickets"));
       let legacyTickets = [];
-      // if (legacySnapshot && legacySnapshot.docs) {
-      //   legacyTickets = legacySnapshot.docs
-      //     .map((doc) => ({ id: doc.id, ...doc.data() }))
-      //     .filter((ticket) => {
-      //       // Exclude if current status is 'Repair Marked Complete'
-      //       const statusArr = Array.isArray(ticket.ticketStates)
-      //         ? ticket.ticketStates
-      //         : [];
-      //       const lastStatus =
-      //         statusArr.length > 0 ? statusArr[statusArr.length - 1] : null;
-      //       // Adjust this value if your status code for 'Repair Marked Complete' is different
-      //       const isRepairMarkedComplete =
-      //         lastStatus === 7 || lastStatus === "Repair Marked Complete";
-      //       return (
-      //         (!ticket.shouldHaveInvoice ||
-      //           ticket.shouldHaveInvoice === false) &&
-      //         ticket.partDeliveryNote &&
-      //         typeof ticket.partDeliveryNote === "string" &&
-      //         ticket.partDeliveryNote.trim() !== "" &&
-      //         Number(ticket.ticketNum) >= 11480 &&
-      //         Number(ticket.ticketNum) <= 11499 &&
-      //         !isRepairMarkedComplete
-      //       );
-      //     });
-      // }
+      if (legacySnapshot && legacySnapshot.docs) {
+        legacyTickets = legacySnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((ticket) => {
+            // Exclude if current status is 'Repair Marked Complete'
+            const statusArr = Array.isArray(ticket.ticketStates)
+              ? ticket.ticketStates
+              : [];
+            const lastStatus =
+              statusArr.length > 0 ? statusArr[statusArr.length - 1] : null;
+            // Adjust this value if your status code for 'Repair Marked Complete' is different
+            const isRepairMarkedComplete =
+              lastStatus === 7 || lastStatus === "Repair Marked Complete";
+            return (
+              (!ticket.shouldHaveInvoice ||
+                ticket.shouldHaveInvoice === false) &&
+              ticket.partDeliveryNote &&
+              typeof ticket.partDeliveryNote === "string" &&
+              ticket.partDeliveryNote.trim() !== "" &&
+              Number(ticket.ticketNum) >= 11480 &&
+              Number(ticket.ticketNum) <= 11499 &&
+              !isRepairMarkedComplete
+            );
+          });
+      }
 
       // For each legacy ticket, check its partsDeliveryNotes for prices > 0
       for (const ticket of legacyTickets) {
@@ -232,6 +242,33 @@ export default function Accounting() {
     }
   };
 
+  // Safe formatter for ticket date which may be a string or Firestore Timestamp
+  const formatTicketDate = (d) => {
+    if (!d) return "N/A";
+    try {
+      if (typeof d === "string") return d;
+      if (d.toDate && typeof d.toDate === "function") {
+        return d.toDate().toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      // fallback for plain Date-like values
+      return new Date(d).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return String(d);
+    }
+  };
+
   return (
     <div className="accounting-page" style={{ padding: "2rem" }}>
       <h2
@@ -270,6 +307,17 @@ export default function Accounting() {
                   }}
                 >
                   Ticket #
+                </th>
+                <th
+                  style={{
+                    padding: "12px 16px",
+                    borderBottom: "2px solid #e0e0e0",
+                    textAlign: "left",
+                    fontWeight: 600,
+                    color: "#555",
+                  }}
+                >
+                  Date
                 </th>
                 <th
                   style={{
@@ -375,6 +423,14 @@ export default function Accounting() {
                       >
                         {ticket.location}
                         {ticket.ticketNum}
+                      </td>
+                      <td
+                        style={{
+                          padding: "10px 16px",
+                          borderBottom: "1px solid #eee",
+                        }}
+                      >
+                        {formatTicketDate(ticket.date)}
                       </td>
                       <td
                         style={{
@@ -490,7 +546,7 @@ export default function Accounting() {
                     {expandedRow === ticket.id && (
                       <tr key={ticket.id + "-details"}>
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           style={{ background: "#f9f9f9", padding: "0" }}
                         >
                           <div style={{ padding: "16px" }}>
