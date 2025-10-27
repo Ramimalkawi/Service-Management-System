@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import JSZip from "jszip";
-import logo from "/logo-and-apple.png";
+// import logo from "/logo-and-apple.png";
 import { saveAs } from "file-saver";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -34,6 +34,9 @@ import { useReactToPrint } from "react-to-print";
 import EmailModal from "./EmailModal";
 import { useNavigate } from "react-router-dom";
 import PartsDeliveryModal from "./PartsDeliveryModal";
+
+const logo =
+  "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
 
 // const resend = new Resend("re_CERL4s6x_H8JGbjuuPSTjE8ZWvnUeKrn9");
 
