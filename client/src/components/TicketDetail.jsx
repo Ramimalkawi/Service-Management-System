@@ -563,7 +563,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Name:</strong> {ticket.customerName}
               </p>
-              {ticket.customerType == "Business" && (
+              {ticket.customerType == "business" && (
                 <p>
                   <strong>Company Name:</strong> {ticket.companyName}
                 </p>
@@ -673,7 +673,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Name:</strong> {ticket.customerName}
               </p>
-              {ticket.customerType == "Business" && (
+              {ticket.customerType == "business" && (
                 <p>
                   <strong>Company Name:</strong> {ticket.companyName}
                 </p>
@@ -988,7 +988,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
                   className="edit-input"
                 />
               </div>
-              {ticket.customerType === "Business" && (
+              {ticket.customerType === "business" && (
                 <div className="edit-field">
                   <label>
                     <strong>Company:</strong>
@@ -1026,7 +1026,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Email:</strong> {ticket.emailAddress}
               </p>
-              {ticket.customerType === "Business" && (
+              {ticket.customerType === "business" && (
                 <p>
                   <strong>Company:</strong> {ticket.companyName}
                 </p>
