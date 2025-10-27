@@ -37,6 +37,8 @@ import PartsDeliveryModal from "./PartsDeliveryModal";
 
 const logo =
   "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+const logoUrlForEmail =
+  "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
 
 // const resend = new Resend("re_CERL4s6x_H8JGbjuuPSTjE8ZWvnUeKrn9");
 
