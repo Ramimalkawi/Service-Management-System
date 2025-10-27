@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import JSZip from "jszip";
-import logo from "../assets/logo-and-apple.png";
+import logo from "/logo-and-apple.png";
 import { saveAs } from "file-saver";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -524,22 +524,24 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     // Inline styles for printing
     const styles = `
       .print-root { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 800px;max-height: 400px }
+      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 1200px; max-height: 1000px; position: relative; }
+      .receipt-logo { max-width: 180px; height: auto; display: block; margin-bottom: 18px; }
       .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px; }
-      .receipt-logo { max-width: 250px; height: auto; }
       .receipt-header h1 { font-size: 2.5rem; color: #0056b3; margin: 0; }
-      .receipt-details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+      .receipt-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
       .receipt-section h2 { font-size: 1.5rem; color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
       .receipt-section p { margin: 10px 0; font-size: 1rem; line-height: 1.6; }
       .receipt-section p strong { color: #555; min-width: 120px; display: inline-block; }
-      .receipt-footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: center; font-size: 0.9rem; color: #777; }
-      .footer-contact { margin-top: 10px; }
+      .receipt-footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: center; font-size: 0.95rem; color: #777; background: #f9f9f9; border-radius: 0 0 8px 8px; }
+      .footer-contact { margin-top: 10px; font-size: 0.98rem; color: #444; }
     `;
 
     return (
       <div className="print-root">
         <style>{styles}</style>
+        {/* Receipt 1: Technician Copy */}
         <div className="receipt-container">
+          <img src={logo} alt="Company Logo" className="receipt-logo" />
           <h2 style={{ color: "#1ccad4", marginBottom: 16 }}>
             Service Ticket #{ticket.location}
             {ticket.ticketNum}
@@ -599,10 +601,45 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               </p>
             </div>
           </div>
-        </div>
 
+          {/* Footer with company details */}
+          <div className="receipt-footer">
+            <div className="footer-contact">
+              {ticket.location === "M" ? (
+                <>
+                  <strong>365 Solutions</strong> &nbsp;|&nbsp; Amman, Jordan
+                  <br />
+                  <span>221 Mecca Street</span>
+                  <br />
+                  <span>
+                    Phone: +962 79 681 8189 &nbsp;|&nbsp; Email:
+                    help@365solutionsjo.com
+                  </span>
+                  <br />
+                  <span>www.365solutionsjo.com</span>
+                </>
+              ) : (
+                <>
+                  <strong>365 Solutions</strong> &nbsp;|&nbsp; Irbid, Jordan
+                  <br />
+                  <span>Wasfi Al-Tal Street</span>
+                  <br />
+                  <span>
+                    Phone: +962 79 668 8831 &nbsp;|&nbsp; Email:
+                    irbid@365solutionsjo.com
+                  </span>
+                  <br />
+                  <span>www.365solutionsjo.com</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <style>{styles}</style>
+        {/* Receipt 1: Technician Copy */}
         <div className="receipt-container">
           <hr style={{ margin: "30px 0px", borderColor: "#100f0fff" }} />
+          <img src={logo} alt="Company Logo" className="receipt-logo" />
           <div
             style={{
               display: "flex",
@@ -672,6 +709,39 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 {ticket.notes ? ticket.notes : <em>No notes added yet.</em>}
               </p>
+            </div>
+          </div>
+
+          {/* Footer with company details */}
+          <div className="receipt-footer">
+            <div className="footer-contact">
+              {ticket.location === "M" ? (
+                <>
+                  <strong>365 Solutions</strong> &nbsp;|&nbsp; Amman, Jordan
+                  <br />
+                  <span>221 Mecca Street</span>
+                  <br />
+                  <span>
+                    Phone: +962 79 681 8189 &nbsp;|&nbsp; Email:
+                    help@365solutionsjo.com
+                  </span>
+                  <br />
+                  <span>www.365solutionsjo.com</span>
+                </>
+              ) : (
+                <>
+                  <strong>365 Solutions</strong> &nbsp;|&nbsp; Irbid, Jordan
+                  <br />
+                  <span>Wasfi Al-Tal Street</span>
+                  <br />
+                  <span>
+                    Phone: +962 79 668 8831 &nbsp;|&nbsp; Email:
+                    irbid@365solutionsjo.com
+                  </span>
+                  <br />
+                  <span>www.365solutionsjo.com</span>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -167,7 +167,7 @@ const DeliveryPage = () => {
             <div class="header">
               <img src="${logoUrl}" alt="365Solutions Logo" class="logo-img" />
               <h2>✅ Service Completed - Ticket Closed</h2>
-              <p>365Solutions - Apple Authorized Service Center</p>
+              <p>365Solutions - Apple Authorized Service Provider</p>
             </div>
             
             <div class="content">
