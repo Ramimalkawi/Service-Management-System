@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import TicketSearchNavbar from "./TicketSearchNavbar";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../firebase";
@@ -47,10 +48,12 @@ const Navbar = () => {
           style={{ marginRight: "8px", width: "80px" }}
           alt="Logo"
         />{" "}
-        365 Solutions Service System
       </div>
 
-      <div className="navbar-links">
+      <div
+        className="navbar-links"
+        style={{ display: "flex", alignItems: "center", gap: 24 }}
+      >
         <NavLink
           to="/tickets"
           className={({ isActive }) => (isActive ? "active" : undefined)}
@@ -97,6 +100,8 @@ const Navbar = () => {
         >
           Archived
         </NavLink>
+        {/* Ticket search in navbar */}
+        <TicketSearchNavbar />
       </div>
       {user && (
         <div className="navbar-avatar" ref={dropdownRef}>

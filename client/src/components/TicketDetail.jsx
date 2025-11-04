@@ -398,6 +398,10 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     }
   };
 
+  const handleSignPriceQuotation = () => {
+    navigate(`/tickets/${ticket.id}/price-quotation`);
+  };
+
   const handleSignOtherDocuments = () => {
     if (!ticket.priceQuotationURL && ticket.priceQuotationRef) {
       navigate(`/tickets/${ticket.id}/price-quotation`);
@@ -529,7 +533,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     // Inline styles for printing
     const styles = `
       .print-root { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 1200px; max-height: 1000px; position: relative; }
+      .receipt-container { background-color: #fff; padding: 40px; margin: 20px auto; border-radius: 8px; width: 100%; max-width: 1200px; max-height: 800px; position: relative; }
       .receipt-logo { max-width: 180px; height: auto; display: block; margin-bottom: 18px; }
       .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; margin-bottom: 30px; }
       .receipt-header h1 { font-size: 2.5rem; color: #0056b3; margin: 0; }
@@ -918,24 +922,63 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
         `}
           </style>
         </div>
-        {ticket.ticketStates?.slice(-1)[0] === 6 && (
-          <div className="deliver-button-wrapper">
-            <button className="deliver-button" onClick={handleDeliver}>
-              <FaTruck /> Deliver to Customer
-            </button>
-          </div>
-        )}
-        {ticket.ticketStates?.slice(-1)[0] === 7 && (
-          <div className="deliver-button-wrapper">
-            <button
-              className="deliver-button"
-              onClick={handleSignOtherDocuments}
-              style={{ backgroundColor: "#a72828ff", borderColor: "#28a745" }}
-            >
-              <FaPenAlt /> Sign Other Documents
-            </button>
-          </div>
-        )}
+        {/* Deliver/Sign/Price Quotation button area */}
+        {(() => {
+          const status = ticket.ticketStates?.slice(-1)[0];
+          const showDeliver = status === 6;
+          const showSignOther = status === 7;
+          const showPriceQuotation = !!ticket.priceQuotationRef;
+          if (showDeliver || showSignOther || showPriceQuotation) {
+            return (
+              <div
+                className="deliver-button-wrapper"
+                style={{ display: "flex", gap: "12px" }}
+              >
+                {showDeliver && (
+                  <button className="deliver-button" onClick={handleDeliver}>
+                    <FaTruck /> Deliver to Customer
+                  </button>
+                )}
+                {showSignOther && (
+                  <button
+                    className="deliver-button"
+                    onClick={handleSignOtherDocuments}
+                    style={{
+                      backgroundColor: "#a72828ff",
+                      borderColor: "#28a745",
+                    }}
+                  >
+                    <FaPenAlt /> Sign Other Documents
+                  </button>
+                )}
+                {showPriceQuotation && (
+                  <button
+                    className="deliver-button"
+                    onClick={handleSignPriceQuotation}
+                    disabled={!!ticket.priceQuotationURL}
+                    style={{
+                      backgroundColor: "#fbc02d",
+                      color: "#333",
+                      borderColor: "#fbc02d",
+                      opacity: ticket.priceQuotationURL ? 0.6 : 1,
+                      cursor: ticket.priceQuotationURL
+                        ? "not-allowed"
+                        : "pointer",
+                    }}
+                    title={
+                      ticket.priceQuotationURL
+                        ? "Already signed"
+                        : "Sign Price Quotation"
+                    }
+                  >
+                    <FaPenAlt style={{ marginRight: 6 }} /> Sign Price Quotation
+                  </button>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
       {showDocumentsLinks && (
         <div className="contract-link-box">

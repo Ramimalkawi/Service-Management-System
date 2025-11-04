@@ -529,32 +529,7 @@ const ProcessTicketPage = () => {
     }
   };
 
-  const handleUpdateRepairID = async () => {
-    if (!newRepairID.trim()) {
-      alert("Please enter a repair ID.");
-      return;
-    }
-
-    const docRef = doc(db, "tickets", id);
-
-    try {
-      await updateDoc(docRef, {
-        caseID: newRepairID.trim(),
-        lastModified: new Date().toISOString(),
-      });
-      setNewRepairID("");
-      alert("Repair ID updated successfully");
-
-      // Update the local ticket state
-      setTicket((prev) => ({
-        ...prev,
-        caseID: newRepairID.trim(),
-      }));
-    } catch (error) {
-      console.error("Error updating repair ID:", error);
-      alert("Failed to update repair ID. Please try again.");
-    }
-  };
+  // handleUpdateRepairID removed; logic now inline in button above
 
   if (loading) return <div className="loading">Loading ticket...</div>;
 
@@ -656,8 +631,55 @@ const ProcessTicketPage = () => {
             <span>{ticket.symptom}</span>
           </div>
           <div className="ticket-info-item">
-            <label>Repair ID:</label>
-            <span>{ticket.caseID || "Not assigned"}</span>
+            <label>Repair ID(s):</label>
+            {Array.isArray(ticket.caseID) ? (
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {ticket.caseID.map((rid, idx) => (
+                  <li
+                    key={idx}
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span>{rid}</span>
+                    <button
+                      type="button"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#e53935",
+                        cursor: "pointer",
+                        fontSize: 14,
+                      }}
+                      title="Remove Repair ID"
+                      disabled={
+                        ticket.ticketStates?.slice(-1)[0] === 7 ||
+                        ticket.ticketStates?.slice(-1)[0] ===
+                          "Repair Marked Complete"
+                      }
+                      onClick={async () => {
+                        if (
+                          !window.confirm(
+                            "Are you sure you want to delete this repair ID?"
+                          )
+                        )
+                          return;
+                        const newArr = ticket.caseID.filter(
+                          (_, i) => i !== idx
+                        );
+                        await updateDoc(doc(db, "tickets", ticket.id), {
+                          caseID: newArr,
+                          lastModified: new Date().toISOString(),
+                        });
+                        setTicket((prev) => ({ ...prev, caseID: newArr }));
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span>{ticket.caseID || "Not assigned"}</span>
+            )}
           </div>
           <div className="ticket-info-item">
             <label>Current Status:</label>
@@ -669,7 +691,7 @@ const ProcessTicketPage = () => {
 
         {/* Repair ID Update Section */}
         <div className="repair-id-update-section">
-          <h3>Update Repair ID</h3>
+          <h3>Add Repair ID</h3>
           <label htmlFor="repair-id-standalone">Repair ID:</label>
           <input
             id="repair-id-standalone"
@@ -685,14 +707,29 @@ const ProcessTicketPage = () => {
           />
           <button
             className="repair-id-update-button"
-            onClick={handleUpdateRepairID}
+            onClick={async () => {
+              if (!newRepairID.trim()) return;
+              let arr = Array.isArray(ticket.caseID)
+                ? [...ticket.caseID]
+                : ticket.caseID
+                  ? [ticket.caseID]
+                  : [];
+              arr.push(newRepairID.trim());
+              await updateDoc(doc(db, "tickets", ticket.id), {
+                caseID: arr,
+                lastModified: new Date().toISOString(),
+              });
+              setTicket((prev) => ({ ...prev, caseID: arr }));
+              setNewRepairID("");
+              alert("Repair ID added successfully");
+            }}
             disabled={
               !newRepairID.trim() ||
               ticket.ticketStates?.slice(-1)[0] === 7 ||
               ticket.ticketStates?.slice(-1)[0] === "Repair Marked Complete"
             }
           >
-            Update Repair ID
+            Add Repair ID
           </button>
         </div>
 
