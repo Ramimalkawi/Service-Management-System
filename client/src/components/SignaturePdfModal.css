@@ -33,17 +33,33 @@
   margin: 0 auto;
 }
 
-.signature-box {
-  margin-top: 0.5rem;
+.signature-area {
+  display: flex;
+  gap: 20px;
   background-color: #f9f9f9;
-  padding: 1rem;
+  margin-top: 0.1rem;
+  padding: 0.5rem;
   border-radius: 8px;
+  height: 400px;
   max-width: 100%;
+  max-height: 100%;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.signature-box p {
+.signature-box {
+  background-color: #f9f9f9;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  height: 400px;
+  max-width: 100%;
+  max-height: 100%;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.signature-area p {
   margin-bottom: 0.5rem;
   font-weight: bold;
   color: #333;
@@ -57,8 +73,8 @@
 }
 
 .sig-canvas {
-  width: 300px;
-  height: 100px;
+  width: 400px;
+  height: 500px;
   max-width: 100%;
   background: #fff;
   border: 2px solid #1ccad4;
