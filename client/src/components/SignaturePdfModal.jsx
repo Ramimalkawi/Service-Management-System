@@ -93,8 +93,8 @@ const SignaturePdfModal = ({
       const { width: lastPageWidth, height: lastPageHeight } =
         lastPage.getSize();
       // Place signature at the bottom center of the last page
-      const sigWidth = 70;
-      const sigHeight = 35;
+      const sigWidth = 50;
+      const sigHeight = 25;
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       lastPage.drawImage(sigImage, {
         x: 300,
@@ -345,8 +345,8 @@ const SignaturePdfModal = ({
               onBegin={() => setHasDrawn(true)}
               penColor="black"
               canvasProps={{
-                width: 300,
-                height: 100,
+                width: 240,
+                height: 80,
 
                 style: {
                   border: "1px solid #ccc",
@@ -375,8 +375,8 @@ const SignaturePdfModal = ({
               ref={sigCanvasTechnician}
               penColor="black"
               canvasProps={{
-                width: 300,
-                height: 100,
+                width: 240,
+                height: 80,
 
                 style: {
                   border: "1px solid #ccc",
