@@ -321,6 +321,54 @@ const PartsModal = ({ isOpen, onClose, ticket, onOpenPriceQuotationModal }) => {
         shouldHaveInvoice: hasPricedPart ? true : allZero ? false : undefined,
       });
 
+      // If any part has a price, create a modernInvoices document
+      if (hasPricedPart) {
+        const formattedDate = new Date().toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        });
+        const invoiceId = `INV${ticket.location}${ticket.ticketNum}`;
+        const invoiceRef = doc(db, "modernInvoices", invoiceId);
+        const existingInvoice = await getDoc(invoiceRef);
+        if (!existingInvoice.exists()) {
+          const invoiceData = {
+            payments: [],
+            customerName: ticket.customerName,
+            machineType: ticket.machineType,
+            date: formattedDate,
+            description: partsList.map((p) => p.description).join(", "),
+            emailAddress: ticket.emailAddress || "",
+            invoiceStatus: "Pending",
+            location: ticket.location || "",
+            mobileNumber: ticket.mobileNumber || "",
+            parts: partsList,
+            ticketNum: Number(ticket.ticketNum),
+            ticketId: ticket.id,
+          };
+          await setDoc(invoiceRef, invoiceData);
+          await updateDoc(doc(db, "tickets", ticket.id), {
+            invoiceId: invoiceId,
+            invoiceStatus: "Pending",
+          });
+        } else {
+          // Update the invoice with the new partsList and description, keep other fields
+          const oldData = existingInvoice.data();
+          await updateDoc(invoiceRef, {
+            parts: partsList,
+            description: partsList.map((p) => p.description).join(", "),
+          });
+          // Optionally update the ticket with invoiceId if not already set
+          await updateDoc(doc(db, "tickets", ticket.id), {
+            invoiceId: invoiceId,
+          });
+        }
+      }
+
       alert("Parts delivery note saved successfully.");
       onClose();
     } catch (err) {

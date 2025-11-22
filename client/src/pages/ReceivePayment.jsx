@@ -12,9 +12,9 @@ import { db } from "../firebase";
 import { useUser } from "../context/userContext";
 
 export default function ReceivePayment() {
-  const { ticketId } = useParams();
+  const { invoiceId } = useParams();
   const navigate = useNavigate();
-  const [ticket, setTicket] = useState(null);
+  const [invoice, setInvoice] = useState(null);
   const [parts, setParts] = useState([]);
   const [amountPaid, setAmountPaid] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -22,42 +22,32 @@ export default function ReceivePayment() {
   const { technician } = useUser();
 
   useEffect(() => {
-    async function fetchTicketDetails() {
+    async function fetchInvoiceDetails() {
+      console.log("Fetching invoice details for ID:", invoiceId);
       setLoading(true);
       try {
-        const ticketRef = doc(db, "tickets", ticketId);
-        const ticketSnap = await getDoc(ticketRef);
+        const invoiceRef = doc(db, "modernInvoices", invoiceId);
+        console.log("Invoice Ref:", invoiceRef);
+        const invoiceSnap = await getDoc(invoiceRef);
 
-        if (ticketSnap.exists()) {
-          const ticketData = ticketSnap.data();
-          setTicket(ticketData);
-
-          if (ticketData.partDeliveryNote) {
-            const partsRef = doc(
-              db,
-              "partsDeliveryNotes",
-              ticketData.partDeliveryNote
-            );
-            const partsSnap = await getDoc(partsRef);
-
-            if (partsSnap.exists()) {
-              const partsData = partsSnap.data();
-              setParts(partsData.parts || []);
-            }
-          }
+        if (invoiceSnap.exists()) {
+          const invoiceData = invoiceSnap.data();
+          setInvoice(invoiceData);
+          console.log("Fetched invoice data:", invoiceData);
+          setParts(invoiceData.parts || []);
         }
       } catch (error) {
-        console.error("Error fetching ticket details:", error);
+        console.error("Error fetching invoice details:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchTicketDetails();
-  }, [ticketId]);
+    fetchInvoiceDetails();
+  }, [invoiceId]);
 
   const handlePayment = async () => {
-    if (!ticket || !amountPaid || amountPaid <= 0) {
+    if (!invoice || !amountPaid || amountPaid <= 0) {
       alert("Please enter a valid payment amount.");
       return;
     }
@@ -66,7 +56,9 @@ export default function ReceivePayment() {
       (sum, part) => sum + Number(part.price || 0),
       0
     );
-    const newAmountPaid = Number(ticket.amountPaid || 0) + Number(amountPaid);
+
+    const newAmountPaid = Number(invoice.amountPaid || 0) + Number(amountPaid);
+
     const newStatus =
       newAmountPaid >= totalAmount
         ? "Paid"
@@ -76,18 +68,36 @@ export default function ReceivePayment() {
 
     try {
       // 1. Add a new payment record to the 'payments' subcollection
-      const ticketRef = doc(db, "tickets", ticketId);
-      const paymentsCollectionRef = collection(ticketRef, "payments");
-      await addDoc(paymentsCollectionRef, {
+      const invoiceRef = doc(db, "modernInvoices", invoiceId);
+      const ticketRef = doc(db, "tickets", invoice.ticketId);
+
+      const paymentData = invoice.payments || [];
+
+      paymentData.push({
         amount: Number(amountPaid),
-        paymentDate: serverTimestamp(),
+        paymentDate: new Date().toISOString(),
         receivedBy: technician.name,
         paymentMethod: paymentMethod,
       });
 
+      // await updateDoc(invoiceRef, { payments: paymentData });
+      // invoiceRef.payments = arrayUnion({
+      //   amount: Number(amountPaid),
+      //   paymentDate: serverTimestamp(),
+      //   receivedBy: technician.name,
+      //   paymentMethod: paymentMethod,
+      // });
+      //   paymentMethod: paymentMethod,
+      // });
+
       // 2. Update the total amountPaid and status on the ticket document
-      await updateDoc(ticketRef, {
+      await updateDoc(invoiceRef, {
+        payments: paymentData,
         amountPaid: newAmountPaid,
+        invoiceStatus: newStatus,
+      });
+
+      await updateDoc(ticketRef, {
         invoiceStatus: newStatus,
       });
 
@@ -101,28 +111,27 @@ export default function ReceivePayment() {
 
   const remainingAmount =
     parts.reduce((sum, part) => sum + Number(part.price || 0), 0) -
-    (ticket?.amountPaid || 0);
+    (invoice?.amountPaid || 0);
 
   if (loading) return <p>Loading...</p>;
-  if (!ticket) return <p>Ticket not found.</p>;
+  if (!invoice) return <p>Invoice not found.</p>;
 
   return (
     <div style={{ padding: "2rem" }}>
       <h2>Receive Payment</h2>
       <div style={{ marginBottom: "1rem" }}>
-        <h3>Ticket Details</h3>
+        <h3>Invoice Details</h3>
         <p>
-          <strong>Ticket #:</strong> {ticket.location}
-          {ticket.ticketNum}
+          <strong>Invoice #:</strong> {invoiceId}
         </p>
         <p>
-          <strong>Customer:</strong> {ticket.customerName}
+          <strong>Customer:</strong> {invoice.customerName}
         </p>
         <p>
-          <strong>Device:</strong> {ticket.machineType}
+          <strong>Device:</strong> {invoice.machineType}
         </p>
         <p>
-          <strong>Status:</strong> {ticket.status}
+          <strong>Status:</strong> {invoice.invoiceStatus || "Pending"}
         </p>
       </div>
 
@@ -214,11 +223,11 @@ export default function ReceivePayment() {
         )}
       </div>
 
-      {ticket && (
+      {invoice && (
         <div style={{ marginBottom: "1rem" }}>
           <h3>Payment Details</h3>
           <p>
-            <strong>Amount Paid:</strong> JOD {ticket.amountPaid || 0}
+            <strong>Amount Paid:</strong> JOD {invoice.amountPaid || 0}
           </p>
           <p>
             <strong>Remaining Amount:</strong> JOD {remainingAmount}
@@ -235,7 +244,7 @@ export default function ReceivePayment() {
             .toFixed(2)}
         </p>
         <p>
-          <strong>Amount Paid:</strong> JOD {ticket.amountPaid || 0}
+          <strong>Amount Paid:</strong> JOD {invoice.amountPaid || 0}
         </p>
         <label>
           Enter Amount Paid:

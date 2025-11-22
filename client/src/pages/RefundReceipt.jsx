@@ -12,9 +12,9 @@ import PrintableRefundContent from "../components/PrintableRefundContent";
 import "./PaymentReceipt.css";
 
 const RefundReceipt = () => {
-  const { ticketId, refundId } = useParams();
+  const { invoiceId, refundIndex } = useParams();
   const [refund, setRefund] = useState(null);
-  const [ticket, setTicket] = useState(null);
+  const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSignatureModalOpen, setSignatureModalOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -24,18 +24,18 @@ const RefundReceipt = () => {
     const fetchReceiptData = async () => {
       setLoading(true);
       try {
-        const ticketRef = doc(db, "tickets", ticketId);
-        const ticketSnap = await getDoc(ticketRef);
-        if (ticketSnap.exists()) {
-          setTicket({ id: ticketSnap.id, ...ticketSnap.data() });
-        }
+        const invoiceRef = doc(db, "modernInvoices", invoiceId);
 
-        const refundRef = doc(db, "tickets", ticketId, "refunds", refundId);
-        const refundSnap = await getDoc(refundRef);
-        if (refundSnap.exists()) {
-          const refundData = { id: refundSnap.id, ...refundSnap.data() };
-          setRefund(refundData);
-          setPdfUrl(refundData.pdfUrl || null);
+        const invoiceSnap = await getDoc(invoiceRef);
+
+        if (invoiceSnap.exists()) {
+          setInvoice(invoiceSnap.data());
+
+          const refund = invoiceSnap.data().refunds[refundIndex];
+          console.log("Fetched refund data:", refund);
+          setRefund(refund);
+          setPdfUrl(refund.pdfUrl || null);
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error fetching receipt data:", error);
@@ -45,7 +45,7 @@ const RefundReceipt = () => {
     };
 
     fetchReceiptData();
-  }, [ticketId, refundId]);
+  }, [invoiceId, refundIndex]);
 
   const generateAndUploadPdf = async (signatureDataUrl = null) => {
     const contentElement = printableContentRef.current;
@@ -83,7 +83,7 @@ const RefundReceipt = () => {
       const pdfBlob = pdf.output("blob");
       const pdfStorageRef = ref(
         storage,
-        `refund-receipts/${ticketId}/${refundId}.pdf`
+        `refund-receipts/${invoiceId}/${refundIndex}.pdf`
       );
 
       await uploadString(
@@ -93,8 +93,14 @@ const RefundReceipt = () => {
       );
       const downloadUrl = await getDownloadURL(pdfStorageRef);
 
-      await updateDoc(doc(db, "tickets", ticketId, "refunds", refundId), {
-        pdfUrl: downloadUrl,
+      await updateDoc(doc(db, "modernInvoices", invoiceId), {
+        refunds: [
+          {
+            ...refund,
+            pdfUrl: downloadUrl,
+            signatureUrl: signatureDataUrl,
+          },
+        ],
       });
 
       setPdfUrl(downloadUrl);
@@ -108,7 +114,14 @@ const RefundReceipt = () => {
   const handleSignatureSave = async (signatureDataUrl) => {
     setRefund((prev) => ({ ...prev, signatureUrl: signatureDataUrl }));
     setSignatureModalOpen(false);
-
+    await updateDoc(doc(db, "modernInvoices", invoiceId), {
+      refunds: [
+        {
+          ...refund,
+          signatureUrl: signatureDataUrl,
+        },
+      ],
+    });
     // Regenerate and upload the PDF with the new signature
     await generateAndUploadPdf(signatureDataUrl);
   };
@@ -156,7 +169,7 @@ const RefundReceipt = () => {
   };
 
   const handleSendEmail = async () => {
-    if (!ticket) return;
+    if (!invoice) return;
 
     let currentPdfUrl = pdfUrl;
     if (!currentPdfUrl) {
@@ -169,8 +182,8 @@ const RefundReceipt = () => {
     }
 
     const emailHtml = `
-      <p>Dear ${ticket.customerName},</p>
-      <p>Please find your refund receipt for ticket #${ticket.ticketId} attached.</p>
+      <p>Dear ${invoice.customerName},</p>
+      <p>Please find your refund receipt for ticket #${invoice.ticketId} attached.</p>
       <p>You can also download it directly from this link: <a href="${currentPdfUrl}">Download Receipt</a></p>
       <br/>
       <p>Thank you,</p>
@@ -183,11 +196,11 @@ const RefundReceipt = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: ticket.customerEmail,
-          subject: `Your Refund Receipt for Ticket #${ticket.ticketId}`,
+          subject: `Your Refund Receipt for Ticket #${invoice.ticketId}`,
           html: emailHtml,
           attachments: [
             {
-              filename: `refund-receipt-${refundId}.pdf`,
+              filename: `refund-receipt-${refundIndex}.pdf`,
               path: currentPdfUrl,
             },
           ],
@@ -204,7 +217,7 @@ const RefundReceipt = () => {
     return <div className="receipt-container">Loading...</div>;
   }
 
-  if (!ticket || !refund) {
+  if (!invoice || !refund) {
     return <div className="receipt-container">Receipt not found.</div>;
   }
 
@@ -226,7 +239,7 @@ const RefundReceipt = () => {
       <div className="receipt-container">
         <PrintableRefundContent
           ref={printableContentRef}
-          ticket={ticket}
+          invoice={invoice}
           refund={refund}
           signatureImage={refund?.signatureUrl}
         />
@@ -244,8 +257,8 @@ const RefundReceipt = () => {
 
       {isSignatureModalOpen && (
         <SignatureRefundModal
-          ticketId={ticketId}
-          refundId={refundId}
+          invoiceId={invoiceId}
+          refundIndex={refundIndex}
           onClose={() => setSignatureModalOpen(false)}
           onSignatureSave={handleSignatureSave}
         />
@@ -255,7 +268,7 @@ const RefundReceipt = () => {
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         <PrintableRefundContent
           ref={printableContentRef}
-          ticket={ticket}
+          invoice={invoice}
           refund={refund}
           signatureImage={refund?.signatureUrl}
         />

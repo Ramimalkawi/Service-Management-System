@@ -5,20 +5,50 @@ import "./PrintableTicket.css";
 import "./PrintableRefundContent.css";
 
 const PrintableRefundContent = React.forwardRef(
-  ({ ticket, refund, signatureImage }, ref) => {
-    if (!ticket || !refund) {
+  ({ invoice, refund, signatureImage }, ref) => {
+    if (!invoice || !refund) {
       return <div ref={ref}>Loading...</div>;
     }
 
-    const formatDate = (date) => {
-      return new Date(date.seconds * 1000).toLocaleString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
+    // const formatDate = (date) => {
+    //   return new Date(date.seconds * 1000).toLocaleString("en-US", {
+    //     year: "numeric",
+    //     month: "long",
+    //     day: "numeric",
+    //     hour: "2-digit",
+    //     minute: "2-digit",
+    //     hour12: true,
+    //   });
+    // };
+
+    const formatDate = (d) => {
+      if (!d) return "N/A";
+      try {
+        let dateObj = null;
+        if (typeof d === "string") {
+          // try parse string into Date, otherwise return date-part fallback
+          const parsed = new Date(d);
+          if (!isNaN(parsed)) dateObj = parsed;
+          else {
+            // fallback: try to strip time portion if present (ISO or ' ' separated)
+            const datePart = d.split("T")[0].split(" ")[0];
+            return datePart || d;
+          }
+        } else if (d.toDate && typeof d.toDate === "function") {
+          dateObj = d.toDate();
+        } else {
+          dateObj = new Date(d);
+        }
+
+        if (!dateObj || isNaN(dateObj)) return String(d);
+        return dateObj.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      } catch (e) {
+        return String(d);
+      }
     };
 
     return (
@@ -52,38 +82,35 @@ const PrintableRefundContent = React.forwardRef(
           <div className="receipt-section">
             <h2>Customer Information</h2>
             <p>
-              <strong>Name:</strong> {ticket.customerName}
+              <strong>Name:</strong> {invoice.customerName}
             </p>
             <p>
-              <strong>Phone:</strong> {ticket.mobileNumber}
+              <strong>Phone:</strong> {invoice.mobileNumber}
             </p>
           </div>
           <div className="receipt-section">
             <h2>Ticket Information</h2>
             <p>
-              <strong>Ticket #:</strong> {ticket.location}
-              {ticket.ticketNum}
+              <strong>Ticket #:</strong>
+              {invoice.location}
+              {invoice.ticketNum}
             </p>
             <p>
-              <strong>Device:</strong> {ticket.machineType}
-            </p>
-            <p>
-              <strong>Serial Number:</strong> {ticket.serialNum}
+              <strong>Device:</strong> {invoice.machineType}
             </p>
           </div>
         </div>
         <div className="receipt-section">
           <h2>Refund Details</h2>
           <p>
-            <strong>Refund ID:</strong> {ticket.location}
-            {ticket.ticketNum}
+            <strong>Refund ID:</strong> {invoice.id}
           </p>
           <p>
             <strong>Refund Date:</strong> {formatDate(refund.refundDate)}
           </p>
           <p>
-            <strong>Amount Refunded:</strong> $
-            {parseFloat(refund.amount).toFixed(2)}
+            <strong>Amount Refunded:</strong>
+            {parseFloat(refund.amount).toFixed(2)} JOD
           </p>
           <p>
             <strong>Reason for Refund:</strong> {refund.reason}

@@ -11,8 +11,8 @@ import { db } from "../firebase";
 import "./SignatureRefundModal.css";
 
 const SignatureRefundModal = ({
-  ticketId,
-  refundId,
+  invoiceId,
+  refundIndex,
   onClose,
   onSignatureSave,
 }) => {
@@ -33,17 +33,29 @@ const SignatureRefundModal = ({
     const storage = getStorage();
     const storageRef = ref(
       storage,
-      `refundSignatures/${ticketId}_${refundId}.png`
+      `refundSignatures/${invoiceId}_${refundIndex}.png`
     );
 
     try {
+      console.log("storageRef: ", storageRef);
       await uploadString(storageRef, signatureImage, "data_url");
       const downloadURL = await getDownloadURL(storageRef);
 
-      const refundRef = doc(db, "tickets", ticketId, "refunds", refundId);
-      await updateDoc(refundRef, {
-        signatureUrl: downloadURL,
-      });
+      // // Update the refund record in Firestore with the signature URL
+      // const invoiceRef = doc(db, "modernInvoices", invoiceId);
+      // const invoiceSnap = await getDoc(invoiceRef);
+      // if (!invoiceSnap.exists()) {
+      //   throw new Error("Invoice not found");
+      // }
+      // const invoiceData = invoiceSnap.data();
+      // const refunds = invoiceData.refunds || [];
+      // if (refundIndex < 0 || refundIndex >= refunds.length) {
+      //   throw new Error("Invalid refund index");
+      // }
+
+      // refunds[refundIndex].signatureUrl = downloadURL;
+
+      // await updateDoc(invoiceRef, { refunds });
 
       onSignatureSave(downloadURL);
       onClose();

@@ -121,7 +121,7 @@ const StatusStepWithBubble = React.memo(function StatusStepWithBubble({
   );
 });
 
-export default function TicketDetail({ ticket, onClose, onDelete }) {
+export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [mediaURLs, setMediaURLs] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -132,6 +132,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
   const [editedTicket, setEditedTicket] = useState({});
   const [ticketNotes, setTicketNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedPath, setCopiedPath] = useState(false);
 
   const storage = getStorage();
 
@@ -335,6 +336,7 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     var filePath = "";
     if (link === "View Contract") {
       filePath = ticket.contractURL;
+      console.log("Opening contract at path:", filePath);
     }
     if (link === "View Delivery Note") {
       filePath = ticket.deliveryNoteURL;
@@ -368,15 +370,20 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
       filePath = ticket.priceQuotationURL;
     }
 
-    const fileRef = ref(storage, filePath);
-
-    try {
-      const url = await getDownloadURL(fileRef);
-      // Open the direct PDF URL for best print quality
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error("Error opening contract PDF:", error);
-      alert("Failed to open contract.");
+    if (!archived) {
+      const fileRef = ref(storage, filePath);
+      try {
+        const url = await getDownloadURL(fileRef);
+        // Open the direct PDF URL for best print quality
+        window.open(url, "_blank");
+      } catch (error) {
+        console.error("Error opening contract PDF:", error);
+        alert("Failed to open contract.");
+      }
+    } else {
+      filePath =
+        "file:///users/apple/Library/Containers/SmartCloud.-65SolutionsSystem/Data/Documents/contracts/BCB3BF44-9001-45FD-B38F-10EF6C7FD54B.png";
+      window.open(filePath, "_blank");
     }
   };
 
@@ -590,6 +597,11 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Serial Number:</strong> {ticket.serialNum}
               </p>
+              {ticket.deviceIMEI && (
+                <p>
+                  <strong>IMEI number:</strong> {ticket.deviceIMEI}
+                </p>
+              )}
               <p>
                 <strong>Warranty Status:</strong> {ticket.warrantyStatus}
               </p>
@@ -700,6 +712,11 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Serial Number:</strong> {ticket.serialNum}
               </p>
+              {ticket.deviceIMEI && (
+                <p>
+                  <strong>IMEI number:</strong> {ticket.deviceIMEI}
+                </p>
+              )}
               <p>
                 <strong>Warranty Status:</strong> {ticket.warrantyStatus}
               </p>
@@ -795,8 +812,24 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
     // };
   };
 
+  // Helper to check if a URL is a local file path
+  function isLocalFile(url) {
+    return typeof url === "string" && url.startsWith("file://");
+  }
+
+  // Helper to extract folder from file path
+  function getFolderPath(fileUrl) {
+    if (!fileUrl) return "";
+    try {
+      const path = decodeURI(fileUrl.replace("file://", ""));
+      return path.substring(0, path.lastIndexOf("/"));
+    } catch {
+      return fileUrl;
+    }
+  }
+
   return (
-    <div className="ticket-detail-container">
+    <>
       {/* Header with close button */}
       <div className="ticket-detail-header">
         <h2>
@@ -823,104 +856,112 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
           >
             <FaFolderOpen /> Documents
           </button>
-          <button className="ticket-action-button" onClick={handleProcess}>
-            <FaCogs /> Process
-          </button>
-          <button
-            className="ticket-action-button"
-            onClick={() => setShowEmailModal(true)}
-          >
-            <FaEnvelope /> Email
-          </button>
-          <button
-            className="ticket-action-button"
-            onClick={() => setShowMediaModal(true)}
-            style={{ position: "relative" }}
-          >
-            🖼️ Media
-            {(!ticket.mediaURLs || ticket.mediaURLs.length === 0) && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: 6,
-                  right: 8,
-                  width: 10,
-                  height: 10,
-                  background: "#e53935",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  border: "2px solid #fff",
-                  boxShadow: "0 0 2px #a72828",
-                }}
-                title="No media uploaded"
-              />
+
+          <>
+            {!archived && (
+              <button className="ticket-action-button" onClick={handleProcess}>
+                <FaCogs /> Process
+              </button>
             )}
-          </button>
-          <button
-            className={`ticket-action-button ${isEditing ? "edit-active" : ""} ${ticket.ticketStates?.slice(-1)[0] === 7 ? "disabled" : ""}`}
-            onClick={handleEditToggle}
-            disabled={ticket.ticketStates?.slice(-1)[0] === 7}
-            style={
-              ticket.ticketStates?.slice(-1)[0] === 7
-                ? { opacity: 0.5, cursor: "not-allowed" }
-                : {}
-            }
-          >
-            {isEditing ? <FaUndo /> : <FaEdit />}{" "}
-            {isEditing ? "Cancel" : "Edit"}
-          </button>
-          {isEditing && (
-            <button
-              className="ticket-action-button save-button"
-              onClick={handleSaveChanges}
-              disabled={isSaving}
-            >
-              <FaSave /> {isSaving ? "Saving..." : "Save"}
-            </button>
-          )}
-          <button
-            className="ticket-action-button"
-            onClick={handleDownloadTicketFolder}
-            disabled={isDownloading}
-          >
-            {isDownloading ? (
-              <span style={{ display: "flex", alignItems: "center" }}>
-                <span
-                  className="spinner"
-                  style={{
-                    marginRight: 6,
-                    width: 18,
-                    height: 18,
-                    border: "2px solid #ccc",
-                    borderTop: "2px solid #333",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                ></span>
-                Downloading...
-              </span>
-            ) : (
-              <>📁 Download Ticket Folder</>
-            )}
-          </button>
-          {canDeleteTicket && (
+
             <button
               className="ticket-action-button"
-              style={{ background: "#e53935", color: "#fff" }}
-              onClick={handleDeleteTicket}
+              onClick={() => setShowEmailModal(true)}
             >
-              🗑️ Delete Ticket
+              <FaEnvelope /> Email
             </button>
-          )}
+            <button
+              className="ticket-action-button"
+              onClick={() => setShowMediaModal(true)}
+              style={{ position: "relative" }}
+            >
+              🖼️ Media
+              {(!ticket.mediaURLs || ticket.mediaURLs.length === 0) && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 6,
+                    right: 8,
+                    width: 10,
+                    height: 10,
+                    background: "#e53935",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                    border: "2px solid #fff",
+                    boxShadow: "0 0 2px #a72828",
+                  }}
+                  title="No media uploaded"
+                />
+              )}
+            </button>
+            {!archived && (
+              <button
+                className={`ticket-action-button ${isEditing ? "edit-active" : ""} ${ticket.ticketStates?.slice(-1)[0] === 7 ? "disabled" : ""}`}
+                onClick={handleEditToggle}
+                disabled={ticket.ticketStates?.slice(-1)[0] === 7}
+                style={
+                  ticket.ticketStates?.slice(-1)[0] === 7
+                    ? { opacity: 0.5, cursor: "not-allowed" }
+                    : {}
+                }
+              >
+                {isEditing ? <FaUndo /> : <FaEdit />}{" "}
+                {isEditing ? "Cancel" : "Edit"}
+              </button>
+            )}
+
+            {isEditing && (
+              <button
+                className="ticket-action-button save-button"
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+              >
+                <FaSave /> {isSaving ? "Saving..." : "Save"}
+              </button>
+            )}
+            <button
+              className="ticket-action-button"
+              onClick={handleDownloadTicketFolder}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <span style={{ display: "flex", alignItems: "center" }}>
+                  <span
+                    className="spinner"
+                    style={{
+                      marginRight: 6,
+                      width: 18,
+                      height: 18,
+                      border: "2px solid #ccc",
+                      borderTop: "2px solid #333",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  ></span>
+                  Downloading...
+                </span>
+              ) : (
+                <>📁 Download Ticket Folder</>
+              )}
+            </button>
+            {canDeleteTicket && !archived && (
+              <button
+                className="ticket-action-button"
+                style={{ background: "#e53935", color: "#fff" }}
+                onClick={handleDeleteTicket}
+              >
+                🗑️ Delete Ticket
+              </button>
+            )}
+          </>
+
           {/* Spinner animation CSS */}
-          <style>
-            {`
+          <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
-        `}
-          </style>
+          `}</style>
         </div>
         {/* Deliver/Sign/Price Quotation button area */}
         {(() => {
@@ -986,7 +1027,9 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
           {documentsLinks.map((link) => (
             <h4
               className="contract-link-box"
-              onClick={() => handleOpenContractInTab({ link })}
+              onClick={() => {
+                handleOpenContractInTab({ link });
+              }}
             >
               📄 {link}
             </h4>
@@ -1124,6 +1167,21 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
                   className="edit-input"
                 />
               </div>
+              {editedTicket.deviceIMEI && (
+                <div className="edit-field">
+                  <label>
+                    <strong>IMEI number:</strong>
+                  </label>
+                  <input
+                    type="text"
+                    value={editedTicket.deviceIMEI}
+                    onChange={(e) =>
+                      handleInputChange("deviceIMEI", e.target.value)
+                    }
+                    className="edit-input"
+                  />
+                </div>
+              )}
               <div className="edit-field">
                 <label>
                   <strong>Warranty Status:</strong>
@@ -1153,6 +1211,11 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
               <p>
                 <strong>Serial Number:</strong> {ticket.serialNum}
               </p>
+              {ticket.deviceIMEI && (
+                <p>
+                  <strong>IMEI number:</strong> {ticket.deviceIMEI}
+                </p>
+              )}
               <p>
                 <strong>Warranty Status:</strong> {ticket.warrantyStatus}
               </p>
@@ -1239,6 +1302,41 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
             </ol>
           </div>
         )}
+
+        {ticket.contractURL && (
+          <div
+            style={{
+              margin: "12px 0",
+              background: "#f8f8f8",
+              padding: 8,
+              borderRadius: 6,
+            }}
+          >
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>
+              Contract Folder Path:
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <code style={{ fontSize: 14, wordBreak: "break-all" }}>
+                {getFolderPath(ticket.contractURL)}
+              </code>
+              <button
+                style={{ padding: "2px 8px", fontSize: 13, cursor: "pointer" }}
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    getFolderPath(ticket.contractURL)
+                  );
+                  setCopiedPath(true);
+                  setTimeout(() => setCopiedPath(false), 1200);
+                }}
+              >
+                {copiedPath ? "Copied!" : "Copy"}
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+              (Open this folder manually in Finder)
+            </div>
+          </div>
+        )}
       </div>
       <EmailModal
         isOpen={showEmailModal}
@@ -1257,6 +1355,6 @@ export default function TicketDetail({ ticket, onClose, onDelete }) {
         onClose={() => setShowDeliveryModal(false)}
         ticket={ticket}
       />
-    </div>
+    </>
   );
 }

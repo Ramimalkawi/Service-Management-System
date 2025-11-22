@@ -13,10 +13,10 @@ import { useUser } from "../context/userContext";
 import "./RefundPage.css";
 
 const RefundPage = () => {
-  const { ticketId } = useParams();
+  const { invoiceId } = useParams();
   const navigate = useNavigate();
   const { technician } = useUser();
-  const [ticket, setTicket] = useState(null);
+  const [invoice, setInvoice] = useState(null);
   const [amountToRefund, setAmountToRefund] = useState("");
   const [refundReason, setRefundReason] = useState("Discount");
   const [loading, setLoading] = useState(true);
@@ -25,29 +25,29 @@ const RefundPage = () => {
   const [totalPaid, setTotalPaid] = useState(0);
 
   useEffect(() => {
-    const fetchTicketDetails = async () => {
+    const fetchInvoiceDetails = async () => {
       setLoading(true);
       try {
-        const ticketRef = doc(db, "tickets", ticketId);
-        const ticketSnap = await getDoc(ticketRef);
+        const invoiceRef = doc(db, "modernInvoices", invoiceId);
+        const invoiceSnap = await getDoc(invoiceRef);
 
-        if (ticketSnap.exists()) {
-          const ticketData = ticketSnap.data();
-          setTicket(ticketData);
-          setTotalPaid(ticketData.amountPaid || 0);
+        if (invoiceSnap.exists()) {
+          const invoiceData = invoiceSnap.data();
+          setInvoice(invoiceData);
+          setTotalPaid(invoiceData.amountPaid || 0);
         } else {
-          setError("Ticket not found.");
+          setError("Invoice not found.");
         }
       } catch (err) {
-        setError("Failed to fetch ticket details.");
+        setError("Failed to fetch invoice details.");
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTicketDetails();
-  }, [ticketId]);
+    fetchInvoiceDetails();
+  }, [invoiceId]);
 
   const handleRefund = async (e) => {
     e.preventDefault();
@@ -76,10 +76,14 @@ const RefundPage = () => {
 
     try {
       // 1. Add a refund transaction to a new 'refunds' subcollection
-      const refundRef = collection(db, "tickets", ticketId, "refunds");
-      await addDoc(refundRef, {
+      const invoiceRef = doc(db, "modernInvoices", invoiceId);
+      const ticketRef = doc(db, "tickets", invoice.ticketId);
+
+      const refundData = invoice.refunds || [];
+
+      refundData.push({
         amount: refundAmount,
-        refundDate: serverTimestamp(),
+        refundDate: new Date().toISOString(),
         refundMethod: "Cash", // Always cash
         reason: refundReason, // Add the reason
         refundedBy: technician?.name || "N/A",
@@ -87,15 +91,21 @@ const RefundPage = () => {
 
       // 2. Update the amountPaid on the ticket
       const newAmountPaid = totalPaid - refundAmount;
-      const ticketRef = doc(db, "tickets", ticketId);
-      await updateDoc(ticketRef, {
+
+      await updateDoc(doc(db, "modernInvoices", invoiceId), {
+        refunds: refundData,
         amountPaid: newAmountPaid,
-        // Also update the status if necessary
-        status: newAmountPaid > 0 ? "Partially Paid" : "Refunded",
+        invoiceStatus:
+          totalPaid - refundAmount > 0 ? "Partially Paid" : "Refunded",
+      });
+
+      await updateDoc(ticketRef, {
+        invoiceStatus:
+          totalPaid - refundAmount > 0 ? "Partially Paid" : "Refunded",
       });
 
       alert("Refund processed successfully!");
-      navigate("/accounting");
+      navigate(`/refund-receipt/${invoiceId}/${refundData.length - 1}`);
     } catch (err) {
       setError("Failed to process refund.");
       console.error(err);
@@ -112,12 +122,12 @@ const RefundPage = () => {
     <div className="refund-page-container">
       {error && <div className="error-message">Error: {error}</div>}
       <h2>
-        Process Refund for Ticket #{ticket?.location}
-        {ticket?.ticketNum}
+        Process Refund for Ticket #{invoice?.location}
+        {invoice?.ticketNum}
       </h2>
       <div className="ticket-summary">
         <p>
-          <strong>Customer:</strong> {ticket?.customerName}
+          <strong>Customer:</strong> {invoice?.customerName}
         </p>
         <p>
           <strong>Total Amount Paid:</strong> JOD {totalPaid.toFixed(2)}

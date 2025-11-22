@@ -23,6 +23,7 @@ import PaymentReceipt from "./pages/PaymentReceipt";
 import RefundPage from "./pages/RefundPage";
 import RefundReceipt from "./pages/RefundReceipt";
 import PriceQuotationPage from "./pages/PriceQuotationPage";
+import ModernInvoicePaymentReceipt from "./pages/ModernInvoicePaymentReceipt";
 
 function App() {
   return (
@@ -145,7 +146,7 @@ function App() {
             }
           />
           <Route
-            path="/receive-payment/:ticketId"
+            path="/receive-payment/:invoiceId"
             element={
               <PrivateRoute>
                 <ReceivePayment />
@@ -161,7 +162,15 @@ function App() {
             }
           />
           <Route
-            path="/refund/:ticketId"
+            path="/modern-invoice-payment-receipt/:invoiceId/:paymentIndex"
+            element={
+              <PrivateRoute>
+                <ModernInvoicePaymentReceipt />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/refund/:invoiceId"
             element={
               <PrivateRoute>
                 <RefundPage />
@@ -169,7 +178,7 @@ function App() {
             }
           />
           <Route
-            path="/refund-receipt/:ticketId/:refundId"
+            path="/refund-receipt/:invoiceId/:refundIndex"
             element={
               <PrivateRoute>
                 <RefundReceipt />

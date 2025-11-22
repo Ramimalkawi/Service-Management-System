@@ -2,12 +2,30 @@
 import React, { useRef, useState, useEffect } from "react";
 import Modal from "react-modal";
 import SignatureCanvas from "react-signature-canvas";
+
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import * as fontkit from "fontkit";
+
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { pdfjs, Document, Page } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import "./SignaturePdfModal.css";
+
+// Helper to fetch and cache the Arabic font
+let cachedArabicFontBytes = null;
+async function getArabicFontBytes() {
+  console.log("Fetching Arabic font bytes...");
+  if (cachedArabicFontBytes) return cachedArabicFontBytes;
+  // Place your font in public/fonts/NotoNaskhArabic-Regular.ttf or similar
+  const fontUrl = "/fonts/NotoNaskhArabic-Regular.ttf";
+  console.log("Fetching from URL:", fontUrl);
+  const res = await fetch(fontUrl);
+  if (!res.ok) throw new Error("Failed to load Arabic font");
+  const bytes = await res.arrayBuffer();
+  cachedArabicFontBytes = bytes;
+  return bytes;
+}
 
 // Set the worker source to the correct path
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -84,7 +102,10 @@ const SignaturePdfModal = ({
       const sigArrayBufferTechnician = await sigBlobTechnician.arrayBuffer();
       const response = await fetch(pdfFile);
       const arrayBuffer = await response.arrayBuffer();
+
       const pdfDoc = await PDFDocument.load(arrayBuffer);
+      // Register fontkit for custom font support
+      pdfDoc.registerFontkit(fontkit);
 
       // Draw signature on the last page of the original PDF
       const sigImage = await pdfDoc.embedPng(sigArrayBuffer);
@@ -95,7 +116,22 @@ const SignaturePdfModal = ({
       // Place signature at the bottom center of the last page
       const sigWidth = 50;
       const sigHeight = 25;
+      // Embed fonts
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      let arabicFont = font;
+      console.log("Attempting to load Arabic font for PDF...", arabicFont);
+      try {
+        console.log("Fetching Arabic font bytes...");
+        const arabicFontBytes = await getArabicFontBytes();
+        arabicFont = await pdfDoc.embedFont(arabicFontBytes);
+        console.log("Arabic font loaded and embedded.", arabicFont);
+      } catch (e) {
+        console.warn(
+          "Could not load Arabic font, falling back to Helvetica",
+          e
+        );
+      }
+
       lastPage.drawImage(sigImage, {
         x: 300,
         y: 40,
@@ -107,7 +143,7 @@ const SignaturePdfModal = ({
         x: 485,
         y: 50,
         size: 8,
-        font,
+        font: arabicFont,
       });
 
       lastPage.drawImage(sigImage, {
@@ -121,7 +157,7 @@ const SignaturePdfModal = ({
         x: 45,
         y: 65,
         size: 8,
-        font,
+        font: arabicFont,
       });
 
       // Create a new page for the signature and info (as before)
@@ -155,15 +191,16 @@ const SignaturePdfModal = ({
         x: leftX + 100,
         y,
         size: 12,
-        font,
+        font: arabicFont,
       });
       y -= lineHeight;
       page.drawText(`Company Name:`, { x: leftX, y, size: 12, font });
+      // Use arabicFont for companyName (supports Arabic)
       page.drawText(`${customerData.companyName || ""}`, {
         x: leftX + 100,
         y,
         size: 12,
-        font,
+        font: arabicFont,
       });
       y -= lineHeight;
       page.drawText(`Contact Mobile:`, { x: leftX, y, size: 12, font });
@@ -235,8 +272,9 @@ const SignaturePdfModal = ({
         font,
       });
       y -= lineHeight;
-      page.drawText(`Device Type:`, { x: rightX, y, size: 12, font });
-      page.drawText(`${customerData.machineType}`, {
+      if (customerData.deviceIMEI)
+        page.drawText(`IMEI number:`, { x: rightX, y, size: 12, font });
+      page.drawText(`${customerData.deviceIMEI}`, {
         x: rightX + 110,
         y,
         size: 12,
@@ -248,7 +286,7 @@ const SignaturePdfModal = ({
         x: rightX + 110,
         y,
         size: 12,
-        font,
+        font: arabicFont,
       });
       y -= lineHeight;
       page.drawText(`Symptom:`, { x: rightX, y, size: 12, font });
@@ -256,7 +294,7 @@ const SignaturePdfModal = ({
         x: rightX + 110,
         y,
         size: 12,
-        font,
+        font: arabicFont,
       });
       y -= lineHeight;
       page.drawText(`Technician Signature:`, { x: rightX, y, size: 12, font });
