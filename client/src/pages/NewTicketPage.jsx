@@ -48,6 +48,8 @@ const NewTicket = () => {
     technicions: [technician.name],
     countryCode: "962",
     date: new Date().toLocaleDateString("en-GB"),
+    deviceStuff: "",
+    notes: "",
   });
 
   const [loading, setLoading] = useState(false);

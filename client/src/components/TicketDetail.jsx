@@ -829,7 +829,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
   }
 
   return (
-    <>
+    <div className="ticket-detail-container">
       {/* Header with close button */}
       <div className="ticket-detail-header">
         <h2>
@@ -1312,7 +1312,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
               borderRadius: 6,
             }}
           >
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>
+            {/* <div style={{ fontWeight: 500, marginBottom: 4 }}>
               Contract Folder Path:
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1334,7 +1334,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
             </div>
             <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
               (Open this folder manually in Finder)
-            </div>
+            </div> */}
           </div>
         )}
       </div>
@@ -1355,6 +1355,6 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
         onClose={() => setShowDeliveryModal(false)}
         ticket={ticket}
       />
-    </>
+    </div>
   );
 }

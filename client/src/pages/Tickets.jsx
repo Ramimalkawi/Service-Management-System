@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc } from "firebase/firestore";
 import { db } from "../firebase";
 import TicketCard from "../components/TicketCard";
 import { useNavigate, useParams } from "react-router-dom";
@@ -212,35 +212,106 @@ const Tickets = () => {
     }
 
     // Prepare data for Excel
-    const data = ticketsToExport.map((t) => ({
-      TicketID: t.id,
-      TicketNumber: `${t.location}${t.ticketNum}`,
-      Date: t.date,
-      CustomerName: t.customerName,
-      OpenedBy:
-        Array.isArray(t.technicions) && t.technicions.length > 0
-          ? t.technicions[0]
-          : "",
-      Email: t.emailAddress,
-      Mobile: t.mobileNumber,
-      MachineType: t.machineType,
-      DeviceDescription: t.deviceDescription,
-      SerialNum: t.serialNum,
-      WarrantyStatus: t.warrantyStatus,
-      Symptom: t.symptom,
-      RepairID: t.caseID,
-      Notes: t.notes,
-      Invoice: t.hasAnInvoice === true || t.shouldHaveInvoice ? "Yes" : "No",
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Tickets");
-    let fileLabel =
-      exportMode === "ticketNumber"
-        ? `${exportStartNum}_to_${exportEndNum}`
-        : `${exportStartDate}_to_${exportEndDate}`;
-    XLSX.writeFile(wb, `tickets_export_${fileLabel}.xlsx`);
-    setShowExportModal(false);
+    (async () => {
+      const data = await Promise.all(
+        ticketsToExport.map(async (t) => {
+          const parts = await getPartsForTicket(t);
+          return {
+            TicketID: t.id,
+            TicketNumber: `${t.location}${t.ticketNum}`,
+            Date: t.date,
+            CustomerName: t.customerName,
+            OpenedBy:
+              Array.isArray(t.technicions) && t.technicions.length > 0
+                ? t.technicions[0]
+                : "",
+            Email: t.emailAddress,
+            Mobile: t.mobileNumber,
+            MachineType: t.machineType,
+            DeviceDescription: t.deviceDescription,
+            SerialNum: t.serialNum,
+            WarrantyStatus: t.warrantyStatus,
+            Symptom: t.symptom,
+            RepairID: t.caseID,
+            Notes: t.notes,
+            Invoice:
+              t.hasAnInvoice === true || t.shouldHaveInvoice ? "Yes" : "No",
+            PartNumber1: parts[0]?.PartNumber || "",
+            NewSerialNumber1: parts[0]?.newSerialNum || "",
+            PartDescription1: parts[0]?.Description || "",
+            PartNumber2: parts[1]?.PartNumber || "",
+            NewSerialNumber2: parts[1]?.newSerialNum || "",
+            PartDescription2: parts[1]?.Description || "",
+            PartNumber3: parts[2]?.PartNumber || "",
+            NewSerialNumber3: parts[2]?.newSerialNum || "",
+            PartDescription3: parts[2]?.Description || "",
+          };
+        })
+      );
+      if (tickets.length > 0) {
+        const firstParts = await getPartsForTicket(tickets[0]);
+      }
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Tickets");
+      let fileLabel =
+        exportMode === "ticketNumber"
+          ? `${exportStartNum}_to_${exportEndNum}`
+          : `${exportStartDate}_to_${exportEndDate}`;
+      XLSX.writeFile(wb, `tickets_export_${fileLabel}.xlsx`);
+      setShowExportModal(false);
+    })();
+
+    // (removed duplicate XLSX export logic; all export is handled inside the async IIFE above)
+  };
+
+  const getPartsForTicket = async (ticket) => {
+    if (!ticket.shouldHaveInvoice || !ticket.partDeliveryNote) return [];
+    // Fetch the document, not a collection
+    const docRef = doc(db, "partsDeliveryNotes", ticket.partDeliveryNote);
+    const snap = await import("firebase/firestore").then(({ getDoc }) =>
+      getDoc(docRef)
+    );
+    if (!snap.exists()) return [];
+    const docData = snap.data();
+
+    // If parts array exists, use it; else fallback to legacy arrays
+    if (Array.isArray(docData.parts) && docData.parts.length > 0) {
+      return docData.parts.map((part) => ({
+        ...part,
+        newSerialNum: part.newSN,
+        PartNumber: part.partNumber,
+        Description: part.description,
+      }));
+    } else if (
+      Array.isArray(docData.partNumbers) &&
+      Array.isArray(docData.prices) &&
+      Array.isArray(docData.partDescriptions)
+    ) {
+      // Legacy format: reconstruct part objects from parallel arrays
+      const count = Math.max(
+        docData.partNumbers.length,
+        docData.prices.length,
+        docData.partDescriptions.length
+      );
+      return Array.from({ length: count }).map((_, i) => ({
+        PartNumber: docData.partNumbers[i] || "",
+        Description:
+          docData.partDescriptions[i] === ">"
+            ? "service"
+            : docData.partDescriptions[i],
+        price: docData.prices[i] || "",
+        quantity: (docData.qtys && docData.qtys[i]) || "",
+        warrantyStatus:
+          (docData.warrantyStatus && docData.warrantyStatus[i]) || "",
+        newSerialNum:
+          (docData.newSerialNumber && docData.newSerialNumber[i]) || "",
+        oldSN: (docData.oldSerialNumber && docData.oldSerialNumber[i]) || "",
+        service: (docData.services && docData.services[i]) || "",
+      }));
+    } else {
+      return [];
+    }
   };
 
   // Remove ticket from state after deletion
