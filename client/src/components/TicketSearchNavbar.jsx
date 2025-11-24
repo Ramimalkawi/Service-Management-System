@@ -19,9 +19,7 @@ export default function TicketSearchNavbar() {
     let found = null;
     try {
       // Try to search by ticketNum first (convert to number)
-      console.log("Searching for ticket:", search);
       let ticketNum = Number(search);
-      let found = null;
       let snap;
       if (!isNaN(ticketNum) && search.trim() !== "") {
         let q = query(
@@ -29,7 +27,6 @@ export default function TicketSearchNavbar() {
           where("ticketNum", "==", ticketNum)
         );
         snap = await getDocs(q);
-        console.log("Search results (ticketNum):", snap.docs);
         if (!snap.empty) {
           found = snap.docs[0].id;
         }
@@ -38,17 +35,25 @@ export default function TicketSearchNavbar() {
         // Try to search by customerName, caseID, serialNum (case-insensitive, partial)
         let q = query(collection(db, "tickets"));
         snap = await getDocs(q);
-        console.log("Search results (fields):", snap.docs);
         const lowerSearch = search.toLowerCase();
         const match = snap.docs.find((doc) => {
           const data = doc.data();
-          const name = (data.customerName || "").toLowerCase();
-          const caseID = (data.caseID || "").toLowerCase();
-          const serialNum = (data.serialNum || "").toLowerCase();
+          const name = typeof data.customerName === "string" ? data.customerName.toLowerCase() : "";
+          let caseIDMatch = false;
+          if (typeof data.caseID === "string") {
+            caseIDMatch = data.caseID.toLowerCase().includes(lowerSearch);
+          } else if (Array.isArray(data.caseID)) {
+            caseIDMatch = data.caseID.some(
+              (id) => typeof id === "string" && id.toLowerCase().includes(lowerSearch)
+            );
+          }
+          const serialNum = typeof data.serialNum === "string" ? data.serialNum.toLowerCase() : "";
+          const imei = typeof data.deviceIMEI === "string" ? data.deviceIMEI.toLowerCase() : "";
           return (
             name.includes(lowerSearch) ||
-            caseID.includes(lowerSearch) ||
-            serialNum.includes(lowerSearch)
+            caseIDMatch ||
+            serialNum.includes(lowerSearch) ||
+            imei.includes(lowerSearch)
           );
         });
         if (match) found = match.id;
@@ -60,7 +65,7 @@ export default function TicketSearchNavbar() {
         setError("Ticket not found.");
       }
     } catch (err) {
-      setError("Error searching for ticket.");
+      setError(err.message || "Error searching for ticket.");
     } finally {
       setLoading(false);
     }

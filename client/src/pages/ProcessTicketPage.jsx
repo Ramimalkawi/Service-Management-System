@@ -627,6 +627,14 @@ const ProcessTicketPage = () => {
             <span>{ticket.machineType}</span>
           </div>
           <div className="ticket-info-item">
+            <label>Serial number:</label>
+            <span>{ticket.serialNum}</span>
+          </div>
+          <div className="ticket-info-item">
+            <label>IMEI:</label>
+            <span>{ticket.deviceIMEI}</span>
+          </div>
+          <div className="ticket-info-item">
             <label>Symptom:</label>
             <span>{ticket.symptom}</span>
           </div>
