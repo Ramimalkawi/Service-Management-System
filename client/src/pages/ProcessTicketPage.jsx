@@ -14,6 +14,7 @@ import PriceQuotationModal from "../components/PriceQuotationModal";
 import { API_ENDPOINTS } from "../config/api";
 import MediaModal from "../components/MediaModal";
 import TicketStatusTimeline from "../components/TicketStatusTimeline";
+import { error } from "pdf-lib";
 
 Modal.setAppElement("#root"); // for accessibility
 const statusOptions = [
@@ -357,6 +358,7 @@ const ProcessTicketPage = () => {
       });
 
       if (response.ok) {
+        alert("Parts allocated email sent to customer.");
         console.log("Parts allocated email sent successfully");
       } else {
         console.error("Failed to send parts allocated email");
@@ -519,6 +521,7 @@ const ProcessTicketPage = () => {
       });
 
       if (response.ok) {
+        alert("Ready for pickup email sent to customer.");
         console.log("Ready for pickup email sent successfully");
       } else {
         console.error("Failed to send ready for pickup email");

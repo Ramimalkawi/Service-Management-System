@@ -124,6 +124,11 @@ export default function Accounting() {
   const navigate = useNavigate();
   const [invoiceCount, setInvoiceCount] = useState(null);
   const [modernInvoices, setModernInvoices] = useState([]);
+  const [showExportFilter, setShowExportFilter] = useState(false);
+  const [exportStatus, setExportStatus] = useState("");
+  const [exportCustomer, setExportCustomer] = useState("");
+  const [exportDateFrom, setExportDateFrom] = useState("");
+  const [exportDateTo, setExportDateTo] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -324,6 +329,98 @@ export default function Accounting() {
     }
   };
 
+  const handleExportInvoices = async () => {
+    setExportStatus("Exporting...");
+    try {
+      // Filter invoices based on exportStatus, exportCustomer, exportDateFrom, exportDateTo
+      let filteredInvoices = modernInvoices.filter((inv) => {
+        let statusMatch = !exportStatus || inv.invoiceStatus === exportStatus;
+        let customerMatch =
+          !exportCustomer ||
+          (inv.customerName || "")
+            .toLowerCase()
+            .includes(exportCustomer.toLowerCase());
+        let dateFromMatch = true;
+        let dateToMatch = true;
+        if (exportDateFrom) {
+          const invDate = new Date(inv.date);
+          const fromDate = new Date(exportDateFrom);
+          dateFromMatch = invDate >= fromDate;
+        }
+        if (exportDateTo) {
+          const invDate = new Date(inv.date);
+          const toDate = new Date(exportDateTo);
+          dateToMatch = invDate <= toDate;
+        }
+        return statusMatch && customerMatch && dateFromMatch && dateToMatch;
+      });
+
+      // Prepare data for Excel
+      const excelData = filteredInvoices.map((inv) => ({
+        Ticket: `${inv.location}${inv.ticketNum}`,
+        Date: inv.date,
+        Customer: inv.customerName,
+        Device: inv.machineType,
+        Status: inv.invoiceStatus,
+        TotalAmount: inv.parts
+          ? inv.parts
+              .map((p) => Number(p.price || 0))
+              .reduce((a, b) => a + b, 0)
+              .toFixed(2)
+          : "0.00",
+        PaidAmount: inv.payments
+          ? inv.payments
+              .map((p) => Number(p.amount || 0))
+              .reduce((a, b) => a + b, 0)
+              .toFixed(2)
+          : "0.00",
+        RefundedAmount: inv.refunds
+          ? inv.refunds
+              .map((r) => Number(r.amount || 0))
+              .reduce((a, b) => a + b, 0)
+              .toFixed(2)
+          : "0.00",
+        DueAmount: (
+          (inv.payments
+            ? inv.payments
+                .map((p) => Number(p.amount || 0))
+                .reduce((a, b) => a + b, 0)
+            : 0) -
+          (inv.refunds
+            ? inv.refunds
+                .map((r) => Number(r.amount || 0))
+                .reduce((a, b) => a + b, 0)
+            : 0)
+        ).toFixed(2),
+        Email: inv.emailAddress,
+        Mobile: inv.mobileNumber,
+      }));
+
+      // Generate Excel file using xlsx
+      // Dynamically import xlsx if not already imported
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+      // Create a blob and trigger download
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoices_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setExportStatus("Export successful!");
+    } catch (err) {
+      setExportStatus("Export failed: " + err.message);
+    }
+  };
+
   // Fetch parts and payments for a ticket when expanded
   const handleInvoiceRowClick = async (invoiceId) => {
     const newExpandedRow = expandedInvoiceRow === invoiceId ? null : invoiceId;
@@ -501,42 +598,7 @@ export default function Accounting() {
       >
         Accounting - Tickets Requiring Invoices
       </h2>
-      {/* <div style={{ marginBottom: "1rem" }}>
-        <button
-          onClick={fetchInvoiceCount}
-          style={{
-            padding: "6px 14px",
-            borderRadius: 4,
-            background: "#1976d2",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 500,
-          }}
-        >
-          Show Invoice Count
-        </button>
-        <button
-          onClick={fetchAndPrintAllInvoices}
-          style={{
-            marginLeft: 12,
-            padding: "6px 14px",
-            borderRadius: 4,
-            background: "#388e3c",
-            color: "#fff",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: 500,
-          }}
-        >
-          Print All Invoices to Console
-        </button>
-        {invoiceCount !== null && (
-          <span style={{ marginLeft: 16, fontWeight: 600 }}>
-            Total Invoices: {invoiceCount}
-          </span>
-        )}
-      </div> */}
+
       <div style={{ marginBottom: "1rem", maxWidth: 400 }}>
         <input
           type="text"
@@ -560,7 +622,105 @@ export default function Accounting() {
           <p>No invoices require action.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <h4>Invoices list</h4>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
+              }}
+            >
+              <h4>Invoices list</h4>
+              <button
+                style={{
+                  marginLeft: "16px",
+                  background: "#1ccad4",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "8px 16px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowExportFilter((prev) => !prev)}
+              >
+                Export Report
+              </button>
+            </div>
+            {/* Export filter row */}
+            {showExportFilter && (
+              <div
+                style={{
+                  background: "#f5f5f5",
+                  padding: "16px",
+                  borderRadius: "6px",
+                  marginBottom: "1rem",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  display: "flex",
+                  gap: "24px",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>
+                  Filter invoices to export:
+                </span>
+                <label>
+                  Status:
+                  <select
+                    value={exportStatus}
+                    onChange={(e) => setExportStatus(e.target.value)}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <option value="">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Partially Paid">Partially Paid</option>
+                  </select>
+                </label>
+                <label>
+                  Customer Name:
+                  <input
+                    type="text"
+                    value={exportCustomer}
+                    onChange={(e) => setExportCustomer(e.target.value)}
+                    style={{ marginLeft: 8, minWidth: 120 }}
+                    placeholder="Any"
+                  />
+                </label>
+                <label>
+                  Date from:
+                  <input
+                    type="date"
+                    value={exportDateFrom}
+                    onChange={(e) => setExportDateFrom(e.target.value)}
+                    style={{ marginLeft: 8 }}
+                  />
+                </label>
+                <label>
+                  Date to:
+                  <input
+                    type="date"
+                    value={exportDateTo}
+                    onChange={(e) => setExportDateTo(e.target.value)}
+                    style={{ marginLeft: 8 }}
+                  />
+                </label>
+                <button
+                  style={{
+                    background: "#388e3c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                  onClick={handleExportInvoices}
+                >
+                  Export to Excel
+                </button>
+              </div>
+            )}
             <table
               style={{
                 width: "100%",
@@ -1869,3 +2029,88 @@ export default function Accounting() {
 //             </table>
 //           </div>
 //         )}
+
+{
+  /* <div style={{ overflowX: "auto" }}> */
+}
+{
+  /* Wrap filter row and table in a parent fragment */
+}
+{
+  /* <>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "1rem",
+                          }}
+                        >
+                          <h4>Invoices list</h4>
+                          <button
+                            style={{
+                              marginLeft: "16px",
+                              background: "#1ccad4",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              padding: "8px 16px",
+                              fontWeight: "bold",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setShowExportFilter((prev) => !prev)}
+                          >
+                            Export Report
+                          </button>
+                        </div>
+                        {/* Export filter row */
+}
+// {showExportFilter && (
+//   <div style={{
+//     background: "#f5f5f5",
+//     padding: "16px",
+//     borderRadius: "6px",
+//     marginBottom: "1rem",
+//     boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+//     display: "flex",
+//     gap: "24px",
+//     alignItems: "center",
+//   }}>
+//     <span style={{ fontWeight: 600 }}>Filter invoices to export:</span>
+//     <label>
+//       Status:
+//       <select value={exportStatus} onChange={e => setExportStatus(e.target.value)} style={{ marginLeft: 8 }}>
+//         <option value="">All</option>
+//         <option value="Pending">Pending</option>
+//         <option value="Paid">Paid</option>
+//         <option value="Partially Paid">Partially Paid</option>
+//       </select>
+//     </label>
+//     <label>
+//       Customer Name:
+//       <input type="text" value={exportCustomer} onChange={e => setExportCustomer(e.target.value)} style={{ marginLeft: 8, minWidth: 120 }} placeholder="Any" />
+//     </label>
+//     <label>
+//       Date from:
+//       <input type="date" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)} style={{ marginLeft: 8 }} />
+//     </label>
+//     <label>
+//       Date to:
+//       <input type="date" value={exportDateTo} onChange={e => setExportDateTo(e.target.value)} style={{ marginLeft: 8 }} />
+//     </label>
+//     <button
+//       style={{
+//         background: "#388e3c",
+//         color: "white",
+//         border: "none",
+//         borderRadius: "6px",
+//         padding: "8px 16px",
+//         fontWeight: "bold",
+//         cursor: "pointer",
+//       }}
+//       onClick={handleExportInvoices}
+//     >
+//       Export to Excel
+//     </button>
+//   </div>
+// )} */}

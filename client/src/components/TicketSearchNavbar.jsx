@@ -38,17 +38,27 @@ export default function TicketSearchNavbar() {
         const lowerSearch = search.toLowerCase();
         const match = snap.docs.find((doc) => {
           const data = doc.data();
-          const name = typeof data.customerName === "string" ? data.customerName.toLowerCase() : "";
+          const name =
+            typeof data.customerName === "string"
+              ? data.customerName.toLowerCase()
+              : "";
           let caseIDMatch = false;
           if (typeof data.caseID === "string") {
             caseIDMatch = data.caseID.toLowerCase().includes(lowerSearch);
           } else if (Array.isArray(data.caseID)) {
             caseIDMatch = data.caseID.some(
-              (id) => typeof id === "string" && id.toLowerCase().includes(lowerSearch)
+              (id) =>
+                typeof id === "string" && id.toLowerCase().includes(lowerSearch)
             );
           }
-          const serialNum = typeof data.serialNum === "string" ? data.serialNum.toLowerCase() : "";
-          const imei = typeof data.deviceIMEI === "string" ? data.deviceIMEI.toLowerCase() : "";
+          const serialNum =
+            typeof data.serialNum === "string"
+              ? data.serialNum.toLowerCase()
+              : "";
+          const imei =
+            typeof data.deviceIMEI === "string"
+              ? data.deviceIMEI.toLowerCase()
+              : "";
           return (
             name.includes(lowerSearch) ||
             caseIDMatch ||

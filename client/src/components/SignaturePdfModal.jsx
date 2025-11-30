@@ -56,10 +56,18 @@ const SignaturePdfModal = ({
   };
 
   const handleAccept = async () => {
-    // if (sigCanvas.current.isEmpty()) {
-    //   alert("Please provide a signature.");
-    //   return;
-    // }
+    // Require both signatures before saving
+    if (
+      !sigCanvasCustomer.current ||
+      sigCanvasCustomer.current.isEmpty() ||
+      !sigCanvasTechnician.current ||
+      sigCanvasTechnician.current.isEmpty()
+    ) {
+      alert(
+        "Please provide both customer and technician signatures before continuing."
+      );
+      return;
+    }
 
     setIsSaving(true);
 
@@ -81,12 +89,18 @@ const SignaturePdfModal = ({
 
     try {
       // Save signature image to Firebase Storage
-      const sigBlob = await new Promise((resolve) =>
-        canvas.toBlob((blob) => resolve(blob), "image/png")
+      const sigBlob = await new Promise((resolve, reject) =>
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Failed to create customer signature blob"));
+        }, "image/png")
       );
 
-      const sigBlobTechnician = await new Promise((resolve) =>
-        canvas2.toBlob((blob) => resolve(blob), "image/png")
+      const sigBlobTechnician = await new Promise((resolve, reject) =>
+        canvas2.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Failed to create technician signature blob"));
+        }, "image/png")
       );
 
       const storage = getStorage();
@@ -100,15 +114,35 @@ const SignaturePdfModal = ({
       // Prepare PDF with signature
       const sigArrayBuffer = await sigBlob.arrayBuffer();
       const sigArrayBufferTechnician = await sigBlobTechnician.arrayBuffer();
-      const response = await fetch(pdfFile);
+      let response;
+      try {
+        response = await fetch(pdfFile);
+        if (!response.ok) throw new Error("Failed to fetch PDF file");
+      } catch (e) {
+        throw new Error(
+          "Could not fetch PDF file. Check the file URL and network."
+        );
+      }
       const arrayBuffer = await response.arrayBuffer();
 
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      let pdfDoc;
+      try {
+        pdfDoc = await PDFDocument.load(arrayBuffer);
+      } catch (e) {
+        throw new Error(
+          "Failed to load PDF document. The file may be corrupted or invalid."
+        );
+      }
       // Register fontkit for custom font support
       pdfDoc.registerFontkit(fontkit);
 
       // Draw signature on the last page of the original PDF
-      const sigImage = await pdfDoc.embedPng(sigArrayBuffer);
+      let sigImage;
+      try {
+        sigImage = await pdfDoc.embedPng(sigArrayBuffer);
+      } catch (e) {
+        throw new Error("Failed to embed customer signature image in PDF.");
+      }
       const totalPages = pdfDoc.getPageCount();
       const lastPage = pdfDoc.getPage(totalPages - 1);
       const { width: lastPageWidth, height: lastPageHeight } =
@@ -117,19 +151,18 @@ const SignaturePdfModal = ({
       const sigWidth = 50;
       const sigHeight = 25;
       // Embed fonts
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      let arabicFont = font;
-      console.log("Attempting to load Arabic font for PDF...", arabicFont);
+      let font, arabicFont;
       try {
-        console.log("Fetching Arabic font bytes...");
+        font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        arabicFont = font;
         const arabicFontBytes = await getArabicFontBytes();
         arabicFont = await pdfDoc.embedFont(arabicFontBytes);
-        console.log("Arabic font loaded and embedded.", arabicFont);
       } catch (e) {
         console.warn(
           "Could not load Arabic font, falling back to Helvetica",
           e
         );
+        arabicFont = font;
       }
 
       lastPage.drawImage(sigImage, {
@@ -164,7 +197,12 @@ const SignaturePdfModal = ({
       const page = pdfDoc.addPage();
       const { width, height } = page.getSize();
 
-      const sigImageTech = await pdfDoc.embedPng(sigArrayBufferTechnician);
+      let sigImageTech;
+      try {
+        sigImageTech = await pdfDoc.embedPng(sigArrayBufferTechnician);
+      } catch (e) {
+        throw new Error("Failed to embed technician signature image in PDF.");
+      }
       const leftX = 40;
       const rightX = width / 2 + 20;
 
@@ -318,9 +356,14 @@ const SignaturePdfModal = ({
         });
       }
 
-      const finalPdfBytes = await pdfDoc.save();
+      let finalPdfBytes;
+      try {
+        finalPdfBytes = await pdfDoc.save();
+      } catch (e) {
+        throw new Error("Failed to save the signed PDF document.");
+      }
       const finalPdfBlob = new Blob([finalPdfBytes], {
-        type: "application/octec-stream",
+        type: "application/octet-stream",
       });
 
       const contractRef = ref(
@@ -328,15 +371,26 @@ const SignaturePdfModal = ({
         `testcontracts/Contract${customerData.location}${ticketNum}${customerData.customerName}.pdf`
       );
 
-      await uploadBytes(contractRef, finalPdfBlob);
+      try {
+        await uploadBytes(contractRef, finalPdfBlob);
+      } catch (e) {
+        throw new Error(
+          "Failed to upload signed PDF to storage. Check your Firebase Storage rules and network."
+        );
+      }
 
-      const contractURL = await getDownloadURL(contractRef);
+      let contractURL;
+      try {
+        contractURL = await getDownloadURL(contractRef);
+      } catch (e) {
+        throw new Error("Failed to get download URL for signed PDF.");
+      }
       // Pass both contractURL and customerSignatureURL to onComplete
       onComplete(contractURL, customerSignatureURL);
       onClose();
     } catch (error) {
       console.error("Failed to save signed PDF:", error);
-      alert("Something went wrong while saving.");
+      alert(error.message || "Something went wrong while saving.");
     } finally {
       setIsSaving(false);
     }
