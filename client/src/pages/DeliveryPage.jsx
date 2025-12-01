@@ -37,9 +37,9 @@ const DeliveryPage = () => {
         if (snap.data().priceQuotationRef && !snap.data().priceQuotationURL) {
           setShowNextButton(true);
         }
-        // if (snap.data().partDeliveryNote && !snap.data().partsDeliveryNoteURL) {
-        //   setShowNextButton(true);
-        // }
+        if (snap.data().partDeliveryNote && !snap.data().partsDeliveryNoteURL) {
+          setShowNextButton(true);
+        }
 
         // Test email functionality immediately (for debugging)
         console.log("🧪 Testing email function with current ticket data");

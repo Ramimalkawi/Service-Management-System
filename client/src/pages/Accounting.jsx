@@ -330,10 +330,14 @@ export default function Accounting() {
   };
 
   const handleExportInvoices = async () => {
+    console.log("export date from:", exportDateFrom, "to:", exportDateTo);
     setExportStatus("Exporting...");
+
     try {
       // Filter invoices based on exportStatus, exportCustomer, exportDateFrom, exportDateTo
       let filteredInvoices = modernInvoices.filter((inv) => {
+        console.log("Filtering invoice", inv.ticketNum);
+        console.log("Filtering invoice date:", inv.date);
         let statusMatch = !exportStatus || inv.invoiceStatus === exportStatus;
         let customerMatch =
           !exportCustomer ||
@@ -343,18 +347,48 @@ export default function Accounting() {
         let dateFromMatch = true;
         let dateToMatch = true;
         if (exportDateFrom) {
-          const invDate = new Date(inv.date);
+          function parseDMY(str) {
+            // "30/11/2025, 06:14:18 pm" or "30/11/2025"
+            const datePart = str.split(",")[0].trim();
+            const [day, month, year] = datePart.split("/").map(Number);
+            return new Date(year, month - 1, day);
+          }
+          const invDate = parseDMY(inv.date);
+          console.log("Parsed invoice date for from filter:", invDate);
           const fromDate = new Date(exportDateFrom);
           dateFromMatch = invDate >= fromDate;
+          console.log(
+            "Invoice",
+            inv.ticketNum,
+            "From date:",
+            fromDate,
+            "Match:",
+            dateFromMatch
+          );
         }
         if (exportDateTo) {
-          const invDate = new Date(inv.date);
+          function parseDMY(str) {
+            // "30/11/2025, 06:14:18 pm" or "30/11/2025"
+            const datePart = str.split(",")[0].trim();
+            const [day, month, year] = datePart.split("/").map(Number);
+            return new Date(year, month - 1, day);
+          }
+          const invDate = parseDMY(inv.date);
           const toDate = new Date(exportDateTo);
           dateToMatch = invDate <= toDate;
+          console.log(
+            "Invoice",
+            inv.ticketNum,
+            "To date:",
+            toDate,
+            "Match:",
+            dateToMatch
+          );
         }
         return statusMatch && customerMatch && dateFromMatch && dateToMatch;
       });
 
+      console.log("Filtered invoices for export:", filteredInvoices);
       // Prepare data for Excel
       const excelData = filteredInvoices.map((inv) => ({
         Ticket: `${inv.location}${inv.ticketNum}`,

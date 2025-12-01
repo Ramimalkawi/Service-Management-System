@@ -15,6 +15,8 @@ import PartsModal from "../components/PartsModal";
 import PriceQuotationModal from "../components/PriceQuotationModal";
 
 const PartsDeliveryPage = () => {
+  // Add state for selected note index at the top level
+  const [selectedNoteIdx, setSelectedNoteIdx] = useState(0);
   const { id } = useParams();
   const { technician } = useUser();
   const [isSigned, setIsSigned] = useState(false);
@@ -173,7 +175,6 @@ const PartsDeliveryPage = () => {
             </p>
           </div>
         </div>
-
         <table className="parts-table">
           <thead>
             <tr>
@@ -198,10 +199,32 @@ const PartsDeliveryPage = () => {
             ))}
           </tbody>
         </table>
-
         <div className="notes-section">
           <p>
-            <strong>Service Notes:</strong> {partsData.serviceNotes || "-"}
+            <strong>Service Notes:</strong>
+            {ticket.details &&
+            Array.isArray(ticket.details) &&
+            ticket.details.length > 0 ? (
+              <>
+                <select
+                  className="no-print"
+                  style={{ marginLeft: 8 }}
+                  value={selectedNoteIdx}
+                  onChange={(e) => setSelectedNoteIdx(Number(e.target.value))}
+                >
+                  {ticket.details.map((note, idx) => (
+                    <option key={idx} value={idx}>
+                      {note.length > 30 ? note.slice(0, 30) + "..." : note}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ marginLeft: 12 }}>
+                  {ticket.details[selectedNoteIdx]}
+                </span>
+              </>
+            ) : (
+              <span> {partsData.serviceNotes || "-"}</span>
+            )}
           </p>
           <ol>
             <li>Warranty for any replaced part is valid for 90 days</li>
@@ -212,7 +235,8 @@ const PartsDeliveryPage = () => {
             <li>Receipt should be provided upon refund</li>
           </ol>
         </div>
-
+        // ...existing code... // Add state for selected note index const
+        [selectedNoteIdx, setSelectedNoteIdx] = useState(0);
         <div className="signatures">
           <div className="signature-block">
             <p>
@@ -299,7 +323,6 @@ const PartsDeliveryPage = () => {
             </div>
           </div>
         </div>
-
         <div className="action-buttons no-print">
           <button
             className="save-button"
