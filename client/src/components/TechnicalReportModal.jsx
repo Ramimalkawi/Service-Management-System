@@ -15,16 +15,33 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
   const { technician } = useUser();
   const [troubleshoot, setTroubleshoot] = useState("");
   const [inspection, setInspection] = useState("");
+  const [isPrintMode, setIsPrintMode] = useState(false);
   const [partNumber, setPartNumber] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [saving, setSaving] = useState(false);
   const reportRef = useRef();
 
+  const isIrbidLocation = ticket?.location
+    ? ticket.location.toString().toUpperCase().startsWith("I")
+    : false;
+  const footerAddress = isIrbidLocation
+    ? "365 Solutions, Wasfi Al-Tal Street, Irbid, Jordan"
+    : "365 Solutions Mecca Street Bldg 221 Amman, Jordan";
+  const footerMobile = isIrbidLocation
+    ? "+962 79 666 8831"
+    : "+962 79 681 8189";
+  const footerEmail = isIrbidLocation
+    ? "irbid@365solutionsjo.com"
+    : "help@365solutionsjo.com";
+
   if (!isOpen || !ticket) return null;
 
   const handleSavePDF = async () => {
     setSaving(true);
+    setIsPrintMode(true);
+    // Wait for the DOM to update
+    await new Promise((resolve) => setTimeout(resolve, 50));
     try {
       // Generate PDF from the report content
       const canvas = await html2canvas(reportRef.current, { scale: 2 });
@@ -54,9 +71,11 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
 
       alert("Technical report PDF saved and uploaded successfully.");
       setSaving(false);
+      setIsPrintMode(false);
       onClose();
     } catch (err) {
       setSaving(false);
+      setIsPrintMode(false);
       alert("Failed to save PDF: " + err.message);
     }
   };
@@ -138,23 +157,57 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
           </div>
           <div className="report-section report-row">
             <strong>Troubleshoot</strong>
-            <textarea
-              className="report-textarea"
-              value={troubleshoot}
-              onChange={(e) => setTroubleshoot(e.target.value)}
-              placeholder="Enter troubleshoot details..."
-              rows={3}
-            />
+            {isPrintMode ? (
+              <div
+                style={{
+                  border: "1px solid #ccc",
+                  minHeight: 60,
+                  padding: 8,
+                  marginTop: 4,
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "inherit",
+                  fontSize: "1rem",
+                  background: "#fafafa",
+                }}
+              >
+                {troubleshoot}
+              </div>
+            ) : (
+              <textarea
+                className="report-textarea"
+                value={troubleshoot}
+                onChange={(e) => setTroubleshoot(e.target.value)}
+                placeholder="Enter troubleshoot details..."
+                rows={3}
+              />
+            )}
           </div>
           <div className="report-section report-row">
             <strong>Inspection</strong>
-            <textarea
-              className="report-textarea"
-              value={inspection}
-              onChange={(e) => setInspection(e.target.value)}
-              placeholder="Enter inspection details..."
-              rows={3}
-            />
+            {isPrintMode ? (
+              <div
+                style={{
+                  border: "1px solid #ccc",
+                  minHeight: 60,
+                  padding: 8,
+                  marginTop: 4,
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "inherit",
+                  fontSize: "1rem",
+                  background: "#fafafa",
+                }}
+              >
+                {inspection}
+              </div>
+            ) : (
+              <textarea
+                className="report-textarea"
+                value={inspection}
+                onChange={(e) => setInspection(e.target.value)}
+                placeholder="Enter inspection details..."
+                rows={3}
+              />
+            )}
           </div>
           <table className="parts-table">
             <thead>
@@ -213,9 +266,9 @@ const TechnicalReportModal = ({ isOpen, onClose, ticket }) => {
             </ol>
           </div>
           <div className="report-footer">
-            365 Solutions Mecca Street Bldg 221 Amman, Jordan, 11910
+            {footerAddress}
             <br />
-            Mob: +962 79 681 8189 Email: help@365solutionsjo.com
+            Mob: {footerMobile} Email: {footerEmail}
           </div>
         </div>
         <button
