@@ -731,6 +731,8 @@ const mapOnlineAgreementToTicket = ({
       "Online customer",
     mobileNumber:
       customer.phone || agreement?.customerPhone || agreement?.phone || "",
+    customerAddress: customer.address || "",
+    customerCompany: customer.company || "",
     emailAddress:
       customer.email || agreement?.customerEmail || agreement?.email || "",
     customerType: agreement?.customerType || "personal",
@@ -883,7 +885,14 @@ const OnlineAgreementCard = ({
   const services = Array.isArray(agreement.services)
     ? agreement.services.filter(Boolean)
     : [];
-
+  const customerAddress =
+    agreement.customer?.address || agreement.customerAddress || "";
+  const customerPhone =
+    agreement.customer?.phone ||
+    agreement.customer?.mobile ||
+    agreement.customerPhone ||
+    agreement.phone ||
+    "";
   const { downloadUrl: agreementUrl } = resolveAgreementFileInfo(agreement);
   const isPdfAvailable = Boolean(agreementUrl);
   const CardWrapper = isPdfAvailable ? "a" : "div";
@@ -958,6 +967,18 @@ const OnlineAgreementCard = ({
           <span>Preferred location:</span>
           <strong>{locationName}</strong>
         </div>
+        {customerPhone && (
+          <div className="online-agreement-card__row">
+            <span>Phone:</span>
+            <strong>{customerPhone}</strong>
+          </div>
+        )}
+        {customerAddress && (
+          <div className="online-agreement-card__row">
+            <span>Address:</span>
+            <strong>{customerAddress}</strong>
+          </div>
+        )}
         {serial && (
           <div className="online-agreement-card__row">
             <span>Serial / IMEI:</span>
