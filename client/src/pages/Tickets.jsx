@@ -814,6 +814,134 @@ const mapOnlineAgreementToTicket = ({
   return ticketPayload;
 };
 
+const resolveAgreementCustomerDetails = (agreement) => {
+  const customer = agreement?.customer || {};
+  const nameCandidate =
+    customer.name ||
+    customer.fullName ||
+    agreement?.customerName ||
+    agreement?.name ||
+    "";
+  const emailCandidate =
+    customer.email || agreement?.customerEmail || agreement?.email || "";
+  const phoneCandidate =
+    customer.phone ||
+    agreement?.customerPhone ||
+    agreement?.phone ||
+    customer.mobile ||
+    "";
+
+  return {
+    name: nameCandidate || "Valued customer",
+    email: typeof emailCandidate === "string" ? emailCandidate.trim() : "",
+    phone: typeof phoneCandidate === "string" ? phoneCandidate.trim() : "",
+  };
+};
+
+const describeAgreementDevice = (agreement) => {
+  const deviceInfo = agreement?.deviceInfo || {};
+  return (
+    agreement?.device ||
+    deviceInfo.selectionDescription ||
+    deviceInfo.device ||
+    deviceInfo.model ||
+    "your device"
+  );
+};
+
+const BRANCH_LABELS = {
+  M: "Amman service center",
+  I: "Irbid service center",
+};
+
+const sendOnlineAgreementDecisionEmail = async ({
+  agreement,
+  decision,
+  ticketNumber,
+  locationCode,
+  technicianName,
+}) => {
+  const { name, email } = resolveAgreementCustomerDetails(agreement);
+  if (!email) {
+    return {
+      success: false,
+      message:
+        "No customer email on file. Please notify the customer manually.",
+    };
+  }
+
+  const deviceLabel = describeAgreementDevice(agreement);
+  const submittedLabel = formatAgreementDate(agreement);
+  const branchLabel =
+    BRANCH_LABELS[locationCode] || "365 Solutions service center";
+
+  const subject =
+    decision === "accept"
+      ? `Ticket ${ticketNumber} created – 365 Solutions`
+      : "Update on your 365 Solutions online request";
+
+  const introCopy =
+    decision === "accept"
+      ? `We're happy to let you know that your online request has been converted into ticket <strong>${ticketNumber}</strong> at our ${branchLabel}.`
+      : "Thank you for submitting your online request. After reviewing the information we could not proceed with it at this time.";
+
+  const followUpCopy =
+    decision === "accept"
+      ? "Our team will keep you posted about progress. If you need to share more details just reply to this email."
+      : "Please reply to this email or call us so we can help you schedule a visit or gather more information.";
+
+  const ticketLine =
+    decision === "accept" && ticketNumber
+      ? `<li><strong>Ticket:</strong> ${ticketNumber}</li>`
+      : "";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
+      <p>Hi ${name},</p>
+      <p>${introCopy}</p>
+      <p>${followUpCopy}</p>
+      <p><strong>Request summary</strong></p>
+      <ul>
+        ${ticketLine}
+        <li><strong>Device:</strong> ${deviceLabel}</li>
+        <li><strong>Submitted:</strong> ${submittedLabel}</li>
+      </ul>
+      <p>If you have any questions, reply to this email or call us at +962 79 681 8189.</p>
+      <p>Best regards,<br/>${technicianName || "365 Solutions Team"}</p>
+    </div>
+  `;
+
+  try {
+    const response = await fetch(API_ENDPOINTS.SEND_EMAIL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: email,
+        subject,
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const apiMessage =
+        payload?.error?.message || payload?.error || response.statusText;
+      throw new Error(apiMessage || "Failed to send customer email.");
+    }
+
+    return {
+      success: true,
+      message: `Email sent to ${email}.`,
+    };
+  } catch (error) {
+    console.error("Failed to send online agreement email", error);
+    return {
+      success: false,
+      message: error?.message || "Failed to send customer email.",
+    };
+  }
+};
+
 const parseAgreementDate = (record) => {
   if (!record) return null;
 
@@ -893,6 +1021,9 @@ const OnlineAgreementCard = ({
     agreement.customerPhone ||
     agreement.phone ||
     "";
+  const companyName =
+    agreement.customer?.company || agreement.companyName || "";
+  const customerType = agreement.customer?.company ? "business" : "personal";
   const { downloadUrl: agreementUrl } = resolveAgreementFileInfo(agreement);
   const isPdfAvailable = Boolean(agreementUrl);
   const CardWrapper = isPdfAvailable ? "a" : "div";
@@ -977,6 +1108,12 @@ const OnlineAgreementCard = ({
           <div className="online-agreement-card__row">
             <span>Address:</span>
             <strong>{customerAddress}</strong>
+          </div>
+        )}
+        {companyName && (
+          <div className="online-agreement-card__row">
+            <span>Company:</span>
+            <strong>{companyName}</strong>
           </div>
         )}
         {serial && (
@@ -1575,6 +1712,28 @@ const Tickets = () => {
   const [exportEndDate, setExportEndDate] = useState("");
   const exportRef = useRef();
 
+  const hasOnlineTickets = onlineTickets.length > 0;
+  const hasAppointments = appointments.length > 0;
+  const showAdminAlert =
+    technician?.permission === "Admin" && (hasOnlineTickets || hasAppointments);
+  const pendingSummaryParts = [];
+  if (hasOnlineTickets) {
+    pendingSummaryParts.push(
+      `${onlineTickets.length} online ${
+        onlineTickets.length === 1 ? "ticket" : "tickets"
+      }`
+    );
+  }
+  if (hasAppointments) {
+    pendingSummaryParts.push(
+      `${appointments.length} appointment${
+        appointments.length === 1 ? "" : "s"
+      }`
+    );
+  }
+  const pendingSummaryVerb = pendingSummaryParts.length === 1 ? "is" : "are";
+  const pendingSummaryText = pendingSummaryParts.join(" and ");
+
   useEffect(() => {
     const fetchTickets = async () => {
       try {
@@ -1642,6 +1801,7 @@ const Tickets = () => {
             agreement.customer?.name,
             agreement.customer?.email,
             agreement.customer?.phone,
+            agreement.customer?.company,
             agreement.device,
             agreement.deviceInfo?.problemDetails,
             agreement.deviceInfo?.selectionDescription,
@@ -1757,6 +1917,12 @@ const Tickets = () => {
       setAppointmentsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (technician?.permission === "Admin") {
+      fetchAppointments();
+    }
+  }, [technician?.permission, fetchAppointments]);
 
   useEffect(() => {
     if (
@@ -2012,6 +2178,7 @@ const Tickets = () => {
     try {
       const ticketNum = await fetchNextTicketNumber();
       const ticketId = `${normalizedLocation}${ticketNum}${generate3DigitNumber()}`;
+      const ticketNumberLabel = `${normalizedLocation}${ticketNum}`;
       const { downloadUrl, storagePath } = resolveAgreementFileInfo(agreement);
       const ticketPayload = mapOnlineAgreementToTicket({
         agreement,
@@ -2027,8 +2194,17 @@ const Tickets = () => {
       await setDoc(doc(db, "tickets", ticketId), ticketPayload);
       await deleteDoc(doc(db, "onlineTickets", agreement.id));
       removeAgreementFromLists(agreement.id);
+      const emailResult = await sendOnlineAgreementDecisionEmail({
+        agreement,
+        decision: "accept",
+        ticketNumber: ticketNumberLabel,
+        locationCode: normalizedLocation,
+        technicianName: currentTechnicianName,
+      });
       alert(
-        `Ticket ${normalizedLocation}${ticketNum} created successfully for ${ticketPayload.customerName}.`
+        `Ticket ${ticketNumberLabel} created successfully for ${ticketPayload.customerName}.${
+          emailResult.message ? `\n${emailResult.message}` : ""
+        }`
       );
     } catch (err) {
       console.error("Failed to accept online agreement:", err);
@@ -2049,6 +2225,16 @@ const Tickets = () => {
     try {
       await deleteDoc(doc(db, "onlineTickets", agreement.id));
       removeAgreementFromLists(agreement.id);
+      const emailResult = await sendOnlineAgreementDecisionEmail({
+        agreement,
+        decision: "reject",
+        locationCode: inferAgreementLocationCode(agreement),
+        technicianName: currentTechnicianName,
+      });
+      const rejectionNote = emailResult.message
+        ? ` ${emailResult.message}`
+        : "";
+      alert(`Agreement rejected.${rejectionNote}`);
     } catch (err) {
       console.error("Failed to reject online agreement:", err);
       alert("Failed to delete online agreement. Please try again.");
@@ -2241,6 +2427,34 @@ const Tickets = () => {
 
   return (
     <div>
+      {showAdminAlert && (
+        <div className="tickets-admin-alert">
+          <div className="tickets-admin-alert__message">
+            Attention Admin: There {pendingSummaryVerb} {pendingSummaryText}{" "}
+            waiting for review.
+          </div>
+          <div className="tickets-admin-alert__actions">
+            {hasOnlineTickets && (
+              <button
+                type="button"
+                onClick={() => setLocationFilter("Online")}
+                className="tickets-admin-alert__button"
+              >
+                Review Online Tickets
+              </button>
+            )}
+            {hasAppointments && (
+              <button
+                type="button"
+                onClick={() => setShowAppointmentsCalendar(true)}
+                className="tickets-admin-alert__button secondary"
+              >
+                View Appointments
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <div className="tickets-header">
         <div className="tickets-header-content">
           <div className="left-section">
