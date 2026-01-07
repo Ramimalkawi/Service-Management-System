@@ -2211,7 +2211,7 @@ const Tickets = () => {
       const emailResult = await sendOnlineAgreementDecisionEmail({
         agreement,
         decision: "accept",
-        ticketNumber: ticketNumberLabel,
+        ticketNumber: ticketId,
         locationCode: normalizedLocation,
         technicianName: currentTechnicianName,
       });
