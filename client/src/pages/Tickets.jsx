@@ -706,6 +706,12 @@ const mapOnlineAgreementToTicket = ({
   const services = Array.isArray(agreement?.services)
     ? agreement.services.filter(Boolean)
     : [];
+  const derivedCompanyName =
+    agreement?.companyName ||
+    agreement?.company?.name ||
+    customer.company ||
+    "";
+  const isBusinessCustomer = Boolean(derivedCompanyName.trim());
 
   const startedBy = technicianName || "Online Intake Portal";
   const baseDetails = [`Accepted on ${timestamp}. Started by ${startedBy}.`];
@@ -736,11 +742,7 @@ const mapOnlineAgreementToTicket = ({
     emailAddress:
       customer.email || agreement?.customerEmail || agreement?.email || "",
     customerType: agreement?.customerType || "personal",
-    companyName:
-      agreement?.companyName ||
-      agreement?.company?.name ||
-      customer.company ||
-      "",
+    companyName: derivedCompanyName,
     machineType: sanitizedDeviceType,
     deviceDescription:
       agreement?.deviceDescription ||
@@ -805,6 +807,10 @@ const mapOnlineAgreementToTicket = ({
   if (agreement?.customerAddress || customer.address) {
     ticketPayload.customerAddress =
       agreement?.customerAddress || customer.address || "";
+  }
+
+  if (isBusinessCustomer) {
+    ticketPayload.customerType = "business";
   }
 
   if (Array.isArray(deviceInfo.attachments) && deviceInfo.attachments.length) {
@@ -894,6 +900,10 @@ const sendOnlineAgreementDecisionEmail = async ({
     decision === "accept" && ticketNumber
       ? `<li><strong>Ticket:</strong> ${ticketNumber}</li>`
       : "";
+  const trackingParagraph =
+    decision === "accept" && ticketNumber
+      ? `<p>You can track your service anytime at <a href="https://www.365solutionsjo.com" target="_blank" rel="noopener noreferrer">www.365solutionsjo.com</a> using ticket ID <strong>${ticketNumber}</strong>.</p>`
+      : "";
 
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
@@ -906,6 +916,7 @@ const sendOnlineAgreementDecisionEmail = async ({
         <li><strong>Device:</strong> ${deviceLabel}</li>
         <li><strong>Submitted:</strong> ${submittedLabel}</li>
       </ul>
+      ${trackingParagraph}
       <p>If you have any questions, reply to this email or call us at +962 79 681 8189.</p>
       <p>Best regards,<br/>${technicianName || "365 Solutions Team"}</p>
     </div>
@@ -1022,8 +1033,11 @@ const OnlineAgreementCard = ({
     agreement.phone ||
     "";
   const companyName =
-    agreement.customer?.company || agreement.companyName || "";
-  const customerType = agreement.customer?.company ? "business" : "personal";
+    agreement.customer?.company ||
+    agreement.companyName ||
+    agreement.company?.name ||
+    "";
+  const customerType = companyName ? "business" : "personal";
   const { downloadUrl: agreementUrl } = resolveAgreementFileInfo(agreement);
   const isPdfAvailable = Boolean(agreementUrl);
   const CardWrapper = isPdfAvailable ? "a" : "div";
