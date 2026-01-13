@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import TicketSearchNavbar from "./TicketSearchNavbar";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -10,19 +10,11 @@ import { useUser } from "../context/userContext";
 const Navbar = () => {
   const [user] = useAuthState(auth);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const dropdownRef = useRef();
   const navigate = useNavigate();
+  const location = useLocation();
   const { technician } = useUser();
-
-  // Temporary debug logging
-  console.log("Current technician data:", technician);
-  console.log("Technician name:", technician?.name);
-  console.log("Technician permission:", technician?.permission);
-  console.log(
-    "Is System Admin?",
-    technician?.name === "System Admin" ||
-      technician?.permission === "SystemAdmin"
-  );
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -40,94 +32,116 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <nav className="navbar">
-      <div className="navbar-title">
-        <img
-          src="/logo_new.png"
-          style={{ marginRight: "8px", width: "80px" }}
-          alt="Logo"
-        />{" "}
-      </div>
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
-      <div
-        className="navbar-links"
-        style={{ display: "flex", alignItems: "center", gap: 24 }}
-      >
-        <NavLink
-          to="/tickets"
-          className={({ isActive }) => (isActive ? "active" : undefined)}
-        >
-          Tickets
-        </NavLink>
-        <NavLink
-          to="/customers"
-          className={({ isActive }) => (isActive ? "active" : undefined)}
-        >
-          Customers
-        </NavLink>
-        {/* 👇 Conditionally render Admin Dashboard link */}
-        {technician?.permission === "Admin" && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }) => (isActive ? "active" : undefined)}
-          >
-            Admin Dashboard
-          </NavLink>
-        )}
-        {/* 👇 Conditionally render User Management link for System Admin only */}
-        {(technician?.name === "System Admin" ||
-          technician?.permission === "SystemAdmin") && (
-          <NavLink
-            to="/user-management"
-            className={({ isActive }) => (isActive ? "active" : undefined)}
-          >
-            👥 User Management
-          </NavLink>
-        )}
-        {/* 👇 Conditionally render Accounting link for accountants only */}
-        {technician?.isAccountant && (
-          <NavLink
-            to="/accounting"
-            className={({ isActive }) => (isActive ? "active" : undefined)}
-          >
-            Accounting
-          </NavLink>
-        )}
-        <NavLink
-          to="/archived"
-          className={({ isActive }) => (isActive ? "active" : undefined)}
-        >
-          Archived
-        </NavLink>
-        {/* Ticket search in navbar */}
-        <TicketSearchNavbar />
-      </div>
-      {user && (
-        <div className="navbar-avatar" ref={dropdownRef}>
-          <img
-            src={`https://ui-avatars.com/api/?name=${
-              user.displayName || user.email
-            }`}
-            alt="Avatar"
-            className="avatar"
-            onClick={() => setDropdownOpen((prev) => !prev)}
-          />
-          {dropdownOpen && (
-            <div className="dropdown-menu">
-              <p>
-                {technician?.name ||
-                  technician?.displayName ||
-                  user?.displayName ||
-                  user?.email ||
-                  "Loading..."}
-              </p>
-              <button onClick={handleSignOut}>Sign Out</button>
-            </div>
-          )}
+  const toggleMobileNav = () => {
+    setMobileNavOpen((prev) => !prev);
+  };
+
+  return (
+    <header className="navbar-shell">
+      <nav className="navbar">
+        <div className="navbar-head">
+          <div className="navbar-title">
+            <img
+              src="/logo_new.png"
+              alt="365 Solutions"
+              className="navbar-title__logo"
+            />
+          </div>
+          <div className="navbar-controls">
+            <button
+              type="button"
+              className={`navbar-toggle ${mobileNavOpen ? "open" : ""}`}
+              onClick={toggleMobileNav}
+              aria-label="Toggle navigation"
+              aria-expanded={mobileNavOpen}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            {user && (
+              <div className="navbar-avatar" ref={dropdownRef}>
+                <img
+                  src={`https://ui-avatars.com/api/?name=${
+                    user.displayName || user.email
+                  }`}
+                  alt="Avatar"
+                  className="avatar"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                />
+                {dropdownOpen && (
+                  <div className="dropdown-menu">
+                    <p>
+                      {technician?.name ||
+                        technician?.displayName ||
+                        user?.displayName ||
+                        user?.email ||
+                        "Loading..."}
+                    </p>
+                    <button onClick={handleSignOut}>Sign Out</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </nav>
+
+        <div
+          className={`navbar-links ${mobileNavOpen ? "navbar-links--open" : ""}`}
+        >
+          <NavLink
+            to="/tickets"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
+            Tickets
+          </NavLink>
+          <NavLink
+            to="/customers"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
+            Customers
+          </NavLink>
+          {technician?.permission === "Admin" && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
+              Admin Dashboard
+            </NavLink>
+          )}
+          {(technician?.name === "System Admin" ||
+            technician?.permission === "SystemAdmin") && (
+            <NavLink
+              to="/user-management"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
+              👥 User Management
+            </NavLink>
+          )}
+          {technician?.isAccountant && (
+            <NavLink
+              to="/accounting"
+              className={({ isActive }) => (isActive ? "active" : undefined)}
+            >
+              Accounting
+            </NavLink>
+          )}
+          <NavLink
+            to="/archived"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
+            Archived
+          </NavLink>
+          <div className="navbar-search">
+            <TicketSearchNavbar />
+          </div>
+        </div>
+      </nav>
+    </header>
   );
 };
 

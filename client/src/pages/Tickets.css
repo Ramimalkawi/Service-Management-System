@@ -12,6 +12,8 @@
   justify-content: space-between;
   align-items: flex-end;
   flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
 }
 
 .tickets-header {
@@ -19,8 +21,12 @@
   top: 0;
   background: white;
   z-index: 10;
-  padding: 8px 16px; /* reduce padding */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 12px 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  max-width: 1200px;
+  width: calc(100% - 24px);
+  margin: 8px auto 0;
 }
 
 .tickets-header-content h1 {
@@ -41,6 +47,22 @@
 
 .filter-menu {
   margin-top: 5px;
+}
+
+.appointments-view-button {
+  margin-left: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  background-color: #1ccad4;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.appointments-view-button:hover {
+  background-color: #17b1c3;
 }
 
 .search-controls {
@@ -104,7 +126,7 @@
 }
 
 .tickets-admin-alert {
-  margin: 12px 16px 0;
+  margin: 12px auto 0;
   padding: 16px;
   border-radius: 10px;
   border: 1px solid #f5c26b;
@@ -115,6 +137,8 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  max-width: 1200px;
+  width: calc(100% - 24px);
 }
 
 .tickets-admin-alert__message {
@@ -162,7 +186,7 @@
 .ticket-list-panel {
   flex: 1;
   overflow-y: auto;
-
+  width: 100%;
   padding-right: 10px;
   border-right: 1px solid #ddd;
   transition:
@@ -297,7 +321,9 @@
 
 .tickets-new {
   display: flex;
-  gap: 3rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .new-ticket-button {
@@ -510,4 +536,87 @@
 
 .online-agreement-card__button--reject:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .tickets-header {
+    position: static;
+    padding: 16px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .tickets-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tickets-new {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .new-ticket-button {
+    width: 100%;
+    height: auto;
+  }
+
+  .search-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search-input,
+  .search-type-select,
+  .clear-search-button {
+    width: 100%;
+  }
+
+  .clear-search-button {
+    text-align: center;
+  }
+
+  .filter-menu {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .filter-menu button,
+  .appointments-view-button {
+    width: 100%;
+  }
+
+  .pagination-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .pagination-controls button {
+    flex: 1 1 30%;
+  }
+
+  .export-excel-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .tickets-admin-alert {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .tickets-admin-alert__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
