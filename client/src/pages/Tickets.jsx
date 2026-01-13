@@ -1694,6 +1694,7 @@ const Tickets = () => {
     error: "",
     success: "",
   });
+  const hasRequestedAppointmentsRef = useRef(false);
   const [acceptingAgreementId, setAcceptingAgreementId] = useState(null);
   const [rejectingAgreementId, setRejectingAgreementId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1728,8 +1729,7 @@ const Tickets = () => {
 
   const hasOnlineTickets = onlineTickets.length > 0;
   const hasAppointments = appointments.length > 0;
-  const showAdminAlert =
-    technician?.permission === "Admin" && (hasOnlineTickets || hasAppointments);
+  const showAdminAlert = hasOnlineTickets || hasAppointments;
   const pendingSummaryParts = [];
   if (hasOnlineTickets) {
     pendingSummaryParts.push(
@@ -1933,18 +1933,24 @@ const Tickets = () => {
   }, []);
 
   useEffect(() => {
-    if (technician?.permission === "Admin") {
-      fetchAppointments();
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  useEffect(() => {
+    if (!showAppointmentsCalendar) {
+      hasRequestedAppointmentsRef.current = false;
     }
-  }, [technician?.permission, fetchAppointments]);
+  }, [showAppointmentsCalendar]);
 
   useEffect(() => {
     if (
       showAppointmentsCalendar &&
       !appointmentsLoading &&
       appointments.length === 0 &&
-      !appointmentsError
+      !appointmentsError &&
+      !hasRequestedAppointmentsRef.current
     ) {
+      hasRequestedAppointmentsRef.current = true;
       fetchAppointments();
     }
   }, [
@@ -2083,22 +2089,14 @@ const Tickets = () => {
           decision
         );
         const docRef = doc(db, "appointments", appointment.id);
-        await updateDoc(docRef, {
-          status: decision === "accept" ? "accepted" : "rejected",
-          appointmentStatus: decision === "accept" ? "accepted" : "rejected",
-          isAvailable: false,
-          available: false,
-          slotAvailable: false,
-          decisionBy: currentTechnicianName,
-          decisionAt: serverTimestamp(),
-        });
+        await deleteDoc(docRef);
         setAppointments((prev) =>
           prev.filter((item) => item.id !== appointment.id)
         );
         const outcomeMessage =
           decision === "accept"
-            ? "Appointment accepted."
-            : "Appointment rejected.";
+            ? "Appointment accepted and removed."
+            : "Appointment rejected and removed.";
         setAppointmentActionState({
           isProcessing: false,
           action: null,
@@ -2444,8 +2442,8 @@ const Tickets = () => {
       {showAdminAlert && (
         <div className="tickets-admin-alert">
           <div className="tickets-admin-alert__message">
-            Attention Admin: There {pendingSummaryVerb} {pendingSummaryText}{" "}
-            waiting for review.
+            Attention: There {pendingSummaryVerb} {pendingSummaryText} waiting
+            for review.
           </div>
           <div className="tickets-admin-alert__actions">
             {hasOnlineTickets && (
