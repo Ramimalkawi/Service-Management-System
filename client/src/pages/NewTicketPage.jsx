@@ -334,6 +334,7 @@ const NewTicket = () => {
           : "irbid@365solutionsjo.com";
       const logoUrl =
         "https://firebasestorage.googleapis.com/v0/b/solutionssystemmain.appspot.com/o/logo-and-apple.png?alt=media&token=8c0ed18b-8153-425b-8646-9517a93f7f5e";
+      const trackingUrl = "https://www.365solutionsjo.com";
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -380,6 +381,9 @@ const NewTicket = () => {
                   }${formData.ticketNum}
                 </div>
                 <div class="info-row">
+                  <span class="label">Ticket ID:</span> ${formData.ticketId}
+                </div>
+                <div class="info-row">
                   <span class="label">Date Received:</span> ${ticketDate}
                 </div>
                 <div class="info-row">
@@ -418,7 +422,9 @@ const NewTicket = () => {
               </ul>
               
               <p>Please download and keep a copy of your signed service contract:</p>
-              <a " class="download-button">Download Service Contract</a>
+              <a href="${contractURL}" class="download-button" target="_blank" rel="noopener noreferrer">Download Service Contract</a>
+
+              <p>You can track your service status anytime at <a href="${trackingUrl}" target="_blank" rel="noopener noreferrer">${trackingUrl}</a> using Ticket ID <strong>${formData.ticketId}</strong>.</p>
               
               <p>If you have any questions, please contact us at:</p>
               <ul>

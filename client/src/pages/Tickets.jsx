@@ -8,6 +8,7 @@ import {
   deleteDoc,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import TicketCard from "../components/TicketCard";
@@ -131,7 +132,7 @@ const combineDateAndTime = (date, timeInput) => {
   }
 
   const timeMatch = trimmed.match(
-    /^([0-9]{1,2})(?::([0-9]{2}))?(?::([0-9]{2}))?\s*(am|pm)?$/i
+    /^([0-9]{1,2})(?::([0-9]{2}))?(?::([0-9]{2}))?\s*(am|pm)?$/i,
   );
   if (!timeMatch) return withTime;
 
@@ -211,19 +212,19 @@ const resolveAppointmentDetails = (appointment) => {
   const customerName = getFirstValue(
     customer.name,
     appointment.customerName,
-    nested.customerName
+    nested.customerName,
   );
   const customerEmail = getFirstValue(
     customer.email,
     appointment.customerEmail,
     nested.customerEmail,
-    appointment.email
+    appointment.email,
   );
   const customerPhone = getFirstValue(
     customer.phone,
     appointment.customerPhone,
     nested.customerPhone,
-    appointment.phone
+    appointment.phone,
   );
   const location = getFirstValue(
     appointment.location,
@@ -232,7 +233,7 @@ const resolveAppointmentDetails = (appointment) => {
     nested.branch,
     appointment.city,
     nested.city,
-    customer.preferredLocation
+    customer.preferredLocation,
   );
   const status = getFirstValue(
     appointment.status,
@@ -240,7 +241,7 @@ const resolveAppointmentDetails = (appointment) => {
     appointment.appointmentStatus,
     nested.appointmentStatus,
     appointment.progress,
-    nested.progress
+    nested.progress,
   );
   const device = getFirstValue(
     appointment.device,
@@ -248,7 +249,7 @@ const resolveAppointmentDetails = (appointment) => {
     appointment.machine,
     nested.machine,
     appointment.machineType,
-    nested.machineType
+    nested.machineType,
   );
   const description = getFirstValue(
     appointment.description,
@@ -258,18 +259,18 @@ const resolveAppointmentDetails = (appointment) => {
     appointment.symptom,
     nested.symptom,
     appointment.problemDescription,
-    nested.problemDescription
+    nested.problemDescription,
   );
   const services =
     getFirstValue(
       Array.isArray(appointment.services) ? appointment.services : null,
-      Array.isArray(nested.services) ? nested.services : null
+      Array.isArray(nested.services) ? nested.services : null,
     ) || [];
   const createdAt = normalizeDateValue(
     appointment.createdAt ||
       appointment.created_at ||
       nested.createdAt ||
-      nested.created_at
+      nested.created_at,
   );
 
   return {
@@ -498,7 +499,7 @@ const isAppointmentAvailable = (appointment) => {
         appointment.reservedCount ??
         (Array.isArray(appointment.customers)
           ? appointment.customers.length
-          : 0)
+          : 0),
     );
     if (!Number.isNaN(booked)) {
       return booked < appointment.capacity;
@@ -548,7 +549,7 @@ const buildDownloadUrlFromStoragePath = (rawPath) => {
   if (!path) return null;
   if (!STORAGE_BUCKET) return null;
   return `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodeURIComponent(
-    path
+    path,
   )}?alt=media`;
 };
 
@@ -613,7 +614,7 @@ const normalizeAgreementUrl = (rawUrl) => {
     const bucket = withoutScheme.slice(0, slashIndex);
     const objectPath = withoutScheme.slice(slashIndex + 1);
     return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(
-      objectPath
+      objectPath,
     )}?alt=media`;
   }
 
@@ -1042,7 +1043,7 @@ const OnlineAgreementCard = ({
   const isPdfAvailable = Boolean(agreementUrl);
   const CardWrapper = isPdfAvailable ? "a" : "div";
   const [selectedLocation, setSelectedLocation] = useState(
-    inferAgreementLocationCode(agreement)
+    inferAgreementLocationCode(agreement),
   );
   const normalizedInitialWarranty =
     typeof agreement.warrantyStatus === "string"
@@ -1054,7 +1055,7 @@ const OnlineAgreementCard = ({
       ? [normalizedInitialWarranty, ...WARRANTY_OPTIONS]
       : WARRANTY_OPTIONS;
   const [selectedWarranty, setSelectedWarranty] = useState(
-    normalizedInitialWarranty
+    normalizedInitialWarranty,
   );
 
   const cardProps = isPdfAvailable
@@ -1223,7 +1224,7 @@ const buildCalendarMatrix = (anchorDate) => {
   const firstOfMonth = new Date(
     anchorDate.getFullYear(),
     anchorDate.getMonth(),
-    1
+    1,
   );
   const startDate = new Date(firstOfMonth);
   startDate.setDate(startDate.getDate() - startDate.getDay());
@@ -1452,7 +1453,7 @@ const AppointmentsCalendar = ({
       if (!baseDate) return acc;
       const dateWithTime = combineDateAndTime(
         baseDate,
-        getAppointmentTimeCandidate(appointment)
+        getAppointmentTimeCandidate(appointment),
       );
       const key = formatDateKey(baseDate);
       if (!key) return acc;
@@ -1470,7 +1471,7 @@ const AppointmentsCalendar = ({
     }, {});
 
     Object.values(grouped).forEach((list) =>
-      list.sort((a, b) => a.sortKey - b.sortKey)
+      list.sort((a, b) => a.sortKey - b.sortKey),
     );
 
     return grouped;
@@ -1478,7 +1479,7 @@ const AppointmentsCalendar = ({
 
   const calendarMatrix = useMemo(
     () => buildCalendarMatrix(viewDate),
-    [viewDate]
+    [viewDate],
   );
 
   const handlePrevMonth = () => {
@@ -1620,7 +1621,7 @@ const AppointmentsCalendar = ({
                                 onKeyDown={(event) =>
                                   handleAppointmentKeyDown(
                                     event,
-                                    appointmentItem.raw
+                                    appointmentItem.raw,
                                   )
                                 }
                               >
@@ -1735,72 +1736,69 @@ const Tickets = () => {
     pendingSummaryParts.push(
       `${onlineTickets.length} online ${
         onlineTickets.length === 1 ? "ticket" : "tickets"
-      }`
+      }`,
     );
   }
   if (hasAppointments) {
     pendingSummaryParts.push(
       `${appointments.length} appointment${
         appointments.length === 1 ? "" : "s"
-      }`
+      }`,
     );
   }
   const pendingSummaryVerb = pendingSummaryParts.length === 1 ? "is" : "are";
   const pendingSummaryText = pendingSummaryParts.join(" and ");
 
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "tickets"));
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+    const ticketsRef = collection(db, "tickets");
+    const unsubscribe = onSnapshot(
+      ticketsRef,
+      (snapshot) => {
+        const data = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
         }));
-
         const sorted = data.sort((a, b) => b.ticketNum - a.ticketNum);
-
         setTickets(sorted);
-        setFilteredTickets(sorted);
         setLoading(false);
-      } catch (err) {
+      },
+      (err) => {
         console.error("Error fetching tickets:", err);
-      }
-    };
-
-    fetchTickets();
+        setLoading(false);
+      },
+    );
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    const fetchOnlineTickets = async () => {
-      setOnlineLoading(true);
-      try {
-        const snapshot = await getDocs(collection(db, "onlineTickets"));
-        const data = snapshot.docs.map((doc) => {
-          const record = doc.data();
+    setOnlineLoading(true);
+    const onlineRef = collection(db, "onlineTickets");
+    const unsubscribe = onSnapshot(
+      onlineRef,
+      (snapshot) => {
+        const data = snapshot.docs.map((docSnap) => {
+          const record = docSnap.data();
           const agreementDate = parseAgreementDate(record);
           return {
-            id: doc.id,
+            id: docSnap.id,
             ...record,
             agreementDate,
           };
         });
-
         data.sort((a, b) => {
           const timeA = a.agreementDate?.getTime?.() || 0;
           const timeB = b.agreementDate?.getTime?.() || 0;
           return timeB - timeA;
         });
-
         setOnlineTickets(data);
-        setFilteredOnlineTickets(data);
-      } catch (err) {
-        console.error("Error fetching online tickets:", err);
-      } finally {
         setOnlineLoading(false);
-      }
-    };
-
-    fetchOnlineTickets();
+      },
+      (err) => {
+        console.error("Error fetching online tickets:", err);
+        setOnlineLoading(false);
+      },
+    );
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -1896,7 +1894,7 @@ const Tickets = () => {
   const totalPages = Math.ceil(activeTickets.length / TICKETS_PER_PAGE);
   const currentTickets = activeTickets.slice(
     (currentPage - 1) * TICKETS_PER_PAGE,
-    currentPage * TICKETS_PER_PAGE
+    currentPage * TICKETS_PER_PAGE,
   );
 
   const handleCardClick = (ticket) => {
@@ -2070,7 +2068,7 @@ const Tickets = () => {
 
       return `Email sent to ${recipient}.`;
     },
-    [currentTechnicianName]
+    [currentTechnicianName],
   );
 
   const handleAppointmentDecision = useCallback(
@@ -2086,12 +2084,12 @@ const Tickets = () => {
       try {
         const emailMessage = await sendAppointmentDecisionEmail(
           appointment,
-          decision
+          decision,
         );
         const docRef = doc(db, "appointments", appointment.id);
         await deleteDoc(docRef);
         setAppointments((prev) =>
-          prev.filter((item) => item.id !== appointment.id)
+          prev.filter((item) => item.id !== appointment.id),
         );
         const outcomeMessage =
           decision === "accept"
@@ -2115,28 +2113,28 @@ const Tickets = () => {
         });
       }
     },
-    [currentTechnicianName, sendAppointmentDecisionEmail]
+    [currentTechnicianName, sendAppointmentDecisionEmail],
   );
 
   const handleAcceptAppointment = useCallback(
     (appointment) => {
       handleAppointmentDecision(appointment, "accept");
     },
-    [handleAppointmentDecision]
+    [handleAppointmentDecision],
   );
 
   const handleRejectAppointment = useCallback(
     (appointment) => {
       handleAppointmentDecision(appointment, "reject");
     },
-    [handleAppointmentDecision]
+    [handleAppointmentDecision],
   );
 
   const removeAgreementFromLists = (agreementId) => {
     if (!agreementId) return;
     setOnlineTickets((prev) => prev.filter((item) => item.id !== agreementId));
     setFilteredOnlineTickets((prev) =>
-      prev.filter((item) => item.id !== agreementId)
+      prev.filter((item) => item.id !== agreementId),
     );
   };
 
@@ -2160,7 +2158,7 @@ const Tickets = () => {
   const handleAcceptAgreement = async (
     agreement,
     locationCode,
-    warrantyStatus
+    warrantyStatus,
   ) => {
     if (!agreement?.id) {
       alert("Agreement is missing an identifier.");
@@ -2216,7 +2214,7 @@ const Tickets = () => {
       alert(
         `Ticket ${ticketNumberLabel} created successfully for ${ticketPayload.customerName}.${
           emailResult.message ? `\n${emailResult.message}` : ""
-        }`
+        }`,
       );
     } catch (err) {
       console.error("Failed to accept online agreement:", err);
@@ -2229,7 +2227,7 @@ const Tickets = () => {
   const handleRejectAgreement = async (agreement) => {
     if (!agreement?.id) return;
     const confirmed = window.confirm(
-      `Reject and delete the online agreement for ${agreement.customerName || agreement.customer?.name || "this customer"}?`
+      `Reject and delete the online agreement for ${agreement.customerName || agreement.customer?.name || "this customer"}?`,
     );
     if (!confirmed) return;
 
@@ -2284,10 +2282,10 @@ const Tickets = () => {
     if (exportMode === "ticketNumber") {
       // Find indices for start and end ticketNum
       const startIdx = filteredTickets.findIndex(
-        (t) => String(t.ticketNum) === exportStartNum
+        (t) => String(t.ticketNum) === exportStartNum,
       );
       const endIdx = filteredTickets.findIndex(
-        (t) => String(t.ticketNum) === exportEndNum
+        (t) => String(t.ticketNum) === exportEndNum,
       );
       if (startIdx === -1 || endIdx === -1) {
         alert("Start or end ticket number not found in the filtered list.");
@@ -2315,7 +2313,7 @@ const Tickets = () => {
             exportEndDate,
             "Parsed:",
             fromDate,
-            toDate
+            toDate,
           );
           console.log("In range:", isDateInRange(ticketDate, fromDate, toDate));
         }
@@ -2362,7 +2360,7 @@ const Tickets = () => {
             NewSerialNumber3: parts[2]?.newSerialNum || "",
             PartDescription3: parts[2]?.Description || "",
           };
-        })
+        }),
       );
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -2383,7 +2381,7 @@ const Tickets = () => {
     // Fetch the document, not a collection
     const docRef = doc(db, "partsDeliveryNotes", ticket.partDeliveryNote);
     const snap = await import("firebase/firestore").then(({ getDoc }) =>
-      getDoc(docRef)
+      getDoc(docRef),
     );
     if (!snap.exists()) return [];
     const docData = snap.data();
@@ -2405,7 +2403,7 @@ const Tickets = () => {
       const count = Math.max(
         docData.partNumbers.length,
         docData.prices.length,
-        docData.partDescriptions.length
+        docData.partDescriptions.length,
       );
       return Array.from({ length: count }).map((_, i) => ({
         PartNumber: docData.partNumbers[i] || "",
@@ -2761,10 +2759,10 @@ const Tickets = () => {
               {(() => {
                 if (exportMode === "ticketNumber") {
                   const startIdx = filteredTickets.findIndex(
-                    (t) => String(t.ticketNum) === exportStartNum
+                    (t) => String(t.ticketNum) === exportStartNum,
                   );
                   const endIdx = filteredTickets.findIndex(
-                    (t) => String(t.ticketNum) === exportEndNum
+                    (t) => String(t.ticketNum) === exportEndNum,
                   );
                   if (startIdx === -1 || endIdx === -1) return 0;
                   return Math.abs(endIdx - startIdx) + 1;
