@@ -71,6 +71,7 @@ const NewTicket = () => {
   const [pendingEmail, setPendingEmail] = useState("");
   const [verificationTimeout, setVerificationTimeout] = useState(null);
   const [verificationExpired, setVerificationExpired] = useState(false);
+  const [verificationExpiresAt, setVerificationExpiresAt] = useState(null);
   const navigate = useNavigate();
 
   const logoUrlForEmail =
@@ -107,6 +108,21 @@ const NewTicket = () => {
     setPendingEmail(formData.emailAddress);
     setEmailVerificationError("");
     setVerificationExpired(false);
+    setVerificationExpiresAt(null);
+    if (verificationTimeout) {
+      clearTimeout(verificationTimeout);
+      setVerificationTimeout(null);
+    }
+  };
+
+  const handleCloseEmailVerifyModal = () => {
+    setShowEmailVerifyModal(false);
+    if (verificationTimeout) {
+      clearTimeout(verificationTimeout);
+      setVerificationTimeout(null);
+    }
+    setVerificationExpiresAt(null);
+    setVerificationExpired(false);
   };
 
   // Fetch contract PDF URL on mount
@@ -129,6 +145,7 @@ const NewTicket = () => {
     setEmailVerificationLoading(true);
     setEmailVerificationError("");
     setVerificationExpired(false);
+    setVerificationExpiresAt(null);
     const code = generate6DigitCode();
     console.log("Generated verification code:", code);
     setVerificationCode(code);
@@ -142,16 +159,20 @@ const NewTicket = () => {
           html: `<p>Your verification code is: <b>${code}</b></p>`,
         }),
       });
-      // Start 1 minute timer
+      const expiryTime = Date.now() + 180000;
+      setVerificationExpiresAt(expiryTime);
+      // Start 3 minute timer
       if (verificationTimeout) clearTimeout(verificationTimeout);
       const timeout = setTimeout(() => {
         setVerificationExpired(true);
-      }, 60000);
+        setVerificationExpiresAt(null);
+      }, 180000);
       setVerificationTimeout(timeout);
     } catch (err) {
       setEmailVerificationError(
-        "Failed to send verification code. Please try again."
+        "Failed to send verification code. Please try again.",
       );
+      setVerificationExpiresAt(null);
     }
     setEmailVerificationLoading(false);
   };
@@ -168,6 +189,9 @@ const NewTicket = () => {
       setShowEmailVerifyModal(false);
       setFormData((prev) => ({ ...prev, emailAddress: pendingEmail }));
       if (verificationTimeout) clearTimeout(verificationTimeout);
+      setVerificationTimeout(null);
+      setVerificationExpiresAt(null);
+      setVerificationExpired(false);
       // Only increment if ticketNum is not set
       if (!formData.ticketNum) {
         const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
@@ -202,7 +226,7 @@ const NewTicket = () => {
       }
     } else if (verificationExpired) {
       setEmailVerificationError(
-        "Verification expired. Please resend code or use fallback email."
+        "Verification expired. Please resend code or use fallback email.",
       );
     } else {
       setEmailVerificationError("Incorrect code. Please try again.");
@@ -214,6 +238,9 @@ const NewTicket = () => {
     setShowEmailVerifyModal(false);
     setFormData((prev) => ({ ...prev, emailAddress: "refused@apple.com" }));
     if (verificationTimeout) clearTimeout(verificationTimeout);
+    setVerificationTimeout(null);
+    setVerificationExpiresAt(null);
+    setVerificationExpired(false);
     // Only increment if ticketNum is not set
     if (!formData.ticketNum) {
       const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
@@ -752,7 +779,7 @@ const NewTicket = () => {
       />
       <EmailVerifyModal
         isOpen={showEmailVerifyModal}
-        onClose={() => setShowEmailVerifyModal(false)}
+        onClose={handleCloseEmailVerifyModal}
         email={pendingEmail}
         onSendCode={handleSendVerificationCode}
         onVerify={handleVerifyCode}
@@ -760,6 +787,7 @@ const NewTicket = () => {
         error={emailVerificationError}
         verificationExpired={verificationExpired}
         onUseFallback={handleUseFallbackEmail}
+        expiresAt={verificationExpiresAt}
       />
     </div>
   );

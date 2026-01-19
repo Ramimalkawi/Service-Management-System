@@ -198,11 +198,6 @@ const ProcessTicketPage = () => {
       technicions: [...ticket.technicions, technicianName],
     };
 
-    if (selectedStatus === 1) {
-      updates.approvalRequired = true;
-      updates.approvalStatus = "pending";
-    }
-
     // If status is Ready For Pickup, check for parts delivery note and prices
     let invoiceMessage = "";
     if (parseInt(selectedStatus) === 6) {
@@ -252,8 +247,6 @@ const ProcessTicketPage = () => {
       ticketStates: [...prev.ticketStates, parseInt(selectedStatus)],
       details: [...(prev.details || []), fullNote],
       technicions: [...prev.technicions, technician.name],
-      approvalRequired: selectedStatus === 1 ? true : prev.approvalRequired,
-      approvalStatus: selectedStatus === 1 ? "pending" : prev.approvalStatus,
       shouldHaveInvoice:
         parseInt(selectedStatus) === 6 && updates.shouldHaveInvoice
           ? true
@@ -282,8 +275,8 @@ const ProcessTicketPage = () => {
         : "irbid@365solutionsjo.com";
       const companyPhone = isAmman ? "+962-79-681-8189" : "+962-79-668-8831";
       const locationName = isAmman ? "Amman Branch" : "Irbid Branch";
-      const ticketId = `${ticket.location}${ticket.ticketNum}`;
-
+      const ticketNumber = `${ticket.location}${ticket.ticketNum}`;
+      const ticketId = `${ticket.ticketId}`;
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -315,6 +308,7 @@ const ProcessTicketPage = () => {
 
               <div class="ticket-info">
                 <h3 style="color: #0e9fb2;">Ticket Details</h3>
+                <div class="info-row"><span class="label">Ticket Number:</span> ${ticketNumber}</div>
                 <div class="info-row"><span class="label">Ticket ID:</span> ${ticketId}</div>
                 <div class="info-row"><span class="label">Device:</span> ${ticket.machineType}</div>
                 <div class="info-row"><span class="label">Serial Number:</span> ${ticket.serialNum}</div>
@@ -377,11 +371,14 @@ const ProcessTicketPage = () => {
         minute: "2-digit",
         hour12: true,
       });
+      const isAmman = ticket.location === "M";
+      const companyEmail = isAmman
+        ? "help@365solutionsjo.com"
+        : "irbid@365solutionsjo.com";
 
-      const companyEmail =
-        ticket.location === "M"
-          ? "help@365solutionsjo.com"
-          : "irbid@365solutionsjo.com";
+      const companyPhone = isAmman ? "+962-79-681-8189" : "+962-79-668-8831";
+      const locationName = isAmman ? "Amman Branch" : "Irbid Branch";
+
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -436,7 +433,8 @@ const ProcessTicketPage = () => {
               <div class="footer">
                 <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
                 <p>365Solutions - Apple Authorized Service Provider</p>
-                <p>Email: <a href="mailto:${companyEmail}">${companyEmail}</a></p>
+                <p><strong>${locationName}</strong></p>
+                <p>Email: <a href="mailto:${companyEmail}">${companyEmail}</a> | Phone: ${companyPhone}</p>
               </div>
             </div>
           </div>
@@ -674,20 +672,6 @@ const ProcessTicketPage = () => {
               Revert Ticket Status (Admin Only)
             </button>
           )}
-        {ticket.approvalRequired && (
-          <div className="approval-toast">
-            <span className="pulse-indicator" />
-            <div className="approval-message">
-              <strong>Approval Needed</strong>: This ticket is currently
-              awaiting admin approval. You can only select the final steps.
-            </div>
-          </div>
-        )}
-        {ticket.approvalStatus === "rejected" && (
-          <div className="rejected-banner">
-            ❌ This ticket has been <strong>rejected</strong> by the admin.
-          </div>
-        )}
 
         <div className="ticket-info-grid">
           <div className="ticket-info-item">
@@ -870,16 +854,9 @@ const ProcessTicketPage = () => {
           >
             {statusOptions.map((status, index) => {
               const isPrevious = index <= currentStatusIndex;
-              const isLocked =
-                (ticket.approvalRequired && index < 6) ||
-                (ticket.approvalStatus === "rejected" && index < 6); // restrict 3–5 unless approved
 
               return (
-                <option
-                  key={index}
-                  value={index}
-                  disabled={isPrevious || isLocked}
-                >
+                <option key={index} value={index} disabled={isPrevious}>
                   {status}
                 </option>
               );
@@ -929,47 +906,6 @@ const ProcessTicketPage = () => {
             `}</style>
           </button>
         </div>
-        {technician?.permission === "Admin" &&
-          ticket.approvalRequired &&
-          ticket.approvalStatus === "pending" && (
-            <div className="admin-approval-section">
-              <p className="approval-warning">
-                This ticket is awaiting approval.
-              </p>
-              <button
-                className="approve-btn"
-                onClick={async () => {
-                  await updateDoc(doc(db, "tickets", id), {
-                    approvalRequired: false,
-                    approvalStatus: "approved",
-                  });
-                  setTicket((prev) => ({
-                    ...prev,
-                    approvalRequired: false,
-                    approvalStatus: "approved",
-                  }));
-                }}
-              >
-                Approve Ticket
-              </button>
-              <button
-                className="reject-btn"
-                onClick={async () => {
-                  await updateDoc(doc(db, "tickets", id), {
-                    approvalRequired: false,
-                    approvalStatus: "rejected",
-                  });
-                  setTicket((prev) => ({
-                    ...prev,
-                    approvalRequired: false,
-                    approvalStatus: "rejected",
-                  }));
-                }}
-              >
-                Reject Ticket
-              </button>
-            </div>
-          )}
       </div>
       <div className="process-ticket-sidebar">
         <button className="side-button" onClick={() => setShowMediaModal(true)}>

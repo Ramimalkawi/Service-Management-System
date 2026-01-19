@@ -13,15 +13,18 @@ const EmailVerifyModal = (props) => {
     error,
     verificationExpired,
     onUseFallback,
+    expiresAt,
   } = props;
   const [inputEmail, setInputEmail] = useState(email || "");
   const [codeSent, setCodeSent] = useState(false);
   const [inputCode, setInputCode] = useState("");
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   React.useEffect(() => {
     setInputEmail(email || "");
     setCodeSent(false);
     setInputCode("");
+    setRemainingSeconds(0);
   }, [email, isOpen]);
 
   const handleSendCode = async () => {
@@ -31,6 +34,26 @@ const EmailVerifyModal = (props) => {
 
   const handleVerify = () => {
     onVerify(inputCode);
+  };
+
+  React.useEffect(() => {
+    if (!codeSent || !expiresAt || verificationExpired) {
+      setRemainingSeconds(0);
+      return undefined;
+    }
+    const updateRemaining = () => {
+      const seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      setRemainingSeconds(seconds);
+    };
+    updateRemaining();
+    const intervalId = setInterval(updateRemaining, 1000);
+    return () => clearInterval(intervalId);
+  }, [codeSent, expiresAt, verificationExpired]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -86,6 +109,11 @@ const EmailVerifyModal = (props) => {
         </button>
       ) : (
         <>
+          {!verificationExpired && remainingSeconds > 0 && (
+            <div style={{ color: "#555", marginBottom: 8 }}>
+              Code expires in <strong>{formatTime(remainingSeconds)}</strong>
+            </div>
+          )}
           <input
             type="text"
             value={inputCode}
