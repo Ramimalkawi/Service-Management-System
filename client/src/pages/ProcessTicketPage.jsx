@@ -164,6 +164,10 @@ const ProcessTicketPage = () => {
   }, [id]);
 
   const handleUpdateStatus = async () => {
+    // If status is Repair Released from Processing (index 2), notify customer that parts were ordered
+    if (parseInt(selectedStatus) === 2) {
+      await sendRepairReleasedEmail();
+    }
     // If status is Parts Allocated (index 4), send parts arrival email
     if (parseInt(selectedStatus) === 4) {
       await sendPartsAllocatedEmail();
@@ -258,6 +262,108 @@ const ProcessTicketPage = () => {
 
     setNote("");
     setStatusUpdating(false);
+  };
+
+  // Email to notify customer that parts have arrived and repair is starting
+  const sendRepairReleasedEmail = async () => {
+    try {
+      const currentDateTime = new Date().toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      const isAmman = ticket.location === "M";
+      const companyEmail = isAmman
+        ? "help@365solutionsjo.com"
+        : "irbid@365solutionsjo.com";
+      const companyPhone = isAmman ? "+962-79-681-8189" : "+962-79-668-8831";
+      const locationName = isAmman ? "Amman Branch" : "Irbid Branch";
+      const ticketId = `${ticket.location}${ticket.ticketNum}`;
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            .email-container { font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; }
+            .header { background-color: #0e9fb2; color: white; padding: 20px; text-align: center; }
+            .logo-img { max-height: 60px; margin-bottom: 10px; }
+            .content { padding: 20px; background-color: #f9f9f9; }
+            .ticket-info { background-color: white; padding: 15px; margin: 15px 0; border-radius: 8px; }
+            .info-row { margin: 8px 0; }
+            .label { font-weight: bold; color: #333; }
+            .cta-box { background-color: #e6f6f8; border: 1px solid #b6e0e6; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .footer-logo-img { max-height: 40px; margin-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <div class="email-container">
+            <div class="header">
+              <img src="${emailHeaderLogo}" alt="365Solutions Logo" class="logo-img" />
+              <h2>Repair Update – Parts Ordered</h2>
+              <p>365Solutions - Apple Authorized Service Center</p>
+            </div>
+            <div class="content">
+              <p>Dear ${ticket.customerName},</p>
+              <p>We have released your device from processing and the required repair part has been ordered. Our team is tracking the shipment and will notify you once the part arrives and installation begins.</p>
+
+              <div class="ticket-info">
+                <h3 style="color: #0e9fb2;">Ticket Details</h3>
+                <div class="info-row"><span class="label">Ticket ID:</span> ${ticketId}</div>
+                <div class="info-row"><span class="label">Device:</span> ${ticket.machineType}</div>
+                <div class="info-row"><span class="label">Serial Number:</span> ${ticket.serialNum}</div>
+                <div class="info-row"><span class="label">Current Status:</span> Repair Released from Processing</div>
+                <div class="info-row"><span class="label">Date:</span> ${currentDateTime}</div>
+              </div>
+
+              <div class="cta-box">
+                <strong>Track Your Repair:</strong>
+                <p>You can always check the live status of your ticket at <a href="https://www.365solutionsjo.com" target="_blank">www.365solutionsjo.com</a> using your Ticket ID <strong>${ticketId}</strong>.</p>
+              </div>
+
+              <p>If you have any questions in the meantime, please reach out to us.</p>
+
+              <div class="footer">
+                <img src="${emailFooterLogo}" alt="365Solutions Logo" class="footer-logo-img" />
+                <p>365Solutions - Apple Authorized Service Provider</p>
+                <p><strong>${locationName}</strong></p>
+                <p>Email: <a href="mailto:${companyEmail}">${companyEmail}</a> | Phone: ${companyPhone}</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const emailData = {
+        to: ticket.emailAddress,
+        subject: `Repair Update – Parts Ordered (Ticket #${ticketId})`,
+        html: emailHtml,
+        location: ticket.location,
+      };
+
+      const response = await fetch(API_ENDPOINTS.SEND_EMAIL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(emailData),
+      });
+
+      if (response.ok) {
+        console.log("Repair released email sent successfully");
+      } else {
+        console.error("Failed to send repair released email");
+      }
+    } catch (error) {
+      console.error("Error sending repair released email:", error);
+    }
   };
 
   // Email to notify customer that parts have arrived and repair is starting
