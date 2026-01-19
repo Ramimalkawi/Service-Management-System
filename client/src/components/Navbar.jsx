@@ -46,7 +46,7 @@ const Navbar = () => {
         <div className="navbar-head">
           <div className="navbar-title">
             <img
-              src="/logo_new.png"
+              src="/logo-no-background.png"
               alt="365 Solutions"
               className="navbar-title__logo"
             />

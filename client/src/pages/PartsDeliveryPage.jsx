@@ -11,8 +11,6 @@ import { FaArrowRight } from "react-icons/fa";
 
 import logoImage from "../assets/logo_new.png";
 import "./PartsDeliveryPage.css";
-import PartsModal from "../components/PartsModal";
-import PriceQuotationModal from "../components/PriceQuotationModal";
 
 const PartsDeliveryPage = () => {
   // Add state for selected note index at the top level
@@ -29,9 +27,6 @@ const PartsDeliveryPage = () => {
   const [ticket, setTicket] = useState(null);
   const [partsData, setPartsData] = useState(null);
   const [showNextArrow, setShowNextArrow] = useState(false);
-  const [isPartsModalOpen, setIsPartsModalOpen] = useState(false);
-  const [isPriceQuotationModalOpen, setIsPriceQuotationModalOpen] =
-    useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,7 +44,7 @@ const PartsDeliveryPage = () => {
             setPartsData(noteData);
 
             const hasPricedParts = noteData.parts?.some(
-              (part) => parseFloat(part.price || 0) > 0
+              (part) => parseFloat(part.price || 0) > 0,
             );
             if (!data.invoiceURL && data.shouldHaveInvoice) {
               setShowNextArrow(true);
@@ -343,24 +338,6 @@ const PartsDeliveryPage = () => {
           <FaArrowRight />
         </button>
       )}
-
-      {/* PartsModal integration */}
-      <PartsModal
-        isOpen={isPartsModalOpen}
-        onClose={() => setIsPartsModalOpen(false)}
-        ticket={ticket}
-        onOpenPriceQuotationModal={() => {
-          setIsPartsModalOpen(false);
-          setIsPriceQuotationModalOpen(true);
-        }}
-      />
-
-      {/* PriceQuotationModal integration */}
-      <PriceQuotationModal
-        isOpen={isPriceQuotationModalOpen}
-        onClose={() => setIsPriceQuotationModalOpen(false)}
-        ticket={ticket}
-      />
     </div>
   );
 };

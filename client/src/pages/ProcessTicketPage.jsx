@@ -9,7 +9,6 @@ import "./ProcessTicketPage.css";
 import { useUser } from "../context/userContext";
 import TechnicalReportModal from "../components/TechnicalReportModal";
 import { useRef } from "react";
-import PartsModal from "../components/PartsModal";
 import PriceQuotationModal from "../components/PriceQuotationModal";
 import { API_ENDPOINTS } from "../config/api";
 import MediaModal from "../components/MediaModal";
@@ -57,7 +56,6 @@ const ProcessTicketPage = () => {
   const [note, setNote] = useState("");
   const [newRepairID, setNewRepairID] = useState("");
 
-  const [isPartsModalOpen, setIsPartsModalOpen] = useState(false);
   const [isPriceQuotationModalOpen, setIsPriceQuotationModalOpen] =
     useState(false);
   // State to hold part info to pass to PriceQuotationModal
@@ -65,8 +63,6 @@ const ProcessTicketPage = () => {
   const [mediaURLs, setMediaURLs] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const storage = getStorage();
-  const openPartsModal = () => setIsPartsModalOpen(true);
-  const closePartsModal = () => setIsPartsModalOpen(false);
   const openPriceQuotationModal = (partInfo) => {
     if (partInfo) setPendingQuotationPart(partInfo);
     setIsPriceQuotationModalOpen(true);
@@ -98,13 +94,13 @@ const ProcessTicketPage = () => {
     const lastStatus = ticket.ticketStates[ticket.ticketStates.length - 1];
     if (lastStatus === 7 || lastStatus === "Repair Marked Complete") {
       alert(
-        "Cannot revert status: Ticket is marked as 'Repair Marked Complete'."
+        "Cannot revert status: Ticket is marked as 'Repair Marked Complete'.",
       );
       return;
     }
     if (
       !window.confirm(
-        "Are you sure you want to revert the ticket status? This will remove the last status, technician, and note."
+        "Are you sure you want to revert the ticket status? This will remove the last status, technician, and note.",
       )
     )
       return;
@@ -155,7 +151,7 @@ const ProcessTicketPage = () => {
               data.mediaURLs.map(async (path) => {
                 const fileRef = ref(storage, path);
                 return await getDownloadURL(fileRef);
-              })
+              }),
             );
             setMediaURLs(urls);
           } catch (error) {
@@ -216,14 +212,14 @@ const ProcessTicketPage = () => {
           const partsDocRef = doc(
             db,
             "partsDeliveryNotes",
-            ticket.partDeliveryNote
+            ticket.partDeliveryNote,
           );
           const partsSnap = await getDoc(partsDocRef);
           if (partsSnap.exists()) {
             const partsData = partsSnap.data();
             if (Array.isArray(partsData.parts)) {
               const hasPricedPart = partsData.parts.some(
-                (part) => Number(part.price) > 0
+                (part) => Number(part.price) > 0,
               );
               if (hasPricedPart) {
                 updates.shouldHaveInvoice = true;
@@ -669,12 +665,12 @@ const ProcessTicketPage = () => {
                       onClick={async () => {
                         if (
                           !window.confirm(
-                            "Are you sure you want to delete this repair ID?"
+                            "Are you sure you want to delete this repair ID?",
                           )
                         )
                           return;
                         const newArr = ticket.caseID.filter(
-                          (_, i) => i !== idx
+                          (_, i) => i !== idx,
                         );
                         await updateDoc(doc(db, "tickets", ticket.id), {
                           caseID: newArr,
@@ -879,7 +875,10 @@ const ProcessTicketPage = () => {
         >
           Report
         </button>
-        <button className="side-button" onClick={openPartsModal}>
+        <button
+          className="side-button"
+          onClick={() => navigate(`/tickets/${id}/parts`)}
+        >
           Parts
         </button>
         <button className="side-button" onClick={openPriceQuotationModal}>
@@ -900,15 +899,6 @@ const ProcessTicketPage = () => {
         />
       </div>
 
-      <PartsModal
-        isOpen={isPartsModalOpen}
-        onClose={closePartsModal}
-        ticket={ticket}
-        onOpenPriceQuotationModal={(partInfo) => {
-          closePartsModal();
-          openPriceQuotationModal(partInfo);
-        }}
-      />
       <PriceQuotationModal
         isOpen={isPriceQuotationModalOpen}
         onClose={closePriceQuotationModal}
@@ -962,74 +952,6 @@ const ProcessTicketPage = () => {
           ticket={ticket}
         />
       )}
-      {/* <Modal
-        isOpen={isPartsModalOpen}
-        onRequestClose={closePartsModal}
-        className="parts-slide-modal"
-        overlayClassName="parts-modal-overlay"
-        closeTimeoutMS={300}
-      >
-        <div className="parts-modal-content">
-          <h2>Parts Panel</h2>
-          
-          <button onClick={closePartsModal} className="close-parts-button">
-            ×
-          </button>
-          <form className="parts-form">
-            <div className="form-group">
-              <label htmlFor="partNumber">Part#:</label>
-              <input id="partNumber" type="text" placeholder="Enter Part#" />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="newSN">New SN:</label>
-              <input id="newSN" type="text" placeholder="Enter New SN" />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="oldSN">Old SN:</label>
-              <input id="oldSN" type="text" placeholder="Enter Old SN" />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="warrantyStatus">Warranty Status:</label>
-              <select id="warrantyStatus">
-                <option>Apple limited warranty</option>
-                <option>Out of warranty</option>
-                <option>Quality Program</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="description">Part Description:</label>
-              <input
-                id="description"
-                type="text"
-                placeholder="Enter Description"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="quantity">Quantity:</label>
-              <input id="quantity" type="number" placeholder="Enter Quantity" />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="price">Price:</label>
-              <input id="price" type="number" placeholder="Enter Price" />
-            </div>
-
-            <div className="form-group checkbox-group">
-              <input type="checkbox" id="serviceCheckbox" />
-              <label htmlFor="serviceCheckbox">Service</label>
-            </div>
-
-            <button type="submit" className="apply-button">
-              Apply
-            </button>
-          </form>
-        </div>
-      </Modal> */}
     </div>
   );
 };

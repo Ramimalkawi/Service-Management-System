@@ -24,6 +24,7 @@ import RefundPage from "./pages/RefundPage";
 import RefundReceipt from "./pages/RefundReceipt";
 import PriceQuotationPage from "./pages/PriceQuotationPage";
 import ModernInvoicePaymentReceipt from "./pages/ModernInvoicePaymentReceipt";
+import PartsPage from "./pages/PartsPage";
 
 function App() {
   return (
@@ -134,6 +135,14 @@ function App() {
             element={
               <PrivateRoute>
                 <PriceQuotationPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tickets/:id/parts"
+            element={
+              <PrivateRoute>
+                <PartsPage />
               </PrivateRoute>
             }
           />

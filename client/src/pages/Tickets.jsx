@@ -918,7 +918,7 @@ const sendOnlineAgreementDecisionEmail = async ({
       </ul>
       ${trackingParagraph}
       <p>If you have any questions, reply to this email or call us at +962 79 681 8189.</p>
-      <p>Best regards,<br/>${technicianName || "365 Solutions Team"}</p>
+      <p>Best regards,<br/>365 Solutions Team</p>
     </div>
   `;
 
