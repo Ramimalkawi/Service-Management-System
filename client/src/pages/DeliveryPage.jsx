@@ -226,7 +226,7 @@ const DeliveryPage = () => {
                   <a href="${doc.url}" class="document-link" target="_blank">
                     ${doc.icon} Download ${doc.name}
                   </a>
-                `
+                `,
                   )
                   .join("")}
               </div>
@@ -348,7 +348,7 @@ const DeliveryPage = () => {
           finalWidth,
           finalHeight,
           undefined,
-          "FAST"
+          "FAST",
         );
 
         const pdfBlob = pdf.output("blob");
@@ -428,7 +428,7 @@ const DeliveryPage = () => {
       const pdf = new jsPDF("p", "mm", "a4");
       const ratio = Math.min(
         pdf.internal.pageSize.getWidth() / canvas.width,
-        pdf.internal.pageSize.getHeight() / canvas.height
+        pdf.internal.pageSize.getHeight() / canvas.height,
       );
       const width = canvas.width * ratio;
       const height = canvas.height * ratio;
@@ -440,7 +440,7 @@ const DeliveryPage = () => {
         width,
         height,
         undefined,
-        "FAST"
+        "FAST",
       );
 
       const pdfBlob = pdf.output("blob");

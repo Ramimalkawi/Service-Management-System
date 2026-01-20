@@ -300,7 +300,7 @@ const ProcessTicketPage = () => {
             <div class="header">
               <img src="${emailHeaderLogo}" alt="365Solutions Logo" class="logo-img" />
               <h2>Repair Update – Parts Ordered</h2>
-              <p>365Solutions - Apple Authorized Service Center</p>
+              <p>365Solutions - Apple Authorized Service Provider</p>
             </div>
             <div class="content">
               <p>Dear ${ticket.customerName},</p>
@@ -401,7 +401,7 @@ const ProcessTicketPage = () => {
             <div class="header">
               <img src="${emailHeaderLogo}" alt="365Solutions Logo" class="logo-img" />
               <h2>Parts Have Arrived – Repair in Progress</h2>
-              <p>365Solutions - Apple Authorized Service Center</p>
+              <p>365Solutions - Apple Authorized Service Provider</p>
             </div>
             <div class="content">
               <p>Dear ${ticket.customerName},</p>
@@ -509,7 +509,7 @@ const ProcessTicketPage = () => {
             <div class="header">
               <img src="${emailHeaderLogo}" alt="365Solutions Logo" class="logo-img" />
               <h2>🎉 Your Device is Ready for Pickup!</h2>
-              <p>365Solutions - Apple Authorized Service Center</p>
+              <p>365Solutions - Apple Authorized Service Provider</p>
             </div>
             
             <div class="content">

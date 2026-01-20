@@ -371,7 +371,7 @@ const NewTicket = () => {
             <div class="content">
               <p>Dear ${formData.customerName},</p>
               
-              <p>We have received your device at 365Solutions Apple Authorized Service Center. Thank you for choosing our services.</p>
+              <p>We have received your device at 365Solutions Apple Authorized Service Provider. Thank you for choosing our services.</p>
               
               <div class="ticket-info">
                 <h3 style="color: #1ccad4;">Service Ticket Information</h3>
