@@ -2352,12 +2352,18 @@ const Tickets = () => {
               t.hasAnInvoice === true || t.shouldHaveInvoice ? "Yes" : "No",
             PartNumber1: parts[0]?.PartNumber || "",
             NewSerialNumber1: parts[0]?.newSerialNum || "",
+            OldSerialNumber1: parts[0]?.oldSerialNumber || "",
+            AmountPaid1: parts[0]?.price * parts[0]?.quantity || "",
             PartDescription1: parts[0]?.Description || "",
             PartNumber2: parts[1]?.PartNumber || "",
             NewSerialNumber2: parts[1]?.newSerialNum || "",
+            OldSerialNumber2: parts[1]?.oldSerialNumber || "",
+            AmountPaid2: parts[1]?.price * parts[1]?.quantity || "",
             PartDescription2: parts[1]?.Description || "",
             PartNumber3: parts[2]?.PartNumber || "",
             NewSerialNumber3: parts[2]?.newSerialNum || "",
+            OldSerialNumber3: parts[2]?.oldSerialNumber || "",
+            AmountPaid3: parts[2]?.price * parts[2]?.quantity || "",
             PartDescription3: parts[2]?.Description || "",
           };
         }),
@@ -2393,6 +2399,9 @@ const Tickets = () => {
         newSerialNum: part.newSN,
         PartNumber: part.partNumber,
         Description: part.description,
+        oldSerialNumber: part.oldSN,
+        price: part.price,
+        quantity: part.quantity,
       }));
     } else if (
       Array.isArray(docData.partNumbers) &&
