@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import TicketCard from "../components/TicketCard";
 import TicketDetail from "../components/TicketDetail";
 import "../components/TicketCard.css";
@@ -40,6 +40,9 @@ export default function Archived() {
   const [selectedTicketIdx, setSelectedTicketIdx] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState("ticketNum");
+  const [localMode, setLocalMode] = useState(false);
+  const [localLabel, setLocalLabel] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchYears = async () => {
@@ -48,8 +51,11 @@ export default function Archived() {
         if (!res.ok) throw new Error("Failed to load archive years");
         const data = await res.json();
         const list = Array.isArray(data.years) ? data.years : [];
-        setYears(list);
-        if (list.length > 0) {
+        setYears((prev) => {
+          if (localMode && prev.includes("Local")) return prev;
+          return list;
+        });
+        if (!localMode && list.length > 0) {
           setYear((prev) => prev || list[0]);
         }
       } catch (err) {
@@ -57,10 +63,14 @@ export default function Archived() {
       }
     };
     fetchYears();
-  }, []);
+  }, [localMode]);
 
   useEffect(() => {
     async function fetchTickets() {
+      if (localMode) {
+        setLoading(false);
+        return;
+      }
       if (!year) {
         setLoading(false);
         return;
@@ -68,6 +78,7 @@ export default function Archived() {
       setLoading(true);
       setError(null);
       setSelectedTicketIdx(null);
+
       try {
         const filesRes = await fetch(
           `${API_ENDPOINTS.ARCHIVE_FILES}?year=${encodeURIComponent(year)}`,
@@ -100,7 +111,38 @@ export default function Archived() {
       }
     }
     fetchTickets();
-  }, [year]);
+  }, [year, localMode]);
+
+  const handleLocalFilePick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleLocalFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const localTickets = Array.isArray(data.tickets) ? data.tickets : [];
+      const normalized = localTickets.map((t) => ({
+        ...t,
+        ticketNum: t.ticketNum !== undefined ? t.ticketNum : t.number,
+      }));
+      setTickets(normalized);
+      setSelectedTicketIdx(null);
+      setLocalMode(true);
+      setLocalLabel(file.name || "Local archive");
+      setYears((prev) => (prev.includes("Local") ? prev : ["Local", ...prev]));
+      setYear("Local");
+    } catch (err) {
+      setError("Failed to load local archive JSON.");
+    } finally {
+      setLoading(false);
+      if (event.target) event.target.value = "";
+    }
+  };
 
   const filteredTickets = tickets.filter((ticket) => {
     if (!searchQuery.trim()) return true;
@@ -155,6 +197,19 @@ export default function Archived() {
           flexWrap: "wrap",
         }}
       >
+        <button type="button" onClick={handleLocalFilePick}>
+          Load Local Archive JSON
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          style={{ display: "none" }}
+          onChange={handleLocalFileChange}
+        />
+        {localMode && localLabel && (
+          <span style={{ color: "#666" }}>Loaded: {localLabel}</span>
+        )}
         <label htmlFor="archived-year-select" style={{ marginRight: 8 }}>
           Select Year:
         </label>

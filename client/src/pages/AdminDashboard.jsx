@@ -15,7 +15,6 @@ import "./AdminDashboard.css";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { API_ENDPOINTS } from "../config/api";
 
 const AdminDashboard = () => {
   // Range download state
@@ -182,26 +181,20 @@ const AdminDashboard = () => {
         setIsArchivingRange(false);
         return;
       }
-
-      const response = await fetch(API_ENDPOINTS.ARCHIVE_TICKETS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          year: archiveYear,
-          label: archiveLabel,
-          tickets,
-        }),
+      const label = archiveLabel.trim();
+      const fileLabel = label ? label : `${startNum}__${endNum}`;
+      const payload = {
+        archivedAt: new Date().toISOString(),
+        year: archiveYear,
+        label: label || null,
+        count: tickets.length,
+        tickets,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to archive tickets");
-      }
-
-      const data = await response.json();
-      alert(
-        `Archived ${data.count} tickets to ${data.file}. You can view them in Archived.`,
-      );
+      saveAs(blob, `archive_${fileLabel}.json`);
+      alert(`Downloaded ${tickets.length} archived tickets as JSON.`);
       setArchiveLabel("");
     } catch (err) {
       alert(err.message || "Failed to archive tickets.");
