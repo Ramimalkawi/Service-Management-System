@@ -70,7 +70,7 @@ export default function Archived() {
       setSelectedTicketIdx(null);
       try {
         const filesRes = await fetch(
-          `${API_ENDPOINTS.ARCHIVE_FILES}?year=${encodeURIComponent(year)}`
+          `${API_ENDPOINTS.ARCHIVE_FILES}?year=${encodeURIComponent(year)}`,
         );
         if (!filesRes.ok) throw new Error("Failed to load archive files");
         const filesData = await filesRes.json();
@@ -79,7 +79,7 @@ export default function Archived() {
         const allTickets = [];
         for (const file of files) {
           const res = await fetch(
-            `${API_ENDPOINTS.ARCHIVE_FILE_BASE}/${year}/${file}`
+            `${API_ENDPOINTS.ARCHIVE_FILE_BASE}/${year}/${file}`,
           );
           if (!res.ok) throw new Error(`Failed to fetch ${file}`);
           const data = await res.json();
@@ -88,7 +88,7 @@ export default function Archived() {
               ...data.tickets.map((t) => ({
                 ...t,
                 ticketNum: t.ticketNum !== undefined ? t.ticketNum : t.number,
-              }))
+              })),
             );
           }
         }
@@ -123,7 +123,8 @@ export default function Archived() {
         );
       case "serialNum":
         return (
-          (ticket.serialNum && ticket.serialNum.toLowerCase().includes(query)) ||
+          (ticket.serialNum &&
+            ticket.serialNum.toLowerCase().includes(query)) ||
           false
         );
       case "caseID":
@@ -220,7 +221,7 @@ export default function Archived() {
                     ticket={{
                       ...filteredTickets[selectedTicketIdx],
                       date: formatLegacyDate(
-                        filteredTickets[selectedTicketIdx].date
+                        filteredTickets[selectedTicketIdx].date,
                       ),
                     }}
                     onClose={() => setSelectedTicketIdx(null)}

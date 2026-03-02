@@ -88,6 +88,7 @@ router.post("/", async (req, res) => {
 router.get("/years", async (_req, res) => {
   try {
     await ensureDir(ARCHIVE_ROOT);
+    console.log("Reading archive root:", ARCHIVE_ROOT);
     const entries = await fs.readdir(ARCHIVE_ROOT, { withFileTypes: true });
     const years = entries
       .filter((entry) => entry.isDirectory())

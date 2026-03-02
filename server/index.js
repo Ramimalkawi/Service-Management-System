@@ -25,10 +25,10 @@ if (!admin.apps.length) {
   } catch (error) {
     console.error(
       "❌ Firebase Admin SDK initialization failed:",
-      error.message
+      error.message,
     );
     console.log(
-      "⚠️ Note: User creation will not work without proper Firebase Admin credentials"
+      "⚠️ Note: User creation will not work without proper Firebase Admin credentials",
     );
   }
 }
@@ -51,7 +51,7 @@ app.use(
     methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     credentials: true,
-  })
+  }),
 );
 
 // Increase the request size limit to handle base64 images in emails

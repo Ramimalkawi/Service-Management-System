@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const [isDownloadingRange, setIsDownloadingRange] = useState(false);
   const [isArchivingRange, setIsArchivingRange] = useState(false);
   const [archiveYear, setArchiveYear] = useState(
-    String(new Date().getFullYear())
+    String(new Date().getFullYear()),
   );
   const [archiveLabel, setArchiveLabel] = useState("");
   const storage = getStorage();
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       const q = query(
         ticketsRef,
         where("ticketNum", ">=", startNum),
-        where("ticketNum", "<=", endNum)
+        where("ticketNum", "<=", endNum),
       );
       const snapshot = await getDocs(q);
       const tickets = snapshot.docs.map((doc) => ({
@@ -81,49 +81,49 @@ const AdminDashboard = () => {
             zip,
             "signed-documents",
             "contract.pdf",
-            ticket.contractURL
+            ticket.contractURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "delivery-note.pdf",
-            ticket.deliveryNoteURL
+            ticket.deliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "device-delivery-note.pdf",
-            ticket.deviceDeliveryNoteURL
+            ticket.deviceDeliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "parts-delivery-note.pdf",
-            ticket.partsDeliveryNoteURL
+            ticket.partsDeliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "no-responsibility-note.pdf",
-            ticket.noResponsibilityURL
+            ticket.noResponsibilityURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "technical-report.pdf",
-            ticket.techReportURL
+            ticket.techReportURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "invoice.pdf",
-            ticket.invoiceURL
+            ticket.invoiceURL,
           ),
           fetchAndAddFileToZip(
             zip,
             "signed-documents",
             "price-quotation.pdf",
-            ticket.priceQuotationURL
+            ticket.priceQuotationURL,
           ),
         ]);
         if (ticket.mediaURLs && ticket.mediaURLs.length > 0) {
@@ -135,9 +135,9 @@ const AdminDashboard = () => {
                 zip,
                 "media",
                 `media_${idx + 1}.${ext}`,
-                path
+                path,
               );
-            })
+            }),
           );
         }
         await zip.generateAsync({ type: "blob" }).then((content) => {
@@ -169,7 +169,7 @@ const AdminDashboard = () => {
       const q = query(
         ticketsRef,
         where("ticketNum", ">=", startNum),
-        where("ticketNum", "<=", endNum)
+        where("ticketNum", "<=", endNum),
       );
       const snapshot = await getDocs(q);
       const tickets = snapshot.docs.map((doc) => ({
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
 
       const data = await response.json();
       alert(
-        `Archived ${data.count} tickets to ${data.file}. You can view them in Archived.`
+        `Archived ${data.count} tickets to ${data.file}. You can view them in Archived.`,
       );
       setArchiveLabel("");
     } catch (err) {
@@ -236,7 +236,7 @@ const AdminDashboard = () => {
       // Get pending approvals
       const pendingQuery = query(
         collection(db, "tickets"),
-        where("approvalRequired", "==", true)
+        where("approvalRequired", "==", true),
       );
       const pendingSnapshot = await getDocs(pendingQuery);
       const pendingApproval = pendingSnapshot.size;
@@ -277,7 +277,7 @@ const AdminDashboard = () => {
   const fetchPendingTickets = async () => {
     const q = query(
       collection(db, "tickets"),
-      where("approvalRequired", "==", true)
+      where("approvalRequired", "==", true),
     );
     const snapshot = await getDocs(q);
     const tickets = snapshot.docs.map((doc) => ({
