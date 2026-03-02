@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import sendEmailRoute from "./routes/sendEmail.js";
 import createUserRoute from "./routes/createUser.js";
+import archiveTicketsRoute from "./routes/archiveTickets.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +60,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/api/sendEmail", sendEmailRoute);
 app.use("/api/createUser", createUserRoute);
+app.use("/api/archive", archiveTicketsRoute);
 
 // API health check route
 app.get("/api", (req, res) => {

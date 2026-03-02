@@ -15,12 +15,18 @@ import "./AdminDashboard.css";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { API_ENDPOINTS } from "../config/api";
 
 const AdminDashboard = () => {
   // Range download state
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
   const [isDownloadingRange, setIsDownloadingRange] = useState(false);
+  const [isArchivingRange, setIsArchivingRange] = useState(false);
+  const [archiveYear, setArchiveYear] = useState(
+    String(new Date().getFullYear())
+  );
+  const [archiveLabel, setArchiveLabel] = useState("");
   const storage = getStorage();
   const fetchAndAddFileToZip = async (zip, folder, fileName, filePath) => {
     if (!filePath) return;
@@ -142,6 +148,65 @@ const AdminDashboard = () => {
       alert("Failed to download ticket ZIPs. Please try again.");
     }
     setIsDownloadingRange(false);
+  };
+
+  const handleArchiveRange = async () => {
+    if (!rangeStart || !rangeEnd) {
+      alert("Please enter both start and end ticket numbers.");
+      return;
+    }
+    setIsArchivingRange(true);
+    try {
+      const startNum = parseInt(rangeStart);
+      const endNum = parseInt(rangeEnd);
+      if (isNaN(startNum) || isNaN(endNum) || startNum > endNum) {
+        alert("Invalid range.");
+        setIsArchivingRange(false);
+        return;
+      }
+
+      const ticketsRef = collection(db, "tickets");
+      const q = query(
+        ticketsRef,
+        where("ticketNum", ">=", startNum),
+        where("ticketNum", "<=", endNum)
+      );
+      const snapshot = await getDocs(q);
+      const tickets = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      if (tickets.length === 0) {
+        alert("No tickets found in this range.");
+        setIsArchivingRange(false);
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.ARCHIVE_TICKETS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: archiveYear,
+          label: archiveLabel,
+          tickets,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to archive tickets");
+      }
+
+      const data = await response.json();
+      alert(
+        `Archived ${data.count} tickets to ${data.file}. You can view them in Archived.`
+      );
+      setArchiveLabel("");
+    } catch (err) {
+      alert(err.message || "Failed to archive tickets.");
+    }
+    setIsArchivingRange(false);
   };
   const { technician } = useUser();
   const navigate = useNavigate();
@@ -320,7 +385,14 @@ const AdminDashboard = () => {
           }}
         >
           <h3>⬇️ Download Ticket Range as ZIPs</h3>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <label>
               From Ticket #
               <input
@@ -351,6 +423,50 @@ const AdminDashboard = () => {
           </div>
           <small style={{ color: "#888" }}>
             Each ticket will be downloaded as a separate ZIP file.
+          </small>
+
+          <hr style={{ margin: "16px 0" }} />
+
+          <h3>🗄️ Archive Ticket Range to Local Server</h3>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <label>
+              Year
+              <input
+                type="number"
+                value={archiveYear}
+                onChange={(e) => setArchiveYear(e.target.value)}
+                style={{ marginLeft: 6, width: 100 }}
+                min={2000}
+                max={2100}
+              />
+            </label>
+            <label>
+              Label (optional)
+              <input
+                type="text"
+                value={archiveLabel}
+                onChange={(e) => setArchiveLabel(e.target.value)}
+                placeholder="e.g. 0007__0606"
+                style={{ marginLeft: 6, width: 180 }}
+              />
+            </label>
+            <button
+              className="action-btn"
+              onClick={handleArchiveRange}
+              disabled={isArchivingRange}
+            >
+              {isArchivingRange ? "Archiving..." : "Archive Range"}
+            </button>
+          </div>
+          <small style={{ color: "#888" }}>
+            Saves the ticket data as JSON under the server archive folder.
           </small>
         </div>
       </div>
