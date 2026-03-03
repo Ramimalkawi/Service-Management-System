@@ -183,6 +183,8 @@ const AdminDashboard = () => {
       }
       const label = archiveLabel.trim();
       const fileLabel = label ? label : `${startNum}__${endNum}`;
+      const archiveZip = new JSZip();
+
       const payload = {
         archivedAt: new Date().toISOString(),
         year: archiveYear,
@@ -190,11 +192,87 @@ const AdminDashboard = () => {
         count: tickets.length,
         tickets,
       };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: "application/json",
+      archiveZip.file("archive.json", JSON.stringify(payload, null, 2));
+
+      for (const ticket of tickets) {
+        const ticketId = ticket.ticketNum || ticket.id || "unknown";
+        const ticketFolder = archiveZip.folder(`ticket_${ticketId}`);
+        ticketFolder.file(
+          "ticket-details.json",
+          JSON.stringify(ticket, null, 2)
+        );
+
+        await Promise.all([
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "contract.pdf",
+            ticket.contractURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "delivery-note.pdf",
+            ticket.deliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "device-delivery-note.pdf",
+            ticket.deviceDeliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "parts-delivery-note.pdf",
+            ticket.partsDeliveryNoteURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "no-responsibility-note.pdf",
+            ticket.noResponsibilityURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "technical-report.pdf",
+            ticket.techReportURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "invoice.pdf",
+            ticket.invoiceURL
+          ),
+          fetchAndAddFileToZip(
+            ticketFolder,
+            "signed-documents",
+            "price-quotation.pdf",
+            ticket.priceQuotationURL
+          ),
+        ]);
+
+        if (ticket.mediaURLs && ticket.mediaURLs.length > 0) {
+          await Promise.all(
+            ticket.mediaURLs.map(async (path, idx) => {
+              const extMatch = path.match(/\.([a-zA-Z0-9]+)$/);
+              const ext = extMatch ? extMatch[1] : "bin";
+              await fetchAndAddFileToZip(
+                ticketFolder,
+                "media",
+                `media_${idx + 1}.${ext}`,
+                path
+              );
+            })
+          );
+        }
+      }
+
+      await archiveZip.generateAsync({ type: "blob" }).then((content) => {
+        saveAs(content, `archive_${fileLabel}.zip`);
       });
-      saveAs(blob, `archive_${fileLabel}.json`);
-      alert(`Downloaded ${tickets.length} archived tickets as JSON.`);
+      alert(`Downloaded ${tickets.length} archived tickets with attachments.`);
       setArchiveLabel("");
     } catch (err) {
       alert(err.message || "Failed to archive tickets.");

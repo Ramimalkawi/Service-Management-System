@@ -179,13 +179,6 @@ export default function Archived() {
     }
   });
 
-  if (loading) return <div>Loading archived tickets...</div>;
-  if (error) return <div style={{ color: "red" }}>Error: {error}</div>;
-
-  if (years.length === 0) {
-    return <div>No archived tickets found yet.</div>;
-  }
-
   return (
     <div>
       <div
@@ -246,10 +239,19 @@ export default function Archived() {
           ))}
         </select>
       </div>
+      
       <div style={{ margin: "0 auto" }}>
-        {filteredTickets.length === 0 ? (
+        {loading && <div>Loading archived tickets...</div>}
+        {!loading && error && (
+          <div style={{ color: "red" }}>Error: {error}</div>
+        )}
+        {!loading && !error && years.length === 0 && !localMode && (
+          <div>No archived tickets found yet.</div>
+        )}
+        {!loading && !error && filteredTickets.length === 0 && year && (
           <p>No archived tickets found for {year}.</p>
-        ) : (
+        )}
+        {!loading && !error && filteredTickets.length > 0 && (
           <div style={{ display: "flex", gap: 24 }}>
             <div
               style={{
