@@ -239,7 +239,7 @@ export default function Archived() {
           ))}
         </select>
       </div>
-      
+
       <div style={{ margin: "0 auto" }}>
         {loading && <div>Loading archived tickets...</div>}
         {!loading && error && (

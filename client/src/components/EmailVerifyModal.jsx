@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Modal from "react-modal";
 
 const EmailVerifyModal = (props) => {
-  // Add support for verificationExpired and onUseFallback
   const {
     isOpen,
     onClose,
@@ -12,7 +11,6 @@ const EmailVerifyModal = (props) => {
     loading,
     error,
     verificationExpired,
-    onUseFallback,
     expiresAt,
   } = props;
   const [inputEmail, setInputEmail] = useState(email || "");
@@ -146,8 +144,7 @@ const EmailVerifyModal = (props) => {
           {verificationExpired && (
             <>
               <div style={{ color: "#e53935", marginTop: 12 }}>
-                Verification expired. You can resend the code or use a fallback
-                email.
+                Verification expired. Please resend the verification code.
               </div>
               <button
                 onClick={() => {
@@ -166,20 +163,6 @@ const EmailVerifyModal = (props) => {
                 }}
               >
                 Resend Code
-              </button>
-              <button
-                onClick={onUseFallback}
-                style={{
-                  marginTop: 12,
-                  marginLeft: 8,
-                  padding: "8px 16px",
-                  borderRadius: 4,
-                  border: "none",
-                  background: "#e53935",
-                  color: "#fff",
-                }}
-              >
-                Use refused@apple.com
               </button>
             </>
           )}

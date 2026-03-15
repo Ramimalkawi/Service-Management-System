@@ -225,64 +225,11 @@ const NewTicket = () => {
         }
       }
     } else if (verificationExpired) {
-      setEmailVerificationError(
-        "Verification expired. Please resend code or use fallback email.",
-      );
+      setEmailVerificationError("Verification expired. Please resend code.");
     } else {
       setEmailVerificationError("Incorrect code. Please try again.");
     }
     setEmailVerificationLoading(false);
-  };
-
-  const handleUseFallbackEmail = () => {
-    setShowEmailVerifyModal(false);
-    setFormData((prev) => ({ ...prev, emailAddress: "refused@apple.com" }));
-    if (verificationTimeout) clearTimeout(verificationTimeout);
-    setVerificationTimeout(null);
-    setVerificationExpiresAt(null);
-    setVerificationExpired(false);
-    // Only increment if ticketNum is not set
-    if (!formData.ticketNum) {
-      const ticketNumDocRef = doc(db, "ticketnumber", "OelkqX6vOsleiRSAHl17");
-      let newTicketNum = null;
-      runTransaction(db, async (transaction) => {
-        const ticketNumDoc = await transaction.get(ticketNumDocRef);
-        if (!ticketNumDoc.exists()) {
-          transaction.set(ticketNumDocRef, { number: 1000 });
-          newTicketNum = 1000;
-        } else {
-          const current = ticketNumDoc.data().number || 1000;
-          newTicketNum = current + 1;
-          transaction.update(ticketNumDocRef, { number: newTicketNum });
-        }
-      }).then(() => {
-        const random3 = generate3DigitNumber();
-        setFormData((prev) => ({
-          ...prev,
-          ticketNum: newTicketNum,
-          ticketId: `${prev.location}${newTicketNum}${random3}`,
-        }));
-        if (formData.warrantyStatus === "Out of warranty") {
-          setShowReleaseModal(true);
-        } else {
-          if (contractPdfUrl) {
-            setShowSignatureModal(true);
-          } else {
-            alert("Contract PDF is not available. Please try again later.");
-          }
-        }
-      });
-    } else {
-      if (formData.warrantyStatus === "Out of warranty") {
-        setShowReleaseModal(true);
-      } else {
-        if (contractPdfUrl) {
-          setShowSignatureModal(true);
-        } else {
-          alert("Contract PDF is not available. Please try again later.");
-        }
-      }
-    }
   };
 
   const handleCompleteContract = async (contractURL, customerSignatureURL) => {
@@ -792,7 +739,6 @@ const NewTicket = () => {
         loading={emailVerificationLoading}
         error={emailVerificationError}
         verificationExpired={verificationExpired}
-        onUseFallback={handleUseFallbackEmail}
         expiresAt={verificationExpiresAt}
       />
     </div>

@@ -199,7 +199,7 @@ const AdminDashboard = () => {
         const ticketFolder = archiveZip.folder(`ticket_${ticketId}`);
         ticketFolder.file(
           "ticket-details.json",
-          JSON.stringify(ticket, null, 2)
+          JSON.stringify(ticket, null, 2),
         );
 
         await Promise.all([
@@ -207,49 +207,49 @@ const AdminDashboard = () => {
             ticketFolder,
             "signed-documents",
             "contract.pdf",
-            ticket.contractURL
+            ticket.contractURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "delivery-note.pdf",
-            ticket.deliveryNoteURL
+            ticket.deliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "device-delivery-note.pdf",
-            ticket.deviceDeliveryNoteURL
+            ticket.deviceDeliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "parts-delivery-note.pdf",
-            ticket.partsDeliveryNoteURL
+            ticket.partsDeliveryNoteURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "no-responsibility-note.pdf",
-            ticket.noResponsibilityURL
+            ticket.noResponsibilityURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "technical-report.pdf",
-            ticket.techReportURL
+            ticket.techReportURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "invoice.pdf",
-            ticket.invoiceURL
+            ticket.invoiceURL,
           ),
           fetchAndAddFileToZip(
             ticketFolder,
             "signed-documents",
             "price-quotation.pdf",
-            ticket.priceQuotationURL
+            ticket.priceQuotationURL,
           ),
         ]);
 
@@ -262,9 +262,9 @@ const AdminDashboard = () => {
                 ticketFolder,
                 "media",
                 `media_${idx + 1}.${ext}`,
-                path
+                path,
               );
-            })
+            }),
           );
         }
       }
