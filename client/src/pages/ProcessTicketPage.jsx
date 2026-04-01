@@ -515,7 +515,7 @@ const ProcessTicketPage = () => {
             <div class="content">
               <p>Dear ${ticket.customerName},</p>
               
-              <p><strong>Great news!</strong> Your device has been successfully repaired and is now ready for pickup.</p>
+              <p><strong>Service completed!</strong> Your device service has been finished and is now ready for pickup.</p>
               
               <div class="pickup-notice">
                 <h3 style="margin-top: 0;">📍 Ready for Pickup</h3>
