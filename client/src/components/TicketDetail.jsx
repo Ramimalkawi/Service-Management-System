@@ -149,6 +149,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
         machineType: ticket.machineType || "",
         deviceDescription: ticket.deviceDescription || "",
         serialNum: ticket.serialNum || "",
+        deviceIMEI: ticket.deviceIMEI || "",
         warrantyStatus: ticket.warrantyStatus || "",
         symptom: ticket.symptom || "",
         repairID: ticket.repairID || "",
@@ -163,7 +164,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
           ticket.mediaURLs.map(async (path) => {
             const fileRef = ref(storage, path);
             return await getDownloadURL(fileRef);
-          })
+          }),
         );
         setMediaURLs(urls);
       } catch (error) {
@@ -204,49 +205,49 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
           zip,
           "signed-documents",
           "contract.pdf",
-          ticket.contractURL
+          ticket.contractURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "delivery-note.pdf",
-          ticket.deliveryNoteURL
+          ticket.deliveryNoteURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "device-delivery-note.pdf",
-          ticket.deviceDeliveryNoteURL
+          ticket.deviceDeliveryNoteURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "parts-delivery-note.pdf",
-          ticket.partsDeliveryNoteURL
+          ticket.partsDeliveryNoteURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "no-responsibility-note.pdf",
-          ticket.noResponsibilityURL
+          ticket.noResponsibilityURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "technical-report.pdf",
-          ticket.techReportURL
+          ticket.techReportURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "invoice.pdf",
-          ticket.invoiceURL
+          ticket.invoiceURL,
         ),
         fetchAndAddFileToZip(
           zip,
           "signed-documents",
           "price-quotation.pdf",
-          ticket.priceQuotationURL
+          ticket.priceQuotationURL,
         ),
       ]);
 
@@ -261,9 +262,9 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
               zip,
               "media",
               `media_${idx + 1}.${ext}`,
-              path
+              path,
             );
-          })
+          }),
         );
       }
 
@@ -453,7 +454,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
   const handleSaveChanges = async () => {
     // Show confirmation alert
     const confirmSave = window.confirm(
-      "Are you sure you want to save these changes? This will update the ticket information permanently."
+      "Are you sure you want to save these changes? This will update the ticket information permanently.",
     );
 
     if (!confirmSave) {
@@ -494,7 +495,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
   const handleDeleteTicket = async () => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this ticket and all its documents? This action cannot be undone."
+        "Are you sure you want to delete this ticket and all its documents? This action cannot be undone.",
       )
     )
       return;
@@ -607,13 +608,25 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
               </p>
             </div>
             {ticket.hasBorrowedDevice && (
-              <div className="receipt-section" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80", borderRadius: "4px", padding: "8px" }}>
-                <h3 style={{ color: "#e65100", marginBottom: 8 }}>📱 Borrowed Device</h3>
+              <div
+                className="receipt-section"
+                style={{
+                  backgroundColor: "#fff8e1",
+                  border: "1px solid #ffcc80",
+                  borderRadius: "4px",
+                  padding: "8px",
+                }}
+              >
+                <h3 style={{ color: "#e65100", marginBottom: 8 }}>
+                  📱 Borrowed Device
+                </h3>
                 <p>
-                  <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+                  <strong>Description:</strong>{" "}
+                  {ticket.borrowedDeviceDescription || "N/A"}
                 </p>
                 <p>
-                  <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+                  <strong>Serial Number:</strong>{" "}
+                  {ticket.borrowedDeviceSerial || "N/A"}
                 </p>
               </div>
             )}
@@ -733,13 +746,25 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
               </p>
             </div>
             {ticket.hasBorrowedDevice && (
-              <div className="receipt-section" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80", borderRadius: "4px", padding: "8px" }}>
-                <h3 style={{ color: "#e65100", marginBottom: 8 }}>📱 Borrowed Device</h3>
+              <div
+                className="receipt-section"
+                style={{
+                  backgroundColor: "#fff8e1",
+                  border: "1px solid #ffcc80",
+                  borderRadius: "4px",
+                  padding: "8px",
+                }}
+              >
+                <h3 style={{ color: "#e65100", marginBottom: 8 }}>
+                  📱 Borrowed Device
+                </h3>
                 <p>
-                  <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+                  <strong>Description:</strong>{" "}
+                  {ticket.borrowedDeviceDescription || "N/A"}
                 </p>
                 <p>
-                  <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+                  <strong>Serial Number:</strong>{" "}
+                  {ticket.borrowedDeviceSerial || "N/A"}
                 </p>
               </div>
             )}
@@ -803,7 +828,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       const contentString = ReactDOMServer.renderToString(
-        <PrintableContent ticket={ticket} />
+        <PrintableContent ticket={ticket} />,
       );
       printWindow.document.write(contentString);
       printWindow.document.close();
@@ -1246,13 +1271,18 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
 
         {/* Borrowed Device Section */}
         {ticket.hasBorrowedDevice && (
-          <div className="ticket-detail-group" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80" }}>
+          <div
+            className="ticket-detail-group"
+            style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80" }}
+          >
             <h3>📱 Borrowed Device</h3>
             <p>
-              <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+              <strong>Description:</strong>{" "}
+              {ticket.borrowedDeviceDescription || "N/A"}
             </p>
             <p>
-              <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+              <strong>Serial Number:</strong>{" "}
+              {ticket.borrowedDeviceSerial || "N/A"}
             </p>
           </div>
         )}

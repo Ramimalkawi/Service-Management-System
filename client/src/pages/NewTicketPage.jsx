@@ -706,7 +706,13 @@ const NewTicket = () => {
           </div>
 
           <div
-            style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px", marginBottom: "18px" }}
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "18px",
+            }}
           >
             <input
               type="checkbox"
@@ -723,11 +729,22 @@ const NewTicket = () => {
                   }),
                 }));
               }}
-              style={{ width: "20px", height: "20px", cursor: "pointer", flexShrink: 0 }}
+              style={{
+                width: "20px",
+                height: "20px",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
             />
             <label
               htmlFor="hasBorrowedDevice"
-              style={{ cursor: "pointer", margin: 0, whiteSpace: "nowrap", fontWeight: 500, color: "#444" }}
+              style={{
+                cursor: "pointer",
+                margin: 0,
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+                color: "#444",
+              }}
             >
               Customer has borrowed a device until repair is complete
             </label>
