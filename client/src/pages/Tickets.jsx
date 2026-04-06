@@ -1699,6 +1699,10 @@ const Tickets = () => {
   const [acceptingAgreementId, setAcceptingAgreementId] = useState(null);
   const [rejectingAgreementId, setRejectingAgreementId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [queueCount, setQueueCount] = useState(0);
+  const [queueData, setQueueData] = useState([]);
+  const [showQueuePanel, setShowQueuePanel] = useState(false);
+  const [currentlyServing, setCurrentlyServing] = useState(null);
 
   // Search state variables
   const [searchQuery, setSearchQuery] = useState("");
@@ -1800,6 +1804,119 @@ const Tickets = () => {
     );
     return () => unsubscribe();
   }, []);
+
+  // Listen to queue collection for waiting count and data
+  useEffect(() => {
+    const queueRef = collection(db, "queue");
+    const unsubscribe = onSnapshot(
+      queueRef,
+      (snapshot) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const getEntryDate = (data) => {
+          // Check for created_at (snake_case - as stored in Firestore)
+          if (data.created_at) {
+            if (typeof data.created_at.toDate === "function") {
+              return data.created_at.toDate();
+            }
+            if (typeof data.created_at.seconds === "number") {
+              return new Date(data.created_at.seconds * 1000);
+            }
+          }
+          // Also check camelCase versions as fallback
+          if (data.createdAt) {
+            if (typeof data.createdAt.toDate === "function") {
+              return data.createdAt.toDate();
+            }
+            if (typeof data.createdAt.seconds === "number") {
+              return new Date(data.createdAt.seconds * 1000);
+            }
+          }
+          // Check timestamp field
+          if (data.timestamp) {
+            if (typeof data.timestamp.toDate === "function") {
+              return data.timestamp.toDate();
+            }
+            if (typeof data.timestamp.seconds === "number") {
+              return new Date(data.timestamp.seconds * 1000);
+            }
+          }
+          // Handle string date format like "2026-04-06"
+          if (data.date && typeof data.date === "string") {
+            const parsed = new Date(data.date + "T00:00:00");
+            if (!isNaN(parsed.getTime())) return parsed;
+          }
+          return null;
+        };
+
+        const todayEntries = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data();
+            const entryDate = getEntryDate(data);
+            return {
+              id: docSnap.id,
+              ...data,
+              entryDate,
+              queueNumber: data.queue_number || data.queueNumber || 0,
+            };
+          })
+          .filter((entry) => {
+            // Filter by technician's location
+            const techLocation = technician?.location;
+            const entryCenter = (entry.center || "").toLowerCase();
+            const entryLocation = entry.location || "";
+
+            // Determine if entry matches technician's location
+            let locationMatch = true;
+            if (techLocation === "M") {
+              // Amman technician - only show Amman queue entries
+              locationMatch =
+                entryCenter === "amman" ||
+                entryLocation === "M" ||
+                entryLocation === "Amman";
+            } else if (techLocation === "I") {
+              // Irbid technician - only show Irbid queue entries
+              locationMatch =
+                entryCenter === "irbid" ||
+                entryLocation === "I" ||
+                entryLocation === "Irbid";
+            }
+
+            if (!locationMatch) return false;
+
+            // If no entryDate, still include but won't show time
+            if (!entry.entryDate || isNaN(entry.entryDate.getTime())) {
+              // Check if date string matches today
+              if (entry.date === formatDateKey(new Date())) {
+                return true;
+              }
+              return false;
+            }
+            return entry.entryDate >= today;
+          })
+          .sort(
+            (a, b) =>
+              a.queueNumber - b.queueNumber || a.entryDate - b.entryDate,
+          );
+
+        const waitingEntries = todayEntries.filter(
+          (entry) => (entry.status || "").toLowerCase() === "waiting",
+        );
+        const servingEntry = todayEntries.find(
+          (entry) => (entry.status || "").toLowerCase() === "serving",
+        );
+
+        setQueueData(todayEntries);
+        setQueueCount(waitingEntries.length);
+        setCurrentlyServing(servingEntry || null);
+      },
+      (err) => {
+        console.error("Error fetching queue:", err);
+      },
+    );
+    return () => unsubscribe();
+  }, [technician?.location]);
 
   useEffect(() => {
     if (locationFilter === "Online") {
@@ -2441,6 +2558,71 @@ const Tickets = () => {
     navigate("/tickets");
   };
 
+  // Queue management functions
+  const callNextInQueue = async () => {
+    const waitingEntries = queueData.filter(
+      (entry) => (entry.status || "").toLowerCase() === "waiting",
+    );
+    if (waitingEntries.length === 0) {
+      alert("No one is waiting in the queue.");
+      return;
+    }
+
+    // If someone is currently being served, mark them as served first
+    if (currentlyServing) {
+      await updateDoc(doc(db, "queue", currentlyServing.id), {
+        status: "served",
+        servedAt: serverTimestamp(),
+        servedBy: currentTechnicianName,
+      });
+    }
+
+    // Call the next person
+    const nextPerson = waitingEntries[0];
+    await updateDoc(doc(db, "queue", nextPerson.id), {
+      status: "serving",
+      calledAt: serverTimestamp(),
+      calledBy: currentTechnicianName,
+    });
+  };
+
+  const markAsServed = async (entryId) => {
+    await updateDoc(doc(db, "queue", entryId), {
+      status: "serviced",
+      servedAt: serverTimestamp(),
+      servedBy: currentTechnicianName,
+    });
+  };
+
+  const skipQueueEntry = async (entryId) => {
+    await updateDoc(doc(db, "queue", entryId), {
+      status: "skipped",
+      skippedAt: serverTimestamp(),
+      skippedBy: currentTechnicianName,
+    });
+  };
+
+  const removeFromQueue = async (entryId) => {
+    if (
+      window.confirm(
+        "Are you sure you want to remove this entry from the queue?",
+      )
+    ) {
+      await deleteDoc(doc(db, "queue", entryId));
+    }
+  };
+
+  const formatTime = (ts) => {
+    if (!ts) return "—";
+    // Handle Firestore Timestamp objects and regular date strings
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
   const isLoading = isOnlineView ? onlineLoading : loading;
   if (isLoading) return <p>Loading...</p>;
 
@@ -2482,6 +2664,34 @@ const Tickets = () => {
               <button className="new-ticket-button" onClick={handleNewTicket}>
                 + New Ticket
               </button>
+              {technician?.isReception && (
+                <button
+                  onClick={() => setShowQueuePanel(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginLeft: "16px",
+                    padding: "8px 16px",
+                    backgroundColor: queueCount > 0 ? "#fff3cd" : "#e8f5e9",
+                    border: `1px solid ${queueCount > 0 ? "#ffc107" : "#4caf50"}`,
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: queueCount > 0 ? "#856404" : "#2e7d32",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontSize: "18px" }}>
+                    {queueCount > 0 ? "⏳" : "✓"}
+                  </span>
+                  <span>
+                    {queueCount > 0
+                      ? `${queueCount} waiting in queue`
+                      : "Queue empty"}
+                  </span>
+                </button>
+              )}
             </div>
             <div className="search-controls">
               <input
@@ -2787,6 +2997,341 @@ const Tickets = () => {
                 return 0;
               })()}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Queue Management Panel - Only for reception technicians */}
+      {showQueuePanel && technician?.isReception && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+          }}
+          onClick={() => setShowQueuePanel(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              maxWidth: "600px",
+              width: "90%",
+              maxHeight: "80vh",
+              overflow: "auto",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <h2 style={{ margin: 0 }}>📋 Queue Management</h2>
+              <button
+                onClick={() => setShowQueuePanel(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#666",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Currently Serving */}
+            {currentlyServing && (
+              <div
+                style={{
+                  backgroundColor: "#e3f2fd",
+                  border: "2px solid #2196f3",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "#1976d2",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      NOW SERVING
+                    </span>
+                    <h3 style={{ margin: "4px 0", color: "#1565c0" }}>
+                      {currentlyServing.location === "M" ||
+                      currentlyServing.location === "Amman"
+                        ? "A"
+                        : "I"}
+                      {String(currentlyServing.queueNumber || 0).padStart(
+                        3,
+                        "0",
+                      )}
+                    </h3>
+                    {currentlyServing.phone && (
+                      <p style={{ margin: 0, color: "#666" }}>
+                        📞 {currentlyServing.phone}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => markAsServed(currentlyServing.id)}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#4caf50",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    ✓ Mark Served
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Call Next Button */}
+            <button
+              onClick={callNextInQueue}
+              disabled={queueCount === 0}
+              style={{
+                width: "100%",
+                padding: "16px",
+                backgroundColor: queueCount > 0 ? "#1ccad4" : "#ccc",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "18px",
+                fontWeight: "bold",
+                cursor: queueCount > 0 ? "pointer" : "not-allowed",
+                marginBottom: "20px",
+              }}
+            >
+              📢 Call Next ({queueCount} waiting)
+            </button>
+
+            {/* Waiting List */}
+            <div>
+              <h3 style={{ marginBottom: "12px", color: "#333" }}>
+                Waiting List
+              </h3>
+              {queueData.filter(
+                (e) => (e.status || "").toLowerCase() === "waiting",
+              ).length === 0 ? (
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: "#888",
+                    padding: "20px",
+                  }}
+                >
+                  No one is waiting in the queue.
+                </p>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  {queueData
+                    .filter(
+                      (entry) =>
+                        (entry.status || "").toLowerCase() === "waiting",
+                    )
+                    .map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "12px 16px",
+                          backgroundColor: index === 0 ? "#fff8e1" : "#f5f5f5",
+                          border:
+                            index === 0
+                              ? "2px solid #ffc107"
+                              : "1px solid #ddd",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-block",
+                              backgroundColor:
+                                index === 0 ? "#ffc107" : "#9e9e9e",
+                              color: index === 0 ? "#000" : "#fff",
+                              padding: "4px 10px",
+                              borderRadius: "4px",
+                              fontSize: "14px",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {entry.location === "M" || entry.center === "amman"
+                              ? "A"
+                              : "I"}
+                            {String(entry.queue_number || index + 1).padStart(
+                              3,
+                              "0",
+                            )}
+                          </span>
+                          {entry.phone_number && (
+                            <span style={{ color: "#666" }}>
+                              📞 {entry.phone_number}
+                            </span>
+                          )}
+
+                          {entry.created_at && (
+                            <span style={{ color: "#999", fontSize: "12px" }}>
+                              Joined {formatTime(entry.created_at)}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => skipQueueEntry(entry.id)}
+                            title="Skip"
+                            style={{
+                              padding: "6px 12px",
+                              backgroundColor: "#ff9800",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Skip
+                          </button>
+                          <button
+                            onClick={() => removeFromQueue(entry.id)}
+                            title="Remove"
+                            style={{
+                              padding: "6px 12px",
+                              backgroundColor: "#f44336",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Served Today */}
+            {queueData.filter((e) =>
+              ["served", "skipped"].includes((e.status || "").toLowerCase()),
+            ).length > 0 && (
+              <div style={{ marginTop: "24px" }}>
+                <h3 style={{ marginBottom: "12px", color: "#666" }}>
+                  Served Today
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  {queueData
+                    .filter((entry) =>
+                      ["served", "skipped"].includes(
+                        (entry.status || "").toLowerCase(),
+                      ),
+                    )
+                    .map((entry) => (
+                      <div
+                        key={entry.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          backgroundColor: "#fafafa",
+                          borderRadius: "6px",
+                          opacity: 0.7,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <span style={{ color: "#999", fontWeight: "bold" }}>
+                            {entry.location === "M" || entry.center === "amman"
+                              ? "A"
+                              : "I"}
+                            {String(entry.queue_number || 0).padStart(3, "0")}
+                          </span>
+                          {entry.phone_number && (
+                            <span style={{ color: "#666" }}>
+                              📞 {entry.phone_number}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            backgroundColor:
+                              entry.status === "served" ? "#c8e6c9" : "#ffe0b2",
+                            color:
+                              entry.status === "served" ? "#2e7d32" : "#e65100",
+                          }}
+                        >
+                          {entry.status === "served"
+                            ? "✓ Served"
+                            : "⏭ Skipped"}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

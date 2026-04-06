@@ -50,6 +50,9 @@ const NewTicket = () => {
     date: new Date().toLocaleDateString("en-GB"),
     deviceStuff: "",
     notes: "",
+    hasBorrowedDevice: false,
+    borrowedDeviceDescription: "",
+    borrowedDeviceSerial: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -62,6 +65,7 @@ const NewTicket = () => {
   const [signatureBlob, setSignatureBlob] = useState(null);
   const [customDeviceType, setCustomDeviceType] = useState("");
   const [showCustomDeviceInput, setShowCustomDeviceInput] = useState(false);
+  const [hasBorrowedDevice, setHasBorrowedDevice] = useState(false);
   const [showEmailVerifyModal, setShowEmailVerifyModal] = useState(false);
   const [pendingWarrantyStatus, setPendingWarrantyStatus] = useState(null);
   const [emailVerificationLoading, setEmailVerificationLoading] =
@@ -700,6 +704,65 @@ const NewTicket = () => {
               />
             </div>
           </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px", marginBottom: "18px" }}
+          >
+            <input
+              type="checkbox"
+              id="hasBorrowedDevice"
+              checked={hasBorrowedDevice}
+              onChange={(e) => {
+                setHasBorrowedDevice(e.target.checked);
+                setFormData((prev) => ({
+                  ...prev,
+                  hasBorrowedDevice: e.target.checked,
+                  ...(!e.target.checked && {
+                    borrowedDeviceDescription: "",
+                    borrowedDeviceSerial: "",
+                  }),
+                }));
+              }}
+              style={{ width: "20px", height: "20px", cursor: "pointer", flexShrink: 0 }}
+            />
+            <label
+              htmlFor="hasBorrowedDevice"
+              style={{ cursor: "pointer", margin: 0, whiteSpace: "nowrap", fontWeight: 500, color: "#444" }}
+            >
+              Customer has borrowed a device until repair is complete
+            </label>
+          </div>
+
+          {hasBorrowedDevice && (
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                width: "100%",
+              }}
+            >
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Borrowed Device Description</label>
+                <input
+                  name="borrowedDeviceDescription"
+                  value={formData.borrowedDeviceDescription}
+                  onChange={handleChange}
+                  placeholder="e.g. iPhone 14 Pro - Space Black"
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Borrowed Device Serial Number</label>
+                <input
+                  name="borrowedDeviceSerial"
+                  value={formData.borrowedDeviceSerial}
+                  onChange={handleChange}
+                  placeholder="Enter serial number"
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <button className="submit-button" onClick={handleShowModal}>
             Create Ticket

@@ -606,6 +606,17 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
                 <strong>Warranty Status:</strong> {ticket.warrantyStatus}
               </p>
             </div>
+            {ticket.hasBorrowedDevice && (
+              <div className="receipt-section" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80", borderRadius: "4px", padding: "8px" }}>
+                <h3 style={{ color: "#e65100", marginBottom: 8 }}>📱 Borrowed Device</h3>
+                <p>
+                  <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+                </p>
+                <p>
+                  <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+                </p>
+              </div>
+            )}
             <div className="receipt-section">
               <h3 style={{ color: "#333", marginBottom: 8 }}>Repair Info</h3>
               <p>
@@ -721,6 +732,17 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
                 <strong>Warranty Status:</strong> {ticket.warrantyStatus}
               </p>
             </div>
+            {ticket.hasBorrowedDevice && (
+              <div className="receipt-section" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80", borderRadius: "4px", padding: "8px" }}>
+                <h3 style={{ color: "#e65100", marginBottom: 8 }}>📱 Borrowed Device</h3>
+                <p>
+                  <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+                </p>
+                <p>
+                  <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+                </p>
+              </div>
+            )}
             <div className="receipt-section">
               <h3 style={{ color: "#333", marginBottom: 8 }}>Repair Info</h3>
               <p>
@@ -1167,21 +1189,20 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
                   className="edit-input"
                 />
               </div>
-              {editedTicket.deviceIMEI && (
-                <div className="edit-field">
-                  <label>
-                    <strong>IMEI number:</strong>
-                  </label>
-                  <input
-                    type="text"
-                    value={editedTicket.deviceIMEI}
-                    onChange={(e) =>
-                      handleInputChange("deviceIMEI", e.target.value)
-                    }
-                    className="edit-input"
-                  />
-                </div>
-              )}
+              <div className="edit-field">
+                <label>
+                  <strong>IMEI number:</strong>
+                </label>
+                <input
+                  type="text"
+                  value={editedTicket.deviceIMEI || ""}
+                  onChange={(e) =>
+                    handleInputChange("deviceIMEI", e.target.value)
+                  }
+                  className="edit-input"
+                  placeholder="Enter IMEI number"
+                />
+              </div>
               <div className="edit-field">
                 <label>
                   <strong>Warranty Status:</strong>
@@ -1222,6 +1243,19 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
             </>
           )}
         </div>
+
+        {/* Borrowed Device Section */}
+        {ticket.hasBorrowedDevice && (
+          <div className="ticket-detail-group" style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80" }}>
+            <h3>📱 Borrowed Device</h3>
+            <p>
+              <strong>Description:</strong> {ticket.borrowedDeviceDescription || "N/A"}
+            </p>
+            <p>
+              <strong>Serial Number:</strong> {ticket.borrowedDeviceSerial || "N/A"}
+            </p>
+          </div>
+        )}
 
         <div className="ticket-detail-group">
           <h3>🛠️ Repair Info</h3>
