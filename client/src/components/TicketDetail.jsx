@@ -153,6 +153,9 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
         warrantyStatus: ticket.warrantyStatus || "",
         symptom: ticket.symptom || "",
         repairID: ticket.repairID || "",
+        hasBorrowedDevice: ticket.hasBorrowedDevice || false,
+        borrowedDeviceDescription: ticket.borrowedDeviceDescription || "",
+        borrowedDeviceSerial: ticket.borrowedDeviceSerial || "",
       });
       setTicketNotes(ticket.notes || "");
     }
@@ -1270,22 +1273,111 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
         </div>
 
         {/* Borrowed Device Section */}
-        {ticket.hasBorrowedDevice && (
-          <div
-            className="ticket-detail-group"
-            style={{ backgroundColor: "#fff8e1", border: "1px solid #ffcc80" }}
-          >
-            <h3>📱 Borrowed Device</h3>
-            <p>
-              <strong>Description:</strong>{" "}
-              {ticket.borrowedDeviceDescription || "N/A"}
-            </p>
-            <p>
-              <strong>Serial Number:</strong>{" "}
-              {ticket.borrowedDeviceSerial || "N/A"}
-            </p>
-          </div>
-        )}
+        <div
+          className="ticket-detail-group"
+          style={{
+            backgroundColor:
+              editedTicket.hasBorrowedDevice || ticket.hasBorrowedDevice
+                ? "#fff8e1"
+                : "#f9f9f9",
+            border:
+              editedTicket.hasBorrowedDevice || ticket.hasBorrowedDevice
+                ? "1px solid #ffcc80"
+                : "1px solid #e0e0e0",
+          }}
+        >
+          <h3>📱 Borrowed Device</h3>
+          {isEditing ? (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "12px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="editHasBorrowedDevice"
+                  checked={editedTicket.hasBorrowedDevice}
+                  onChange={(e) => {
+                    handleInputChange("hasBorrowedDevice", e.target.checked);
+                    if (!e.target.checked) {
+                      handleInputChange("borrowedDeviceDescription", "");
+                      handleInputChange("borrowedDeviceSerial", "");
+                    }
+                  }}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <label
+                  htmlFor="editHasBorrowedDevice"
+                  style={{ cursor: "pointer", margin: 0, fontWeight: 500 }}
+                >
+                  Customer has borrowed a device
+                </label>
+              </div>
+              {editedTicket.hasBorrowedDevice && (
+                <>
+                  <div className="edit-field">
+                    <label>
+                      <strong>Borrowed Device Description:</strong>
+                    </label>
+                    <input
+                      type="text"
+                      value={editedTicket.borrowedDeviceDescription}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "borrowedDeviceDescription",
+                          e.target.value,
+                        )
+                      }
+                      className="edit-input"
+                      placeholder="e.g. iPhone 14 Pro - Space Black"
+                    />
+                  </div>
+                  <div className="edit-field">
+                    <label>
+                      <strong>Borrowed Device Serial Number:</strong>
+                    </label>
+                    <input
+                      type="text"
+                      value={editedTicket.borrowedDeviceSerial}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "borrowedDeviceSerial",
+                          e.target.value,
+                        )
+                      }
+                      className="edit-input"
+                      placeholder="Enter serial number"
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {ticket.hasBorrowedDevice ? (
+                <>
+                  <p>
+                    <strong>Description:</strong>{" "}
+                    {ticket.borrowedDeviceDescription || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Serial Number:</strong>{" "}
+                    {ticket.borrowedDeviceSerial || "N/A"}
+                  </p>
+                </>
+              ) : (
+                <p style={{ color: "#888", fontStyle: "italic" }}>
+                  No device borrowed
+                </p>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="ticket-detail-group">
           <h3>🛠️ Repair Info</h3>
