@@ -3084,7 +3084,7 @@ const Tickets = () => {
                     </span>
                     <h3 style={{ margin: "4px 0", color: "#1565c0" }}>
                       {currentlyServing.location === "M" ||
-                      currentlyServing.location === "Amman"
+                      currentlyServing.center === "amman"
                         ? "A"
                         : "I"}
                       {String(currentlyServing.queueNumber || 0).padStart(
