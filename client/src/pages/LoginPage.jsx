@@ -1,6 +1,6 @@
 // LoginPage.jsx
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, browserLocalPersistence, setPersistence } from "firebase/auth";
 import {
   doc,
   getDoc,
@@ -27,6 +27,8 @@ const LoginPage = () => {
     setError("");
 
     try {
+      // Ensure auth persists across browser sessions
+      await setPersistence(auth, browserLocalPersistence);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
