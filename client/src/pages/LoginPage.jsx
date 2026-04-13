@@ -1,6 +1,10 @@
 // LoginPage.jsx
 import React, { useState } from "react";
-import { signInWithEmailAndPassword, browserLocalPersistence, setPersistence } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  browserLocalPersistence,
+  setPersistence,
+} from "firebase/auth";
 import {
   doc,
   getDoc,
@@ -32,14 +36,14 @@ const LoginPage = () => {
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
 
       const user = userCredential.user;
 
       const q = query(
         collection(db, "technicions"),
-        where("email", "==", user.email)
+        where("email", "==", user.email),
       );
 
       const querySnapshot = await getDocs(q);

@@ -1,21 +1,37 @@
 // PrivateRoute.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 
 const PrivateRoute = ({ children }) => {
-  const [user, loading] = useAuthState(auth);
+  const [user, setUser] = useState(undefined); // undefined = still loading
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      alert("Please login first.");
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    // While waiting for Firebase to restore session, check localStorage
+    // to avoid flashing the login page
+    const cachedUser = localStorage.getItem("technician");
+    if (cachedUser) {
+      return children;
     }
-  }, [loading, user]);
+    return <div>Loading...</div>;
+  }
 
-  if (loading) return <div>Loading...</div>;
+  if (!user) {
+    alert("Please login first.");
+    return <Navigate to="/" />;
+  }
 
-  return user ? children : <Navigate to="/" />;
+  return children;
 };
 
 export default PrivateRoute;

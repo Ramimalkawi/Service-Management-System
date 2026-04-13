@@ -1,7 +1,11 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, browserLocalPersistence, setPersistence } from "firebase/auth";
+import {
+  getAuth,
+  browserLocalPersistence,
+  setPersistence,
+} from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 // Firebase config using environment variables for production
@@ -30,7 +34,7 @@ const storage = getStorage(app);
 
 // Keep user logged in until they explicitly log out
 setPersistence(auth, browserLocalPersistence).catch((err) =>
-  console.error("Failed to set auth persistence:", err)
+  console.error("Failed to set auth persistence:", err),
 );
 
 export { db, auth, storage };
