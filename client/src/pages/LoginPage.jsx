@@ -1,9 +1,10 @@
 // LoginPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   signInWithEmailAndPassword,
   browserLocalPersistence,
   setPersistence,
+  onAuthStateChanged,
 } from "firebase/auth";
 import {
   doc,
@@ -24,7 +25,25 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const { setTechnician } = useUser();
+
+  // If user is already logged in, redirect to tickets
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigate("/tickets", { replace: true });
+      }
+      setCheckingAuth(false);
+    });
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // Show nothing while checking auth to avoid login form flash
+  if (checkingAuth) {
+    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>Loading...</div>;
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
