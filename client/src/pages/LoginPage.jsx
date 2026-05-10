@@ -41,7 +41,18 @@ const LoginPage = () => {
 
   // Show nothing while checking auth to avoid login form flash
   if (checkingAuth) {
-    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>Loading...</div>;
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        Loading...
+      </div>
+    );
   }
 
   const handleLogin = async (e) => {
