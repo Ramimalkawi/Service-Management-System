@@ -14,8 +14,11 @@ import "./MediaModal.css";
 const MediaModal = ({ isOpen, onClose, ticket, mediaURLs, setMediaURLs }) => {
   const [uploading, setUploading] = useState(false);
   const [deletingIndex, setDeletingIndex] = useState(null);
+  const [selectedMedia, setSelectedMedia] = useState(null);
 
   if (!isOpen) return null;
+
+  const closePreview = () => setSelectedMedia(null);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -110,10 +113,14 @@ const MediaModal = ({ isOpen, onClose, ticket, mediaURLs, setMediaURLs }) => {
                   src={url}
                   alt={`Media ${index}`}
                   className="media-preview-modal"
+                  onClick={() => setSelectedMedia(url)}
                 />
                 <button
                   className="delete-button"
-                  onClick={() => handleDelete(index)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(index);
+                  }}
                   disabled={deletingIndex === index}
                 >
                   {deletingIndex === index ? "..." : "🗑"}
@@ -123,6 +130,21 @@ const MediaModal = ({ isOpen, onClose, ticket, mediaURLs, setMediaURLs }) => {
           </div>
         ) : (
           <h4>No images for this device</h4>
+        )}
+
+        {selectedMedia && (
+          <div className="media-preview-overlay" onClick={closePreview}>
+            <div className="media-preview-content" onClick={(e) => e.stopPropagation()}>
+              <button className="media-preview-close" onClick={closePreview}>
+                ×
+              </button>
+              <img
+                src={selectedMedia}
+                alt="Enlarged media preview"
+                className="media-preview-large"
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

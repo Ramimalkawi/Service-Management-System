@@ -58,6 +58,7 @@ h3 {
   height: auto;
   border-radius: 6px;
   object-fit: cover;
+  cursor: zoom-in;
 }
 
 .delete-button {
@@ -75,4 +76,44 @@ h3 {
 
 .media-preview-modal:hover {
   transform: scale(1.05);
+}
+
+.media-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.media-preview-content {
+  position: relative;
+  max-width: 95vw;
+  max-height: 90vh;
+}
+
+.media-preview-large {
+  max-width: 95vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.media-preview-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
 }
