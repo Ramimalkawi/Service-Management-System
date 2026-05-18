@@ -1,0 +1,214 @@
+/* ── AppointmentsPage layout ─────────────────────────────────────────────── */
+
+.appt-page {
+  padding: 28px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.appt-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.appt-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.appt-page__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.appt-page__count {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.appt-page__refresh {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.appt-page__refresh:hover:not(:disabled) {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.appt-page__refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.appt-page__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.appt-page__error button {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #fca5a5;
+  background: #fff;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.appt-page__loading {
+  padding: 48px;
+  text-align: center;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.appt-page__body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.appt-page__body--with-details .appt-page__calendar-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.appt-page__calendar-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.appt-page__calendar-controls {
+  /* inherits appointments-calendar__controls, just remove modal top padding */
+  padding-top: 0 !important;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  margin-bottom: 12px;
+}
+
+/* Make the calendar fill the page instead of a fixed-size modal */
+.appt-page .appointments-calendar {
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .appt-page {
+    padding: 16px;
+  }
+
+  .appt-page__body {
+    flex-direction: column;
+  }
+
+  .appt-page__body--with-details .appt-page__calendar-wrap {
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* ── Processed Today ─────────────────────────────────────────────────────── */
+
+.appt-page__count-processed {
+  color: #0ea5e9;
+  font-weight: 600;
+}
+
+.appt-page__processed {
+  margin-top: 36px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  padding-top: 24px;
+}
+
+.appt-page__processed-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 14px;
+}
+
+.appt-page__processed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appt-page__processed-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.appt-page__processed-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+.appt-page__processed-badge--accepted {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.appt-page__processed-badge--rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.appt-page__processed-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.appt-page__processed-device {
+  color: #64748b;
+}
+
+.appt-page__processed-time {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.appt-page__processed-by {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+}

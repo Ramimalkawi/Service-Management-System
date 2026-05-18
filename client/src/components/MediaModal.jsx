@@ -33,7 +33,7 @@ const MediaModal = ({ isOpen, onClose, ticket, mediaURLs, setMediaURLs }) => {
       for (const file of files) {
         const imageRef = ref(
           storage,
-          `uploadedFiles/Ticket${ticket.location}${ticket.ticketNum}/${file.name}`
+          `uploadedFiles/Ticket${ticket.location}${ticket.ticketNum}/${file.name}`,
         );
         await uploadBytes(imageRef, file);
         console.log(imageRef.fullPath);
@@ -134,7 +134,10 @@ const MediaModal = ({ isOpen, onClose, ticket, mediaURLs, setMediaURLs }) => {
 
         {selectedMedia && (
           <div className="media-preview-overlay" onClick={closePreview}>
-            <div className="media-preview-content" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="media-preview-content"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button className="media-preview-close" onClick={closePreview}>
                 ×
               </button>

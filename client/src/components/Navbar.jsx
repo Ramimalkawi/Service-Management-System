@@ -100,6 +100,12 @@ const Navbar = () => {
             Tickets
           </NavLink>
           <NavLink
+            to="/appointments"
+            className={({ isActive }) => (isActive ? "active" : undefined)}
+          >
+            Appointments
+          </NavLink>
+          <NavLink
             to="/customers"
             className={({ isActive }) => (isActive ? "active" : undefined)}
           >

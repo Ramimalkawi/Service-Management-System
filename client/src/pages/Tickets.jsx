@@ -1684,18 +1684,6 @@ const Tickets = () => {
   const [loading, setLoading] = useState(true);
   const [onlineLoading, setOnlineLoading] = useState(true);
   const [locationFilter, setLocationFilter] = useState("All");
-  const [showAppointmentsCalendar, setShowAppointmentsCalendar] =
-    useState(false);
-  const [appointments, setAppointments] = useState([]);
-  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
-  const [appointmentsError, setAppointmentsError] = useState("");
-  const [appointmentActionState, setAppointmentActionState] = useState({
-    isProcessing: false,
-    action: null,
-    error: "",
-    success: "",
-  });
-  const hasRequestedAppointmentsRef = useRef(false);
   const [acceptingAgreementId, setAcceptingAgreementId] = useState(null);
   const [rejectingAgreementId, setRejectingAgreementId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1732,8 +1720,30 @@ const Tickets = () => {
   const [exportEndDate, setExportEndDate] = useState("");
   const exportRef = useRef();
 
+  const [pendingAppointmentsCount, setPendingAppointmentsCount] = useState(0);
+
+  useEffect(() => {
+    const fetchAppointmentCount = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "appointments"));
+        const available = snapshot.docs.filter((docSnap) => {
+          const d = docSnap.data();
+          if (d.isAvailable === false || d.available === false) return false;
+          const unavailable = new Set(["booked","reserved","assigned","closed","completed","cancelled","canceled","taken","confirmed","unavailable","accepted","approved","rejected","declined","denied"]);
+          const status = (d.status || d.appointmentStatus || "").trim().toLowerCase();
+          if (unavailable.has(status)) return false;
+          return true;
+        });
+        setPendingAppointmentsCount(available.length);
+      } catch (err) {
+        console.error("Error fetching appointment count:", err);
+      }
+    };
+    fetchAppointmentCount();
+  }, []);
+
   const hasOnlineTickets = onlineTickets.length > 0;
-  const hasAppointments = appointments.length > 0;
+  const hasAppointments = pendingAppointmentsCount > 0;
   const showAdminAlert = hasOnlineTickets || hasAppointments;
   const pendingSummaryParts = [];
   if (hasOnlineTickets) {
@@ -1745,8 +1755,8 @@ const Tickets = () => {
   }
   if (hasAppointments) {
     pendingSummaryParts.push(
-      `${appointments.length} appointment${
-        appointments.length === 1 ? "" : "s"
+      `${pendingAppointmentsCount} appointment${
+        pendingAppointmentsCount === 1 ? "" : "s"
       }`,
     );
   }
@@ -2025,227 +2035,6 @@ const Tickets = () => {
   const handleExportExcel = () => {
     setShowExportModal(true);
   };
-
-  const fetchAppointments = useCallback(async () => {
-    setAppointmentsLoading(true);
-    setAppointmentsError("");
-    try {
-      const snapshot = await getDocs(collection(db, "appointments"));
-      const data = snapshot.docs
-        .map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        }))
-        .filter(isAppointmentAvailable);
-
-      setAppointments(data);
-    } catch (err) {
-      console.error("Error fetching appointments:", err);
-      setAppointmentsError("Failed to load appointments. Please try again.");
-    } finally {
-      setAppointmentsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAppointments();
-  }, [fetchAppointments]);
-
-  useEffect(() => {
-    if (!showAppointmentsCalendar) {
-      hasRequestedAppointmentsRef.current = false;
-    }
-  }, [showAppointmentsCalendar]);
-
-  useEffect(() => {
-    if (
-      showAppointmentsCalendar &&
-      !appointmentsLoading &&
-      appointments.length === 0 &&
-      !appointmentsError &&
-      !hasRequestedAppointmentsRef.current
-    ) {
-      hasRequestedAppointmentsRef.current = true;
-      fetchAppointments();
-    }
-  }, [
-    showAppointmentsCalendar,
-    appointmentsLoading,
-    appointments.length,
-    appointmentsError,
-    fetchAppointments,
-  ]);
-
-  const handleToggleAppointments = () => {
-    setShowAppointmentsCalendar((prev) => !prev);
-  };
-
-  const resetAppointmentActionState = useCallback(() => {
-    setAppointmentActionState({
-      isProcessing: false,
-      action: null,
-      error: "",
-      success: "",
-    });
-  }, []);
-
-  const sendAppointmentDecisionEmail = useCallback(
-    async (appointment, decision) => {
-      const details = resolveAppointmentDetails(appointment);
-      const recipient = details.customerEmail?.trim();
-      if (!recipient) {
-        return (
-          "No customer email on file." +
-          " The status was updated, but please notify the customer manually."
-        );
-      }
-
-      const friendlyName = details.customerName || "valued customer";
-      const scheduledLabel = details.scheduledDate
-        ? details.scheduledDate.toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          })
-        : "a pending date";
-      const timeLabel = details.timeLabel ? ` at ${details.timeLabel}` : "";
-      const locationLabel = details.location
-        ? ` at our ${details.location} location`
-        : " at our service center";
-
-      const subject =
-        decision === "accept"
-          ? `Appointment confirmed – ${details.summary}`
-          : `Appointment update – ${details.summary}`;
-
-      const introCopy =
-        decision === "accept"
-          ? `We're happy to confirm your appointment on ${scheduledLabel}${timeLabel}${locationLabel}.`
-          : `We're sorry to inform you that we can't accommodate your appointment on ${scheduledLabel}${timeLabel}.`;
-
-      const followUpCopy =
-        decision === "accept"
-          ? "We'll be ready for your visit. If you need to reschedule, please call or reply to this email."
-          : "Please reply to this email or call us so we can help you reschedule at a convenient time.";
-
-      const servicesMarkup =
-        details.services.length > 0
-          ? `<li><strong>Services:</strong> ${details.services.join(", ")}</li>`
-          : "";
-
-      const descriptionMarkup = details.description
-        ? `<p><strong>Notes:</strong> ${details.description}</p>`
-        : "";
-
-      const html = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #0f172a;">
-          <p>Hi ${friendlyName},</p>
-          <p>${introCopy}</p>
-          <p>${followUpCopy}</p>
-          <p><strong>Appointment details:</strong></p>
-          <ul>
-            <li><strong>Subject:</strong> ${details.summary}</li>
-            <li><strong>Date:</strong> ${scheduledLabel}${timeLabel || ""}</li>
-            <li><strong>Location:</strong> ${details.location || "365 Solutions"}</li>
-            <li><strong>Device:</strong> ${details.device || "—"}</li>
-            ${servicesMarkup}
-          </ul>
-          ${descriptionMarkup}
-          <p>If you have any questions, just reply to this email or call us.</p>
-          <p>Best regards,<br/>${currentTechnicianName}<br/>365 Solutions Team</p>
-        </div>
-      `;
-
-      const response = await fetch(API_ENDPOINTS.SEND_EMAIL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: recipient,
-          subject,
-          html,
-        }),
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to send customer email.";
-        try {
-          const payload = await response.json();
-          if (payload?.error) {
-            errorMessage =
-              typeof payload.error === "string"
-                ? payload.error
-                : payload.error.message || errorMessage;
-          }
-        } catch (err) {
-          console.error("Failed to parse email error response", err);
-        }
-        throw new Error(errorMessage);
-      }
-
-      return `Email sent to ${recipient}.`;
-    },
-    [currentTechnicianName],
-  );
-
-  const handleAppointmentDecision = useCallback(
-    async (appointment, decision) => {
-      if (!appointment?.id) return;
-      setAppointmentActionState({
-        isProcessing: true,
-        action: decision,
-        error: "",
-        success: "",
-      });
-
-      try {
-        const emailMessage = await sendAppointmentDecisionEmail(
-          appointment,
-          decision,
-        );
-        const docRef = doc(db, "appointments", appointment.id);
-        await deleteDoc(docRef);
-        setAppointments((prev) =>
-          prev.filter((item) => item.id !== appointment.id),
-        );
-        const outcomeMessage =
-          decision === "accept"
-            ? "Appointment accepted and removed."
-            : "Appointment rejected and removed.";
-        setAppointmentActionState({
-          isProcessing: false,
-          action: null,
-          error: "",
-          success: `${outcomeMessage} ${emailMessage || ""}`.trim(),
-        });
-      } catch (error) {
-        console.error("Failed to process appointment decision", error);
-        setAppointmentActionState({
-          isProcessing: false,
-          action: null,
-          error:
-            error?.message ||
-            "Something went wrong while handling the appointment.",
-          success: "",
-        });
-      }
-    },
-    [currentTechnicianName, sendAppointmentDecisionEmail],
-  );
-
-  const handleAcceptAppointment = useCallback(
-    (appointment) => {
-      handleAppointmentDecision(appointment, "accept");
-    },
-    [handleAppointmentDecision],
-  );
-
-  const handleRejectAppointment = useCallback(
-    (appointment) => {
-      handleAppointmentDecision(appointment, "reject");
-    },
-    [handleAppointmentDecision],
-  );
 
   const removeAgreementFromLists = (agreementId) => {
     if (!agreementId) return;
@@ -2647,13 +2436,12 @@ const Tickets = () => {
             {hasAppointments && (
               <button
                 type="button"
-                onClick={() => setShowAppointmentsCalendar(true)}
+                onClick={() => navigate("/appointments")}
                 className="tickets-admin-alert__button secondary"
               >
-                View Appointments
+                Review Appointments
               </button>
-            )}
-          </div>
+            )}</div>
         </div>
       )}
       <div className="tickets-header">
@@ -2741,13 +2529,7 @@ const Tickets = () => {
                   {label}
                 </button>
               ))}
-              <button
-                className="appointments-view-button"
-                onClick={handleToggleAppointments}
-                type="button"
-              >
-                Appointments
-              </button>
+
             </div>
           </div>
           {totalPages > 1 && (
@@ -3336,18 +3118,7 @@ const Tickets = () => {
         </div>
       )}
 
-      <AppointmentsCalendar
-        isOpen={showAppointmentsCalendar}
-        onClose={handleToggleAppointments}
-        appointments={appointments}
-        loading={appointmentsLoading}
-        error={appointmentsError}
-        onRetry={fetchAppointments}
-        onAcceptAppointment={handleAcceptAppointment}
-        onRejectAppointment={handleRejectAppointment}
-        actionState={appointmentActionState}
-        onResetActionState={resetAppointmentActionState}
-      />
+
     </div>
   );
 };

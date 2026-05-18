@@ -1,5 +1,6 @@
 // src/config/api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const rawBase = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_BASE_URL = rawBase.replace(/\/+$/, "");
 
 export const API_ENDPOINTS = {
   SEND_EMAIL: `${API_BASE_URL}/api/sendEmail`,

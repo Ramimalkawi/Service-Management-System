@@ -25,6 +25,7 @@ import RefundReceipt from "./pages/RefundReceipt";
 import PriceQuotationPage from "./pages/PriceQuotationPage";
 import ModernInvoicePaymentReceipt from "./pages/ModernInvoicePaymentReceipt";
 import PartsPage from "./pages/PartsPage";
+import AppointmentsPage from "./pages/AppointmentsPage";
 
 function App() {
   return (
@@ -143,6 +144,14 @@ function App() {
             element={
               <PrivateRoute>
                 <PartsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <PrivateRoute>
+                <AppointmentsPage />
               </PrivateRoute>
             }
           />
