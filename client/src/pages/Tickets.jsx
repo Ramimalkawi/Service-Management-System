@@ -1729,8 +1729,26 @@ const Tickets = () => {
         const available = snapshot.docs.filter((docSnap) => {
           const d = docSnap.data();
           if (d.isAvailable === false || d.available === false) return false;
-          const unavailable = new Set(["booked","reserved","assigned","closed","completed","cancelled","canceled","taken","confirmed","unavailable","accepted","approved","rejected","declined","denied"]);
-          const status = (d.status || d.appointmentStatus || "").trim().toLowerCase();
+          const unavailable = new Set([
+            "booked",
+            "reserved",
+            "assigned",
+            "closed",
+            "completed",
+            "cancelled",
+            "canceled",
+            "taken",
+            "confirmed",
+            "unavailable",
+            "accepted",
+            "approved",
+            "rejected",
+            "declined",
+            "denied",
+          ]);
+          const status = (d.status || d.appointmentStatus || "")
+            .trim()
+            .toLowerCase();
           if (unavailable.has(status)) return false;
           return true;
         });
@@ -2441,7 +2459,8 @@ const Tickets = () => {
               >
                 Review Appointments
               </button>
-            )}</div>
+            )}
+          </div>
         </div>
       )}
       <div className="tickets-header">
@@ -2529,7 +2548,6 @@ const Tickets = () => {
                   {label}
                 </button>
               ))}
-
             </div>
           </div>
           {totalPages > 1 && (
@@ -3117,8 +3135,6 @@ const Tickets = () => {
           </div>
         </div>
       )}
-
-
     </div>
   );
 };

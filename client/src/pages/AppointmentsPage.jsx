@@ -1,5 +1,12 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useUser } from "../context/userContext";
 import { API_ENDPOINTS } from "../config/api";
@@ -371,16 +378,25 @@ const isAppointmentAvailable = (appointment) => {
   return true;
 };
 
-const isProcessedToday = (appointment) => {
-  const status = (
-    appointment?.status ||
-    appointment?.appointmentStatus ||
-    ""
-  ).trim().toLowerCase();
-  if (status !== "accepted" && status !== "rejected") return false;
+const isAcceptedActive = (appointment) => {
+  const status = (appointment?.status || appointment?.appointmentStatus || "")
+    .trim()
+    .toLowerCase();
+  if (status !== "accepted") return false;
+  const apptDate = parseAppointmentDate(appointment);
+  if (!apptDate) return true; // no date → keep it visible
+  // Show until the end of the appointment day
+  return formatDateKey(apptDate) >= formatDateKey(new Date());
+};
+
+const isAcceptedExpired = (appointment) => {
+  const status = (appointment?.status || appointment?.appointmentStatus || "")
+    .trim()
+    .toLowerCase();
+  if (status !== "accepted") return false;
   const apptDate = parseAppointmentDate(appointment);
   if (!apptDate) return false;
-  return formatDateKey(apptDate) === formatDateKey(new Date());
+  return formatDateKey(apptDate) < formatDateKey(new Date());
 };
 
 // ─── Calendar helpers ─────────────────────────────────────────────────────────
@@ -586,7 +602,7 @@ const AppointmentsPage = () => {
     "365 Solutions Team";
 
   const [appointments, setAppointments] = useState([]);
-  const [processedToday, setProcessedToday] = useState([]);
+  const [acceptedToday, setAcceptedToday] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actionState, setActionState] = useState({
@@ -611,9 +627,20 @@ const AppointmentsPage = () => {
     setError("");
     try {
       const snapshot = await getDocs(collection(db, "appointments"));
-      const all = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
-      setAppointments(all.filter(isAppointmentAvailable));
-      setProcessedToday(all.filter(isProcessedToday));
+      const all = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+
+      // Auto-delete accepted appointments whose day has already passed
+      const expired = all.filter(isAcceptedExpired);
+      await Promise.all(
+        expired.map((appt) => deleteDoc(doc(db, "appointments", appt.id))),
+      );
+      const remaining = all.filter((a) => !isAcceptedExpired(a));
+
+      setAppointments(remaining.filter(isAppointmentAvailable));
+      setAcceptedToday(remaining.filter(isAcceptedActive));
     } catch (err) {
       console.error("Error fetching appointments:", err);
       setError("Failed to load appointments. Please try again.");
@@ -763,12 +790,20 @@ const AppointmentsPage = () => {
           decidedAt: serverTimestamp(),
           decidedBy: currentTechnicianName,
         });
-        const updatedAppointment = { ...appointment, status: newStatus, decidedBy: currentTechnicianName };
+        // Always remove from the pending list
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id));
-        setProcessedToday((prev) => [
-          updatedAppointment,
-          ...prev.filter((a) => a.id !== appointment.id),
-        ]);
+        if (decision === "accept") {
+          // Keep a card for accepted appointments
+          const updatedAppointment = {
+            ...appointment,
+            status: "accepted",
+            decidedBy: currentTechnicianName,
+          };
+          setAcceptedToday((prev) => [
+            updatedAppointment,
+            ...prev.filter((a) => a.id !== appointment.id),
+          ]);
+        }
         const outcomeMessage =
           decision === "accept"
             ? "Appointment accepted."
@@ -884,10 +919,18 @@ const AppointmentsPage = () => {
               {appointments.length === 0
                 ? "No pending appointments"
                 : `${appointments.length} pending appointment${appointments.length === 1 ? "" : "s"}`}
-              {processedToday.length > 0 && (
-                <span className="appt-page__count-processed">
-                  {" · "}{processedToday.length} processed today
-                </span>
+              {acceptedToday.length > 0 && (
+                <button
+                  type="button"
+                  className="appt-page__count-processed appt-page__count-processed--link"
+                  onClick={() =>
+                    document
+                      .getElementById("accepted-appointments-section")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                >
+                  {" · "}{acceptedToday.length} accepted ↓
+                </button>
               )}
             </span>
           )}
@@ -958,10 +1001,7 @@ const AppointmentsPage = () => {
                   ))}
                 </div>
                 {calendarMatrix.map((week, weekIndex) => (
-                  <div
-                    className="appointments-week"
-                    key={`week-${weekIndex}`}
-                  >
+                  <div className="appointments-week" key={`week-${weekIndex}`}>
                     {week.map((date) => {
                       const key = formatDateKey(date);
                       const isCurrentMonth =
@@ -1035,40 +1075,81 @@ const AppointmentsPage = () => {
         </div>
       )}
 
-      {/* Processed Today section */}
-      {!loading && processedToday.length > 0 && (
-        <div className="appt-page__processed">
-          <h2 className="appt-page__processed-title">Processed Today</h2>
-          <div className="appt-page__processed-list">
-            {processedToday.map((appt) => {
+      {/* Accepted Appointments – full detail cards, visible until end of appointment day */}
+      {!loading && acceptedToday.length > 0 && (
+        <div id="accepted-appointments-section" className="appt-page__accepted">
+          <h2 className="appt-page__accepted-title">✓ Accepted Appointments</h2>
+          <div className="appt-page__accepted-list">
+            {acceptedToday.map((appt) => {
               const details = resolveAppointmentDetails(appt);
-              const isAccepted = (appt.status || "").toLowerCase() === "accepted";
               const scheduledLabel = details.scheduledDate
-                ? details.scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                : "";
+                ? details.scheduledDate.toLocaleDateString(undefined, {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Date pending";
+              const createdLabel = details.createdAt
+                ? details.createdAt.toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })
+                : "—";
               return (
-                <div key={appt.id} className="appt-page__processed-item">
-                  <span
-                    className={`appt-page__processed-badge ${
-                      isAccepted
-                        ? "appt-page__processed-badge--accepted"
-                        : "appt-page__processed-badge--rejected"
-                    }`}
-                  >
-                    {isAccepted ? "✓ Accepted" : "✕ Rejected"}
-                  </span>
-                  <span className="appt-page__processed-name">
-                    {details.customerName || details.summary}
-                  </span>
-                  {details.device && (
-                    <span className="appt-page__processed-device">{details.device}</span>
+                <div key={appt.id} className="appt-page__accepted-card">
+                  <div className="appt-page__accepted-card-header">
+                    <span className="appt-page__accepted-badge">✓ Accepted</span>
+                    {appt.decidedBy && (
+                      <span className="appt-page__accepted-by">by {appt.decidedBy}</span>
+                    )}
+                  </div>
+
+                  <h3 className="appt-page__accepted-summary">{details.summary}</h3>
+                  <p className="appt-page__accepted-date">
+                    {scheduledLabel}{details.timeLabel ? ` · ${details.timeLabel}` : ""}
+                  </p>
+
+                  <div className="appt-page__accepted-grid">
+                    <div>
+                      <span className="appt-page__accepted-label">Customer</span>
+                      <p>{details.customerName || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="appt-page__accepted-label">Phone</span>
+                      <p>{details.customerPhone || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="appt-page__accepted-label">Email</span>
+                      <p>{details.customerEmail || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="appt-page__accepted-label">Location</span>
+                      <p>{details.location || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="appt-page__accepted-label">Device</span>
+                      <p>{details.device || "—"}</p>
+                    </div>
+                    {details.services.length > 0 && (
+                      <div>
+                        <span className="appt-page__accepted-label">Services</span>
+                        <p>{details.services.join(", ")}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {details.description && (
+                    <div className="appt-page__accepted-notes">
+                      <span className="appt-page__accepted-label">Notes</span>
+                      <p>{details.description}</p>
+                    </div>
                   )}
-                  {scheduledLabel && (
-                    <span className="appt-page__processed-time">{scheduledLabel}</span>
-                  )}
-                  {appt.decidedBy && (
-                    <span className="appt-page__processed-by">by {appt.decidedBy}</span>
-                  )}
+
+                  <div className="appt-page__accepted-footer">
+                    <span>Booked on {createdLabel}</span>
+                    <code className="appt-page__accepted-id">{appt.id}</code>
+                  </div>
                 </div>
               );
             })}
