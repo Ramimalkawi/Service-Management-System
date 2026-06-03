@@ -929,7 +929,8 @@ const AppointmentsPage = () => {
                       ?.scrollIntoView({ behavior: "smooth", block: "start" })
                   }
                 >
-                  {" · "}{acceptedToday.length} accepted ↓
+                  {" · "}
+                  {acceptedToday.length} accepted ↓
                 </button>
               )}
             </span>
@@ -1099,20 +1100,29 @@ const AppointmentsPage = () => {
               return (
                 <div key={appt.id} className="appt-page__accepted-card">
                   <div className="appt-page__accepted-card-header">
-                    <span className="appt-page__accepted-badge">✓ Accepted</span>
+                    <span className="appt-page__accepted-badge">
+                      ✓ Accepted
+                    </span>
                     {appt.decidedBy && (
-                      <span className="appt-page__accepted-by">by {appt.decidedBy}</span>
+                      <span className="appt-page__accepted-by">
+                        by {appt.decidedBy}
+                      </span>
                     )}
                   </div>
 
-                  <h3 className="appt-page__accepted-summary">{details.summary}</h3>
+                  <h3 className="appt-page__accepted-summary">
+                    {details.summary}
+                  </h3>
                   <p className="appt-page__accepted-date">
-                    {scheduledLabel}{details.timeLabel ? ` · ${details.timeLabel}` : ""}
+                    {scheduledLabel}
+                    {details.timeLabel ? ` · ${details.timeLabel}` : ""}
                   </p>
 
                   <div className="appt-page__accepted-grid">
                     <div>
-                      <span className="appt-page__accepted-label">Customer</span>
+                      <span className="appt-page__accepted-label">
+                        Customer
+                      </span>
                       <p>{details.customerName || "—"}</p>
                     </div>
                     <div>
@@ -1124,7 +1134,9 @@ const AppointmentsPage = () => {
                       <p>{details.customerEmail || "—"}</p>
                     </div>
                     <div>
-                      <span className="appt-page__accepted-label">Location</span>
+                      <span className="appt-page__accepted-label">
+                        Location
+                      </span>
                       <p>{details.location || "—"}</p>
                     </div>
                     <div>
@@ -1133,7 +1145,9 @@ const AppointmentsPage = () => {
                     </div>
                     {details.services.length > 0 && (
                       <div>
-                        <span className="appt-page__accepted-label">Services</span>
+                        <span className="appt-page__accepted-label">
+                          Services
+                        </span>
                         <p>{details.services.join(", ")}</p>
                       </div>
                     )}

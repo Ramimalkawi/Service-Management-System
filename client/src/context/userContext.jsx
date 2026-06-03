@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { createContext, useContext, useEffect, useState } from "react";
+import { onIdTokenChanged, signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const UserContext = createContext();
 
@@ -23,25 +16,14 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed:", user);
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       if (user) {
-        console.log("User UID:", user.uid);
-        console.log("User email:", user.email);
         try {
-          // Query by email instead of using UID as document ID
           const q = query(
             collection(db, "technicions"),
             where("email", "==", user.email)
           );
-          console.log("Fetching technician data for email:", user.email);
           const querySnapshot = await getDocs(q);
-          console.log(
-            "Query result:",
-            querySnapshot.empty
-              ? "No documents"
-              : `${querySnapshot.size} documents found`
-          );
 
           if (!querySnapshot.empty) {
             const docData = querySnapshot.docs[0].data();
@@ -50,21 +32,29 @@ export const UserProvider = ({ children }) => {
               id: querySnapshot.docs[0].id,
               ...docData,
             };
-            console.log("Technician data:", techData);
             setTechnician(techData);
             localStorage.setItem("technician", JSON.stringify(techData));
           } else {
-            console.log("No technician document found for email:", user.email);
             setTechnician(null);
             localStorage.removeItem("technician");
           }
         } catch (err) {
           console.error("Error fetching technician:", err);
+          // If auth token is invalid/expired, sign out cleanly
+          if (err.code === "permission-denied" || err.code === "unauthenticated") {
+            await signOut(auth);
+          }
           setTechnician(null);
           localStorage.removeItem("technician");
         }
       } else {
-        console.log("User not authenticated");
+        // User is null — either signed out or token refresh failed (403)
+        // Sign out explicitly to clear any stale Firebase SDK state
+        try {
+          await signOut(auth);
+        } catch (_) {
+          // already signed out
+        }
         setTechnician(null);
         localStorage.removeItem("technician");
       }
