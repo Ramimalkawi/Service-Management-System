@@ -2270,7 +2270,7 @@ const Tickets = () => {
             SerialNum: t.serialNum,
             WarrantyStatus: t.warrantyStatus,
             Symptom: t.symptom,
-            RepairID: t.caseID,
+            RepairID: Array.isArray(t.caseID) ? t.caseID.join(", ") : (t.caseID || ""),
             Notes: t.notes,
             Invoice:
               t.hasAnInvoice === true || t.shouldHaveInvoice ? "Yes" : "No",
