@@ -1,19 +1,7 @@
 // LoginPage.jsx
-import React, { useState, useEffect } from "react";
-import {
-  signInWithEmailAndPassword,
-  browserLocalPersistence,
-  setPersistence,
-  onAuthStateChanged,
-} from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase"; // adjust path
 import { useNavigate } from "react-router-dom";
 import "./LoginPage.css";
@@ -61,8 +49,6 @@ const LoginPage = () => {
     setError("");
 
     try {
-      // Ensure auth persists across browser sessions
-      await setPersistence(auth, browserLocalPersistence);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -79,7 +65,6 @@ const LoginPage = () => {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        const docData = querySnapshot.docs[0].data();
         setTechnician(querySnapshot.docs[0].data());
       } else {
         console.log("No technician record found for this email.");

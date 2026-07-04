@@ -48,13 +48,7 @@ export const UserProvider = ({ children }) => {
           localStorage.removeItem("technician");
         }
       } else {
-        // User is null — either signed out or token refresh failed (403)
-        // Sign out explicitly to clear any stale Firebase SDK state
-        try {
-          await signOut(auth);
-        } catch (_) {
-          // already signed out
-        }
+        // User is null — signed out normally or token refresh failed (403)
         setTechnician(null);
         localStorage.removeItem("technician");
       }
