@@ -30,6 +30,12 @@ const LOCATION_FILTERS = [
   { label: "Online Customers", value: "Online" },
 ];
 
+const INVOICE_FILTERS = [
+  { label: "All", value: "All" },
+  { label: "Has Invoice", value: "Has" },
+  { label: "No Invoice", value: "None" },
+];
+
 const WARRANTY_OPTIONS = [
   "Apple limited warranty",
   "Out of warranty",
@@ -1684,6 +1690,7 @@ const Tickets = () => {
   const [loading, setLoading] = useState(true);
   const [onlineLoading, setOnlineLoading] = useState(true);
   const [locationFilter, setLocationFilter] = useState("All");
+  const [invoiceFilter, setInvoiceFilter] = useState("All");
   const [acceptingAgreementId, setAcceptingAgreementId] = useState(null);
   const [rejectingAgreementId, setRejectingAgreementId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1989,6 +1996,12 @@ const Tickets = () => {
       filtered = filtered.filter((ticket) => ticket.location === "I");
     }
 
+    if (invoiceFilter === "Has") {
+      filtered = filtered.filter((ticket) => ticket.hasAnInvoice === true);
+    } else if (invoiceFilter === "None") {
+      filtered = filtered.filter((ticket) => ticket.hasAnInvoice !== true);
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
 
@@ -2034,7 +2047,14 @@ const Tickets = () => {
 
     setFilteredTickets(filtered);
     setCurrentPage(1);
-  }, [locationFilter, tickets, onlineTickets, searchQuery, searchType]);
+  }, [
+    locationFilter,
+    invoiceFilter,
+    tickets,
+    onlineTickets,
+    searchQuery,
+    searchType,
+  ]);
 
   const totalPages = Math.ceil(activeTickets.length / TICKETS_PER_PAGE);
   const currentTickets = activeTickets.slice(
@@ -2529,25 +2549,45 @@ const Tickets = () => {
                 </button>
               )}
             </div>
-            <div className="filter-menu">
-              {LOCATION_FILTERS.map(({ label, value }) => (
-                <button
-                  key={value}
-                  onClick={() => setLocationFilter(value)}
-                  style={{
-                    marginRight: "10px",
-                    padding: "8px 16px",
-                    backgroundColor:
-                      locationFilter === value ? "#1ccad4" : "#f0f0f0",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="filters-row">
+              <div className="filter-group">
+                <span className="filter-group__label">Location</span>
+                <div className="filter-track">
+                  {LOCATION_FILTERS.map(({ label, value }) => (
+                    <button
+                      key={value}
+                      onClick={() => setLocationFilter(value)}
+                      className={
+                        locationFilter === value
+                          ? "filter-track__button--active"
+                          : ""
+                      }
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {!isOnlineView && (
+                <div className="filter-group">
+                  <span className="filter-group__label">Invoice</span>
+                  <div className="filter-track">
+                    {INVOICE_FILTERS.map(({ label, value }) => (
+                      <button
+                        key={value}
+                        onClick={() => setInvoiceFilter(value)}
+                        className={
+                          invoiceFilter === value
+                            ? "filter-track__button--active"
+                            : ""
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {totalPages > 1 && (
