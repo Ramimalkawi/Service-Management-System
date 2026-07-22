@@ -9,6 +9,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import logoImage from "../assets/logo_new.png";
 import "./ReceiptPage.css";
 import { useUser } from "../context/userContext";
+import { waitForImagesToLoad } from "../utils/pdfCapture";
 
 const ReceiptPage = () => {
   const { id } = useParams();
@@ -100,6 +101,7 @@ const ReceiptPage = () => {
       }
       setSaving(true);
       contentEl.classList.add("no-print-mode");
+      await waitForImagesToLoad(contentEl);
 
       // If showing signature image, ensure it's visible and loaded before html2canvas
       let imgEl = null;

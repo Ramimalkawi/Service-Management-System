@@ -10,6 +10,7 @@ import { useUser } from "../context/userContext";
 import logoImage from "../assets/logo_new.png";
 import "./PartsDeliveryPage.css";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { waitForImagesToLoad } from "../utils/pdfCapture";
 
 const PriceQuotationPage = () => {
   const { id } = useParams();
@@ -105,6 +106,7 @@ const PriceQuotationPage = () => {
       contentEl.classList.add("no-print-mode");
       setRenderSignaturesAsImages(true);
       setTimeout(async () => {
+        await waitForImagesToLoad(contentEl);
         const canvas = await html2canvas(contentEl, { scale: 2 });
         const image = canvas.toDataURL("image/jpeg");
         const pdf = new jsPDF("p", "mm", "a4");

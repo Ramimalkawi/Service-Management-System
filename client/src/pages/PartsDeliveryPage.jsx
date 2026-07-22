@@ -10,6 +10,7 @@ import { useUser } from "../context/userContext";
 import { FaArrowRight } from "react-icons/fa";
 
 import logoImage from "../assets/logo_new.png";
+import { waitForImagesToLoad } from "../utils/pdfCapture";
 import "./PartsDeliveryPage.css";
 
 const PartsDeliveryPage = () => {
@@ -95,6 +96,7 @@ const PartsDeliveryPage = () => {
       }
       setSaving(true);
       contentEl.classList.add("no-print-mode");
+      await waitForImagesToLoad(contentEl);
       const canvas = await html2canvas(contentEl, { scale: 2 });
       const image = canvas.toDataURL("image/jpeg");
       const pdf = new jsPDF("p", "mm", "a4");
@@ -230,8 +232,6 @@ const PartsDeliveryPage = () => {
             <li>Receipt should be provided upon refund</li>
           </ol>
         </div>
-        // ...existing code... // Add state for selected note index const
-        [selectedNoteIdx, setSelectedNoteIdx] = useState(0);
         <div className="signatures">
           <div className="signature-block">
             <p>

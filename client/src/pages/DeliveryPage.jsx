@@ -10,6 +10,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useUser } from "../context/userContext";
 
 import { API_ENDPOINTS } from "../config/api";
+import { waitForImagesToLoad } from "../utils/pdfCapture";
 
 import "./DeliveryPage.css";
 
@@ -320,6 +321,7 @@ const DeliveryPage = () => {
         }
         setSaving(true);
         contentEl.classList.add("no-print-mode");
+        await waitForImagesToLoad(contentEl);
 
         const canvas = await html2canvas(contentEl, { scale: 2 });
         const imgData = canvas.toDataURL("image/jpeg");
