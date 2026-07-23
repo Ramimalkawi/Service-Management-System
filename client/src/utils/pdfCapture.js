@@ -7,7 +7,10 @@ export const waitForImagesToLoad = (container) => {
   const images = Array.from(container.querySelectorAll("img"));
   return Promise.all(
     images.map((img) => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      // `complete` is true once the browser is done with the image, whether
+      // it loaded or failed (e.g. a 404) — either way there's no future
+      // load/error event left to wait for, so treat it as settled.
+      if (img.complete) return Promise.resolve();
       return new Promise((resolve) => {
         img.addEventListener("load", resolve, { once: true });
         img.addEventListener("error", resolve, { once: true });

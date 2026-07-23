@@ -602,7 +602,7 @@ const DeliveryPage = () => {
                 </a>
               </p>
               <img
-                src="/apple-authorised.png"
+                src="/logo_new.png"
                 alt="Apple Authorised Logo"
                 className="apple-logo"
               />
