@@ -5,6 +5,7 @@ const API_BASE_URL = rawBase.replace(/\/+$/, "");
 export const API_ENDPOINTS = {
   SEND_EMAIL: `${API_BASE_URL}/api/sendEmail`,
   CREATE_USER: `${API_BASE_URL}/api/createUser`,
+  UPDATE_USER_PASSWORD: `${API_BASE_URL}/api/updateUserPassword`,
   ARCHIVE_TICKETS: `${API_BASE_URL}/api/archive`,
   ARCHIVE_YEARS: `${API_BASE_URL}/api/archive/years`,
   ARCHIVE_FILES: `${API_BASE_URL}/api/archive/files`,

@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import sendEmailRoute from "./routes/sendEmail.js";
 import createUserRoute from "./routes/createUser.js";
+import updateUserPasswordRoute from "./routes/updateUserPassword.js";
 import archiveTicketsRoute from "./routes/archiveTickets.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +61,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use("/api/sendEmail", sendEmailRoute);
 app.use("/api/createUser", createUserRoute);
+app.use("/api/updateUserPassword", updateUserPasswordRoute);
 app.use("/api/archive", archiveTicketsRoute);
 
 // API health check route
@@ -89,6 +91,7 @@ const server = app.listen(process.env.PORT || 5001, () => {
   console.log("- GET  /");
   console.log("- POST /api/sendEmail");
   console.log("- POST /api/createUser");
+  console.log("- POST /api/updateUserPassword");
 });
 
 // Keep the process alive

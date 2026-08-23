@@ -12,6 +12,7 @@ import {
 import { db } from "../firebase";
 import { createUserWithoutSessionConflict } from "../utils/secondaryAuth";
 import { useUser } from "../context/userContext";
+import { API_ENDPOINTS } from "../config/api";
 import "./UserManagement.css";
 
 const UserManagement = () => {
@@ -20,9 +21,11 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [assigningCredentialsUser, setAssigningCredentialsUser] =
     useState(null);
+  const [changingPasswordUser, setChangingPasswordUser] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,10 +38,17 @@ const UserManagement = () => {
     email: "",
     password: "",
   });
+  const [passwordData, setPasswordData] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [credentialsError, setCredentialsError] = useState("");
   const [credentialsSuccess, setCredentialsSuccess] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Check if current user is System Admin
   const isSystemAdmin =
@@ -87,6 +97,14 @@ const UserManagement = () => {
     }));
   };
 
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -109,6 +127,16 @@ const UserManagement = () => {
     setAssigningCredentialsUser(null);
     setCredentialsError("");
     setCredentialsSuccess("");
+  };
+
+  const resetPasswordForm = () => {
+    setPasswordData({
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setChangingPasswordUser(null);
+    setPasswordError("");
+    setPasswordSuccess("");
   };
 
   const handleSubmit = async (e) => {
@@ -255,6 +283,71 @@ const UserManagement = () => {
     }
   };
 
+  const handleChangePassword = (user) => {
+    setChangingPasswordUser(user);
+    setPasswordData({ newPassword: "", confirmPassword: "" });
+    setPasswordError("");
+    setPasswordSuccess("");
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError("Both fields are required");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+
+    if (!changingPasswordUser?.uid) {
+      setPasswordError(
+        "This user has no login account yet — assign login credentials first.",
+      );
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.UPDATE_USER_PASSWORD, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          uid: changingPasswordUser.uid,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Failed to update password");
+      }
+
+      setPasswordSuccess("Password updated successfully!");
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        resetPasswordForm();
+      }, 1500);
+    } catch (err) {
+      console.error("Error updating password:", err);
+      setPasswordError(err.message || "Failed to update password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const getPermissionBadge = (user) => {
     let badgeClass = "permission-badge ";
     let displayText = "";
@@ -325,6 +418,12 @@ const UserManagement = () => {
                     onClick={() => handleEdit(user)}
                   >
                     ✏️ Edit
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => handleChangePassword(user)}
+                  >
+                    🔑 Change Password
                   </button>
                   <button
                     className="btn-danger"
@@ -575,6 +674,90 @@ const UserManagement = () => {
                   onClick={() => {
                     setShowCredentialsModal(false);
                     resetCredentialsForm();
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && changingPasswordUser && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>🔑 Change Password</h2>
+              <p className="modal-subtitle">
+                Set a new password for:{" "}
+                <strong>{changingPasswordUser.name}</strong>
+              </p>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  resetPasswordForm();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="user-form">
+              {passwordError && (
+                <div className="error-message">❌ {passwordError}</div>
+              )}
+              {passwordSuccess && (
+                <div className="success-message">✅ {passwordSuccess}</div>
+              )}
+
+              <div className="form-group">
+                <label htmlFor="new-password">New Password *</label>
+                <input
+                  type="password"
+                  id="new-password"
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordInputChange}
+                  placeholder="Enter new password"
+                  required
+                  minLength="6"
+                />
+                <small className="form-help">
+                  Password must be at least 6 characters long
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirm-password">Confirm Password *</label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordInputChange}
+                  placeholder="Re-enter new password"
+                  required
+                  minLength="6"
+                />
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? "Updating..." : "🔑 Update Password"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    resetPasswordForm();
                   }}
                 >
                   Cancel
