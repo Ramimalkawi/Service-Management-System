@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import sendEmailRoute from "./routes/sendEmail.js";
@@ -12,24 +13,82 @@ import archiveTicketsRoute from "./routes/archiveTickets.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+// Load server/.env explicitly — without a path, dotenv looks relative to
+// process.cwd(), which is wrong whenever this server isn't started with
+// server/ as the working directory (e.g. `npm start` from the repo root).
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      projectId: "solutionssystemmain", // Match the client Firebase config
-      // For development, we'll use default credentials or service account key
-      // In production, you should use proper service account credentials
-    });
-    console.log("✅ Firebase Admin SDK initialized");
+    let serviceAccount = null;
+    let credentialSource = null;
+
+    // 1. A base64-encoded service account JSON in an env var — the most
+    //    portable option for hosts like Render/Railway/Heroku, where you
+    //    can't drop a key file onto the filesystem but can set an env var.
+    //    Base64 also sidesteps dashboards mangling the private_key field's
+    //    embedded newlines when a raw JSON string is pasted in.
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+      serviceAccount = JSON.parse(
+        Buffer.from(
+          process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+          "base64",
+        ).toString("utf8"),
+      );
+      credentialSource = "FIREBASE_SERVICE_ACCOUNT_BASE64 env var";
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      // 2. The raw JSON pasted directly into an env var (works as long as
+      //    the host preserves the string exactly).
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      credentialSource = "FIREBASE_SERVICE_ACCOUNT_JSON env var";
+    } else {
+      // 3. A local key file, e.g. for development — resolved against this
+      //    file's own directory rather than process.cwd(), which is wrong
+      //    whenever the server isn't started with server/ as the working
+      //    directory (e.g. `npm start` from the repo root).
+      const rawCredentialsPath =
+        process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+        "./serviceAccountKey.json";
+      const serviceAccountPath = path.isAbsolute(rawCredentialsPath)
+        ? rawCredentialsPath
+        : path.join(__dirname, rawCredentialsPath);
+
+      if (fs.existsSync(serviceAccountPath)) {
+        serviceAccount = JSON.parse(
+          fs.readFileSync(serviceAccountPath, "utf8"),
+        );
+        credentialSource = serviceAccountPath;
+      }
+    }
+
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.project_id || "solutionssystemmain",
+      });
+      console.log(
+        "✅ Firebase Admin SDK initialized with service account:",
+        credentialSource,
+      );
+    } else {
+      // Fall back to Application Default Credentials (works on GCP-hosted
+      // infrastructure like Cloud Run/Functions without a key file).
+      admin.initializeApp({
+        projectId: "solutionssystemmain",
+      });
+      console.log(
+        "⚠️ No service account credentials found (checked FIREBASE_SERVICE_ACCOUNT_BASE64, " +
+          "FIREBASE_SERVICE_ACCOUNT_JSON, and a local key file) — falling back to Application Default Credentials.",
+      );
+    }
   } catch (error) {
     console.error(
       "❌ Firebase Admin SDK initialization failed:",
       error.message,
     );
     console.log(
-      "⚠️ Note: User creation will not work without proper Firebase Admin credentials",
+      "⚠️ Note: User creation/password updates will not work without proper Firebase Admin credentials",
     );
   }
 }

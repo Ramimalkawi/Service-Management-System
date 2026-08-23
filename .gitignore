@@ -63,5 +63,9 @@ Thumbs.db
 .firebase/
 firebase-debug.log
 
+# Firebase Admin SDK service account keys — never commit these
+server/*firebase-adminsdk*.json
+server/serviceAccountKey.json
+
 # Vercel
 .vercel/
