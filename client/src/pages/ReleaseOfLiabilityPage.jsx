@@ -300,6 +300,9 @@ const ReleaseOfLiabilityPage = () => {
                     borderBottom: "1px solid #999",
                     fontSize: "15px",
                     marginLeft: 4,
+                    width: "70%",
+                    minWidth: 220,
+                    boxSizing: "border-box",
                   }}
                 />
               )}
@@ -322,6 +325,9 @@ const ReleaseOfLiabilityPage = () => {
                     borderBottom: "1px solid #999",
                     fontSize: "15px",
                     marginLeft: 4,
+                    width: "70%",
+                    minWidth: 220,
+                    boxSizing: "border-box",
                   }}
                 />
               )}
