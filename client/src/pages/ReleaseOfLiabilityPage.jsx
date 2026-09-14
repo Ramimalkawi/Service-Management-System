@@ -10,9 +10,14 @@ import logoImage from "../assets/logo_new.png";
 import "./PartsDeliveryPage.css";
 import { waitForImagesToLoad } from "../utils/pdfCapture";
 
-const LOCATION_LABELS = {
-  M: "Main Office (Amman)",
-  I: "Irbid Branch",
+const BRANCH_NAMES = {
+  M: "Amman",
+  I: "Irbid",
+};
+
+const buildServiceLocation = (locationCode) => {
+  const branchName = BRANCH_NAMES[locationCode] || locationCode || "";
+  return ["365 Solutions", "Jordan", branchName].filter(Boolean).join(", ");
 };
 
 const ReleaseOfLiabilityPage = () => {
@@ -42,7 +47,7 @@ const ReleaseOfLiabilityPage = () => {
         const data = ticketSnap.data();
         setTicket(data);
         setFullName(data.customerName || "");
-        setPlace(LOCATION_LABELS[data.location] || "");
+        setPlace(buildServiceLocation(data.location));
       }
       setLoading(false);
     };
@@ -175,7 +180,7 @@ const ReleaseOfLiabilityPage = () => {
               <strong>Serial Number:</strong> {ticket.serialNum || "-"}
               <br />
               <strong>Service Location Information:</strong>{" "}
-              {LOCATION_LABELS[ticket.location] || ticket.location || "-"}
+              {buildServiceLocation(ticket.location) || "-"}
               <br />
               <strong>Ticket #:</strong> {ticket.location}
               {ticket.ticketNum}
