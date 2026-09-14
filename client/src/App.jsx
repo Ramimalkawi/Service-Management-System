@@ -23,6 +23,7 @@ import PaymentReceipt from "./pages/PaymentReceipt";
 import RefundPage from "./pages/RefundPage";
 import RefundReceipt from "./pages/RefundReceipt";
 import PriceQuotationPage from "./pages/PriceQuotationPage";
+import ReleaseOfLiabilityPage from "./pages/ReleaseOfLiabilityPage";
 import ModernInvoicePaymentReceipt from "./pages/ModernInvoicePaymentReceipt";
 import PartsPage from "./pages/PartsPage";
 import AppointmentsPage from "./pages/AppointmentsPage";
@@ -136,6 +137,14 @@ function App() {
             element={
               <PrivateRoute>
                 <PriceQuotationPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tickets/:id/release-of-liability"
+            element={
+              <PrivateRoute>
+                <ReleaseOfLiabilityPage />
               </PrivateRoute>
             }
           />

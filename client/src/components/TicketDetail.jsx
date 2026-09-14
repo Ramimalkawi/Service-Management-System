@@ -252,6 +252,12 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
           "price-quotation.pdf",
           ticket.priceQuotationURL,
         ),
+        fetchAndAddFileToZip(
+          zip,
+          "signed-documents",
+          "release-of-liability.pdf",
+          ticket.releaseOfLiabilityURL,
+        ),
       ]);
 
       // Add uploaded media
@@ -330,6 +336,10 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
       setDocumentsLinks((prev) => [...prev, "View Price Quotation"]);
     }
 
+    if (ticket.releaseOfLiabilityURL) {
+      setDocumentsLinks((prev) => [...prev, "View Release of Liability"]);
+    }
+
     if (documentsLinks.length > 0) {
       setShowDocumentsLinks((prev) => !prev);
     }
@@ -372,6 +382,10 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
 
     if (link === "View Price Quotation") {
       filePath = ticket.priceQuotationURL;
+    }
+
+    if (link === "View Release of Liability") {
+      filePath = ticket.releaseOfLiabilityURL;
     }
 
     if (!archived) {
@@ -513,6 +527,7 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
         "noResponsibilityURL",
         "invoiceURL",
         "priceQuotationURL",
+        "releaseOfLiabilityURL",
         "customerSignatureURL",
       ];
       for (const field of fileFields) {
@@ -969,6 +984,22 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
                 <FaSave /> {isSaving ? "Saving..." : "Save"}
               </button>
             )}
+            <button
+              className="ticket-action-button"
+              onClick={() =>
+                navigate(`/tickets/${ticket.id}/release-of-liability`)
+              }
+              title={
+                ticket.releaseOfLiabilityURL
+                  ? "Already signed — click to view/re-sign"
+                  : "Have the customer sign the foreign-device release of liability"
+              }
+            >
+              <FaPenAlt />{" "}
+              {ticket.releaseOfLiabilityURL
+                ? "Release Signed ✓"
+                : "Release of Liability"}
+            </button>
             <button
               className="ticket-action-button"
               onClick={handleDownloadTicketFolder}
