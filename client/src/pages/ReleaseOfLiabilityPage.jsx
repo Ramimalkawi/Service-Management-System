@@ -215,8 +215,11 @@ const ReleaseOfLiabilityPage = () => {
         </div>
 
         <div className="signatures" style={{ justifyContent: "flex-start" }}>
-          <div className="signature-block">
-            <label>Signature:</label>
+          <div
+            className="signature-block"
+            style={{ flex: "0 0 auto", width: 220, textAlign: "left" }}
+          >
+            <label style={{ display: "block" }}>Signature:</label>
             <div className="signature-box">
               <div style={{ position: "relative", width: 200, height: 100 }}>
                 {renderSignatureAsImage || pdfSaved || alreadySigned ? (
