@@ -6,7 +6,7 @@ import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import SignatureCanvas from "react-signature-canvas";
-import logoImage from "../assets/logo_new.png";
+import logoImage from "../assets/logo-and-apple.png";
 import "./PartsDeliveryPage.css";
 import { waitForImagesToLoad } from "../utils/pdfCapture";
 
@@ -15,10 +15,28 @@ const BRANCH_NAMES = {
   I: "Irbid",
 };
 
+const BRANCH_CONTACT = {
+  M: {
+    addressLine1: "Mecca Street , Building No. 221",
+    addressLine2: "Amman, Jordan",
+    phone: "+962 (79) 6818189",
+    email: "help@365solutionsjo.com",
+  },
+  I: {
+    addressLine1: "Wasfi Al-Tal Street",
+    addressLine2: "Irbid, Jordan",
+    phone: "+962 (79) 6688831",
+    email: "irbid@365solutionsjo.com",
+  },
+};
+
 const buildServiceLocation = (locationCode) => {
   const branchName = BRANCH_NAMES[locationCode] || locationCode || "";
   return ["365 Solutions", "Jordan", branchName].filter(Boolean).join(", ");
 };
+
+const getBranchContact = (locationCode) =>
+  BRANCH_CONTACT[locationCode] || BRANCH_CONTACT.M;
 
 const ReleaseOfLiabilityPage = () => {
   const { id } = useParams();
@@ -147,6 +165,7 @@ const ReleaseOfLiabilityPage = () => {
   if (!ticket) return <p>Ticket not found.</p>;
 
   const alreadySigned = Boolean(ticket.releaseOfLiabilityURL) && !pdfSaved;
+  const branchContact = getBranchContact(ticket.location);
 
   return (
     <div className="parts-page-wrapper">
@@ -157,12 +176,27 @@ const ReleaseOfLiabilityPage = () => {
         </div>
       )}
       <div className="parts-delivery-container" ref={pageRef}>
-        <div className="header-section">
-          <img src={logoImage} alt="365 Solutions Logo" className="logo" />
-          <h2 className="modal-title">
-            Release of Liability for Devices Purchased Abroad
-          </h2>
+        <div className="release-liability-header">
+          <img
+            src={logoImage}
+            alt="365 Solutions Logo"
+            className="release-liability-logo"
+          />
+          <div className="release-liability-contact">
+            {branchContact.addressLine1}
+            <br />
+            {branchContact.addressLine2}
+            <br />
+            Mob: {branchContact.phone}
+            <br />
+            Email:{" "}
+            <span style={{ color: "#1ccad4" }}>{branchContact.email}</span>
+          </div>
         </div>
+        <hr />
+        <h2 className="modal-title">
+          Release of Liability for Devices Purchased Abroad
+        </h2>
 
         <div className="info-row">
           <div>

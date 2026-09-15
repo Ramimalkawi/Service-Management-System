@@ -28,6 +28,27 @@
   flex: 1;
 }
 
+/* Header used on the Release of Liability page, matching the
+   Release of Liability / Out-of-Warranty header layout */
+.release-liability-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.release-liability-logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.release-liability-contact {
+  text-align: right;
+  font-size: 0.95rem;
+  color: #222;
+}
+
 .parts-delivery-container {
   background: white;
   padding: 32px;
