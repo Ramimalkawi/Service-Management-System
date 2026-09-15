@@ -163,29 +163,46 @@
   padding: 12px 16px;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  align-items: center;
+  align-content: flex-start;
+  gap: 8px;
   border-bottom: 1px solid #e0e0e0;
   z-index: 10;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .ticket-action-button {
-  display: flex;
-
+  display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
+  white-space: nowrap;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background-color: #1ccad4;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
 }
 
 .ticket-action-button:hover {
   background-color: #16b1bd;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.ticket-action-button:active {
+  transform: scale(0.97);
+}
+
+.ticket-action-button:disabled {
+  cursor: not-allowed;
 }
 
 .deliver-button-wrapper {

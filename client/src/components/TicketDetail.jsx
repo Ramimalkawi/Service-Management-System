@@ -907,20 +907,19 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
 
       {/* ✅ Sticky Action Bar */}
       <div className="ticket-detail-sticky-bar">
-        <div style={{ display: "flex", width: "100%", gap: "12px" }}>
-          <button className="ticket-action-button" onClick={handlePrint2}>
-            <FaPrint /> Print
-          </button>
+        <button className="ticket-action-button" onClick={handlePrint2}>
+          <FaPrint /> Print
+        </button>
 
-          <button
-            className="ticket-action-button"
-            onClick={handleShowDocumentsLinks}
-          >
-            <FaFolderOpen /> Documents
-          </button>
+        <button
+          className="ticket-action-button"
+          onClick={handleShowDocumentsLinks}
+        >
+          <FaFolderOpen /> Documents
+        </button>
 
-          <>
-            {!archived && (
+        <>
+          {!archived && (
               <button className="ticket-action-button" onClick={handleProcess}>
                 <FaCogs /> Process
               </button>
@@ -1040,7 +1039,6 @@ export default function TicketDetail({ ticket, onClose, onDelete, archived }) {
             100% { transform: rotate(360deg); }
           }
           `}</style>
-        </div>
         {/* Deliver/Sign/Price Quotation button area */}
         {(() => {
           const status = ticket.ticketStates?.slice(-1)[0];
