@@ -52,6 +52,7 @@ const ReleaseOfLiabilityPage = () => {
   const [isSigned, setIsSigned] = useState(false);
   const [fullName, setFullName] = useState("");
   const [place, setPlace] = useState("");
+  const [model, setModel] = useState("");
   const sigCanvas = useRef(null);
   const pageRef = useRef(null);
 
@@ -205,8 +206,27 @@ const ReleaseOfLiabilityPage = () => {
               <br />
               <strong>Device (Foreign Device):</strong> {ticket.machineType}
               <br />
-              <strong>Model:</strong>{" "}
-              {ticket.deviceDescription || ticket.machineType || "-"}
+              <strong>Model: </strong>
+              {pdfSaved || alreadySigned ? (
+                <span>{model || "-"}</span>
+              ) : (
+                <input
+                  type="text"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  placeholder="Enter device model"
+                  className="no-print-border"
+                  style={{
+                    border: "none",
+                    borderBottom: "1px solid #999",
+                    fontSize: "15px",
+                    marginLeft: 4,
+                    width: "60%",
+                    minWidth: 160,
+                    boxSizing: "border-box",
+                  }}
+                />
+              )}
             </p>
           </div>
           <div>
