@@ -1,6 +1,10 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 import { initializeAuth, browserLocalPersistence } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
@@ -24,7 +28,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Keep a local copy of Firestore data in the browser (IndexedDB) so that
+// already-downloaded tickets load instantly and only changes are fetched.
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
 const auth = initializeAuth(app, {
   persistence: browserLocalPersistence,
 });

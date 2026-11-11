@@ -2,6 +2,10 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   collection,
   getDocs,
+  getDoc,
+  query,
+  orderBy,
+  limit,
   doc,
   setDoc,
   runTransaction,
@@ -23,6 +27,9 @@ import "./AppointmentsCalendar.css";
 import TicketDetail from "../components/TicketDetail";
 
 const TICKETS_PER_PAGE = 50;
+// How many of the newest tickets to read at a time. Older tickets are only
+// read when the user asks for them, searches, or exports.
+const TICKETS_FETCH_BATCH = 200;
 const LOCATION_FILTERS = [
   { label: "All", value: "All" },
   { label: "Amman", value: "Amman" },
@@ -1688,6 +1695,12 @@ const Tickets = () => {
   const [onlineTickets, setOnlineTickets] = useState([]);
   const [filteredOnlineTickets, setFilteredOnlineTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Number of newest tickets to read; null means read all tickets.
+  const [ticketLimit, setTicketLimit] = useState(TICKETS_FETCH_BATCH);
+  const [hasMoreTickets, setHasMoreTickets] = useState(false);
+  const [loadingMoreTickets, setLoadingMoreTickets] = useState(false);
+  // A ticket opened by URL that is not among the loaded tickets
+  const [directTicket, setDirectTicket] = useState(null);
   const [onlineLoading, setOnlineLoading] = useState(true);
   const [locationFilter, setLocationFilter] = useState("All");
   const [invoiceFilter, setInvoiceFilter] = useState("All");
@@ -1701,7 +1714,7 @@ const Tickets = () => {
 
   // Search state variables
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState("all"); // all, ticketNumber, date, machineType, customerName
+  const [searchType, setSearchType] = useState("all"); // all, ticketNumber, date, machineType, customerName, serialNum
 
   const navigate = useNavigate();
   const { id: selectedTicketId } = useParams();
@@ -1717,7 +1730,8 @@ const Tickets = () => {
   const activeTickets = isOnlineView ? filteredOnlineTickets : filteredTickets;
   const selectedTicket = isOnlineView
     ? undefined
-    : activeTickets.find((t) => t.id === selectedTicketId);
+    : activeTickets.find((t) => t.id === selectedTicketId) ||
+      (directTicket?.id === selectedTicketId ? directTicket : undefined);
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStartNum, setExportStartNum] = useState("");
@@ -1790,8 +1804,13 @@ const Tickets = () => {
 
   useEffect(() => {
     const ticketsRef = collection(db, "tickets");
+    // Read only the newest tickets unless all of them are needed
+    const ticketsQuery =
+      ticketLimit === null
+        ? ticketsRef
+        : query(ticketsRef, orderBy("ticketNum", "desc"), limit(ticketLimit));
     const unsubscribe = onSnapshot(
-      ticketsRef,
+      ticketsQuery,
       (snapshot) => {
         const data = snapshot.docs.map((docSnap) => ({
           id: docSnap.id,
@@ -1799,15 +1818,57 @@ const Tickets = () => {
         }));
         const sorted = data.sort((a, b) => b.ticketNum - a.ticketNum);
         setTickets(sorted);
+        setHasMoreTickets(ticketLimit !== null && snapshot.size >= ticketLimit);
         setLoading(false);
+        setLoadingMoreTickets(false);
       },
       (err) => {
         console.error("Error fetching tickets:", err);
         setLoading(false);
+        setLoadingMoreTickets(false);
       },
     );
     return () => unsubscribe();
-  }, []);
+  }, [ticketLimit]);
+
+  const loadMoreTickets = () => {
+    if (ticketLimit === null) return;
+    setLoadingMoreTickets(true);
+    setTicketLimit((prev) => (prev === null ? null : prev + TICKETS_FETCH_BATCH));
+  };
+
+  const loadAllTickets = () => {
+    if (ticketLimit === null) return;
+    setLoadingMoreTickets(true);
+    setTicketLimit(null);
+  };
+
+  // Searching must cover every ticket, not only the newest ones
+  useEffect(() => {
+    if (searchQuery.trim() && ticketLimit !== null) {
+      setLoadingMoreTickets(true);
+      setTicketLimit(null);
+    }
+  }, [searchQuery, ticketLimit]);
+
+  // A ticket opened directly (e.g. from the navbar search) may be older than
+  // the loaded tickets, so read that single ticket on its own.
+  useEffect(() => {
+    if (!selectedTicketId || tickets.some((t) => t.id === selectedTicketId)) {
+      return;
+    }
+    let cancelled = false;
+    getDoc(doc(db, "tickets", selectedTicketId))
+      .then((snap) => {
+        if (!cancelled && snap.exists()) {
+          setDirectTicket({ id: snap.id, ...snap.data() });
+        }
+      })
+      .catch((err) => console.error("Error fetching ticket:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTicketId, tickets]);
 
   useEffect(() => {
     setOnlineLoading(true);
@@ -1984,7 +2045,6 @@ const Tickets = () => {
       }
 
       setFilteredOnlineTickets(filtered);
-      setCurrentPage(1);
       return;
     }
 
@@ -2023,6 +2083,10 @@ const Tickets = () => {
               ticket.customerName &&
               ticket.customerName.toLowerCase().includes(query)
             );
+          case "serialNum":
+            return [ticket.serialNum, ticket.deviceIMEI].some(
+              (v) => typeof v === "string" && v.toLowerCase().includes(query)
+            );
           case "all":
           default: {
             const ticketNum = `${ticket.location}${ticket.ticketNum}`;
@@ -2038,7 +2102,11 @@ const Tickets = () => {
               (ticket.emailAddress &&
                 ticket.emailAddress.toLowerCase().includes(query)) ||
               (ticket.mobileNumber &&
-                ticket.mobileNumber.toLowerCase().includes(query))
+                ticket.mobileNumber.toLowerCase().includes(query)) ||
+              (typeof ticket.serialNum === "string" &&
+                ticket.serialNum.toLowerCase().includes(query)) ||
+              (typeof ticket.deviceIMEI === "string" &&
+                ticket.deviceIMEI.toLowerCase().includes(query))
             );
           }
         }
@@ -2046,7 +2114,6 @@ const Tickets = () => {
     }
 
     setFilteredTickets(filtered);
-    setCurrentPage(1);
   }, [
     locationFilter,
     invoiceFilter,
@@ -2055,6 +2122,10 @@ const Tickets = () => {
     searchQuery,
     searchType,
   ]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [locationFilter, invoiceFilter, searchQuery, searchType]);
 
   const totalPages = Math.ceil(activeTickets.length / TICKETS_PER_PAGE);
   const currentTickets = activeTickets.slice(
@@ -2071,6 +2142,8 @@ const Tickets = () => {
   };
 
   const handleExportExcel = () => {
+    // Exports can reach older tickets, so make sure all tickets are loaded
+    loadAllTickets();
     setShowExportModal(true);
   };
 
@@ -2538,6 +2611,7 @@ const Tickets = () => {
                 <option value="date">Date</option>
                 <option value="machineType">Machine Type</option>
                 <option value="customerName">Customer Name</option>
+                <option value="serialNum">Serial Number</option>
               </select>
               {searchQuery && (
                 <button
@@ -2590,6 +2664,23 @@ const Tickets = () => {
               )}
             </div>
           </div>
+          {!isOnlineView && (hasMoreTickets || loadingMoreTickets) && (
+            <div className="pagination-controls">
+              <span style={{ margin: "0 10px" }}>
+                {loadingMoreTickets
+                  ? "Loading tickets..."
+                  : `Showing the newest ${tickets.length} tickets`}
+              </span>
+              {!loadingMoreTickets && (
+                <>
+                  <button onClick={loadMoreTickets}>Load older tickets</button>
+                  <button onClick={loadAllTickets} style={{ marginLeft: "8px" }}>
+                    Load all tickets
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           {totalPages > 1 && (
             <div className="pagination-controls">
               <button
