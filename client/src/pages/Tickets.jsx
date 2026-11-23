@@ -2217,6 +2217,7 @@ const Tickets = () => {
       let agreementDownloadUrl = downloadUrl;
       let stampWarning = "";
       if (downloadUrl || storagePath) {
+        let step = "preparing the PDF";
         try {
           const { bytes } = await stampOnlineAgreementWithTicket({
             storage,
@@ -2225,25 +2226,30 @@ const Tickets = () => {
             downloadUrl,
             ticketNumber: ticketNumberLabel,
           });
+          // Same folder the in-store signed contracts are uploaded to.
+          step = "uploading the updated PDF";
           const stampedRef = storageRef(
             storage,
-            `onlineAgreements/accepted/ServiceAgreement_${ticketId}.pdf`,
+            `testcontracts/OnlineContract${ticketId}.pdf`,
           );
           await uploadBytes(
             stampedRef,
             new Blob([bytes], { type: "application/pdf" }),
             { contentType: "application/pdf" },
           );
+          step = "getting the updated PDF link";
           const stampedUrl = await getDownloadURL(stampedRef);
           contractStoragePath = stampedUrl;
           agreementDownloadUrl = stampedUrl;
         } catch (stampError) {
           console.error(
-            "Failed to add ticket number to online agreement PDF:",
+            `Failed to add ticket number to online agreement PDF (${step}):`,
             stampError,
+            { storagePath, downloadUrl },
           );
-          stampWarning =
-            "\nWarning: the ticket number could not be added to the agreement PDF; the original PDF was attached.";
+          stampWarning = `\nWarning: the ticket number could not be added to the agreement PDF; the original PDF was attached.\nReason (${step}): ${
+            stampError?.code || stampError?.message || stampError
+          }`;
         }
       } else {
         stampWarning =

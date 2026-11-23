@@ -329,7 +329,9 @@ const collectImageBoxes = async (page) => {
 // Returns { onlNumber, record } where `record` describes the Signature Record
 // page (null when the PDF doesn't have one).
 const inspectAgreementPdf = async (pdfBytes) => {
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdfBytes) });
+  // Pass a copy: pdf.js transfers the buffer to its worker, which would leave
+  // the original detached (empty) for pdf-lib afterwards.
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdfBytes.slice(0)) });
   const doc = await loadingTask.promise;
   try {
     const pages = [];
