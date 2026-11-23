@@ -14,7 +14,9 @@ import {
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase";
+import { stampOnlineAgreementWithTicket } from "../utils/onlineAgreementPdf";
 import TicketCard from "../components/TicketCard";
 import { useNavigate, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -2207,16 +2209,60 @@ const Tickets = () => {
       const ticketId = `${normalizedLocation}${ticketNum}${generate3DigitNumber()}`;
       const ticketNumberLabel = `${normalizedLocation}${ticketNum}`;
       const { downloadUrl, storagePath } = resolveAgreementFileInfo(agreement);
+
+      // Add the official ticket number to the agreement's Signature Record
+      // page (or append that page if the PDF doesn't have one). The original
+      // file is kept untouched; the stamped copy becomes the ticket contract.
+      let contractStoragePath = storagePath;
+      let agreementDownloadUrl = downloadUrl;
+      let stampWarning = "";
+      if (downloadUrl || storagePath) {
+        try {
+          const { bytes } = await stampOnlineAgreementWithTicket({
+            storage,
+            agreement,
+            storagePath,
+            downloadUrl,
+            ticketNumber: ticketNumberLabel,
+          });
+          const stampedRef = storageRef(
+            storage,
+            `onlineAgreements/accepted/ServiceAgreement_${ticketId}.pdf`,
+          );
+          await uploadBytes(
+            stampedRef,
+            new Blob([bytes], { type: "application/pdf" }),
+            { contentType: "application/pdf" },
+          );
+          const stampedUrl = await getDownloadURL(stampedRef);
+          contractStoragePath = stampedUrl;
+          agreementDownloadUrl = stampedUrl;
+        } catch (stampError) {
+          console.error(
+            "Failed to add ticket number to online agreement PDF:",
+            stampError,
+          );
+          stampWarning =
+            "\nWarning: the ticket number could not be added to the agreement PDF; the original PDF was attached.";
+        }
+      } else {
+        stampWarning =
+          "\nWarning: no agreement PDF was found for this request.";
+      }
+
       const ticketPayload = mapOnlineAgreementToTicket({
         agreement,
         locationCode: normalizedLocation,
         ticketNum,
         ticketId,
-        contractStoragePath: storagePath,
-        agreementDownloadUrl: downloadUrl,
+        contractStoragePath,
+        agreementDownloadUrl,
         warrantyStatus: normalizedWarranty,
         technicianName: currentTechnicianName,
       });
+      if (downloadUrl && agreementDownloadUrl !== downloadUrl) {
+        ticketPayload.originalOnlineAgreementPdfURL = downloadUrl;
+      }
 
       await setDoc(doc(db, "tickets", ticketId), ticketPayload);
       await deleteDoc(doc(db, "onlineTickets", agreement.id));
@@ -2231,7 +2277,7 @@ const Tickets = () => {
       alert(
         `Ticket ${ticketNumberLabel} created successfully for ${ticketPayload.customerName}.${
           emailResult.message ? `\n${emailResult.message}` : ""
-        }`,
+        }${stampWarning}`,
       );
     } catch (err) {
       console.error("Failed to accept online agreement:", err);
