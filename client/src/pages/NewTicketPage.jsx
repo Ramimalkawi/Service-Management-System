@@ -55,6 +55,11 @@ const NewTicket = () => {
     borrowedDeviceSerial: "",
   });
 
+  // First / last name are entered separately; the ticket only stores the
+  // combined full name in formData.customerName.
+  const [nameParts, setNameParts] = useState({ firstName: "", lastName: "" });
+  const [nameError, setNameError] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [contractPdfUrl, setContractPdfUrl] = useState(null);
@@ -100,6 +105,20 @@ const NewTicket = () => {
     }
   };
 
+  const cleanNamePart = (value) => value.replace(/\s+/g, " ").trim();
+
+  const handleNamePartChange = (e) => {
+    const { name, value } = e.target;
+    const next = { ...nameParts, [name]: value };
+    setNameParts(next);
+    setNameError("");
+    const fullName = [next.firstName, next.lastName]
+      .map(cleanNamePart)
+      .filter(Boolean)
+      .join(" ");
+    setFormData((prev) => ({ ...prev, customerName: fullName }));
+  };
+
   const handleCustomDeviceChange = (e) => {
     const { value } = e.target;
     setCustomDeviceType(value);
@@ -108,6 +127,18 @@ const NewTicket = () => {
 
   const handleShowModal = (e) => {
     e.preventDefault();
+    const missingField = !cleanNamePart(nameParts.firstName)
+      ? "firstName"
+      : !cleanNamePart(nameParts.lastName)
+        ? "lastName"
+        : null;
+    if (missingField) {
+      setNameError(
+        "Please enter the customer's full name: both first name and last name are required.",
+      );
+      document.querySelector(`input[name="${missingField}"]`)?.focus();
+      return;
+    }
     setShowEmailVerifyModal(true);
     setPendingEmail(formData.emailAddress);
     setEmailVerificationError("");
@@ -497,13 +528,61 @@ const NewTicket = () => {
           </div>
 
           <div className="form-group">
-            <label>Customer Name</label>
-            <input
-              name="customerName"
-              value={formData.customerName}
-              onChange={handleChange}
-              required
-            />
+            <label>Customer Full Name</label>
+            <div className="name-row">
+              <div className="name-field">
+                <label htmlFor="customerFirstName" className="name-sub">
+                  First name *
+                </label>
+                <input
+                  id="customerFirstName"
+                  name="firstName"
+                  value={nameParts.firstName}
+                  onChange={handleNamePartChange}
+                  placeholder="First name"
+                  autoComplete="off"
+                  className={
+                    nameError && !cleanNamePart(nameParts.firstName)
+                      ? "input-error"
+                      : ""
+                  }
+                  required
+                />
+              </div>
+              <div className="name-field">
+                <label htmlFor="customerLastName" className="name-sub">
+                  Last name *
+                </label>
+                <input
+                  id="customerLastName"
+                  name="lastName"
+                  value={nameParts.lastName}
+                  onChange={handleNamePartChange}
+                  placeholder="Last name"
+                  autoComplete="off"
+                  className={
+                    nameError && !cleanNamePart(nameParts.lastName)
+                      ? "input-error"
+                      : ""
+                  }
+                  required
+                />
+              </div>
+            </div>
+            {nameError ? (
+              <div className="name-error">{nameError}</div>
+            ) : (
+              <div className="name-hint">
+                Enter the customer's full name (first and last name) as it
+                appears on their ID.
+                {formData.customerName && (
+                  <>
+                    {" "}
+                    Saved as: <strong>{formData.customerName}</strong>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="form-group">
