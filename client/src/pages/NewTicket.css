@@ -92,6 +92,7 @@
 
 /* ===== Customer first / last name ===== */
 .ticket-form .name-row {
+  direction: ltr;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -107,12 +108,14 @@
   margin-bottom: 4px;
 }
 .ticket-form .name-hint {
+  direction: ltr;
   margin-top: 6px;
   font-size: 12.5px;
   color: #777;
   text-align: left;
 }
 .ticket-form .name-error {
+  direction: ltr;
   margin-top: 6px;
   font-size: 13px;
   color: #b00020;
